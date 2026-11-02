@@ -48,7 +48,9 @@ Background: `docs/packages/auxiliary/overview.md`,
   result to the identical ones (`_per_distinct_column`): on `sid`, the
   signals of a satellite share its orbit and clock (4,429 signals, about
   120 distinct columns). So a strategy computes a column from that
-  column's data alone; one that reads other columns breaks this.
+  column's data alone, and its result has no coordinates or attributes
+  per column (only `epoch` and the satellite dimension); one that reads
+  other columns, or puts per-column coordinates on its result, breaks this.
 - Angles are radians in datasets; polar angle, not elevation.
 - **Products**: only `final` and `rapid`; file names come from
   `ProductSpec.sp3_filenames`/`clk_filenames` (one per listed sampling, tried
