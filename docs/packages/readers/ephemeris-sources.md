@@ -127,7 +127,7 @@ were set; runs still write to it, since broadcast stores do not compare them.
 1. AuxDataPipeline: download SP3 (+ CLK, if aux_data.fetch_clock) from FTP (CODE/ESA/IGS)
 2. Epoch grid of the day: 00:00 plus multiples of the sampling interval of the
    observations (1 s with a shared aux cache), in GPS time like the SP3 file
-3. Interpolation (polynomial of degree 10): SP3 positions → epoch grid
+3. Interpolation (sp3_interpolation: polynomial of degree 10 or Hermite spline): SP3 positions → epoch grid
 4. Clock piecewise linear interpolation (skipped if fetch_clock=False)
 5. Write Zarr cache: 00_aux_zarr/aux_{date}_{site}_{sampling}s.zarr; with a shared aux cache an
    entry of aux_cache.zarr, one value per satellite for all its signals

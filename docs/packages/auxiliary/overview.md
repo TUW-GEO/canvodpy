@@ -56,12 +56,14 @@ Different data types require different methods based on the underlying physics:
 
 <div class="grid cards" markdown>
 
--   :fontawesome-solid-circle-nodes: &nbsp; **SP3 (polynomial of degree 10)**
+-   :fontawesome-solid-circle-nodes: &nbsp; **SP3 (polynomial of degree 10 or Hermite spline)**
 
     ---
 
-    Each position comes from the polynomial through the 11 nearest orbit
-    epochs, as in RTKLIB; the velocities are its derivative.
+    By default, each position comes from the polynomial through the 11
+    nearest orbit epochs, as in RTKLIB; the velocities are its derivative.
+    `Sp3Config(method="hermite")` (`aux_data.sp3_interpolation: hermite`)
+    gives the cubic Hermite spline of v1.0.0.
 
     ```python
     strategy = Sp3InterpolationStrategy(config=Sp3Config())
@@ -180,7 +182,7 @@ Different data types require different methods based on the underlying physics:
         Preprocessor-->>User: {epoch: 96, sid: 384}
 
         User->>Interpolator: interpolate onto the day's epoch grid
-        Interpolator->>Interpolator: polynomial of degree 10
+        Interpolator->>Interpolator: polynomial of degree 10 (default)
         Interpolator-->>User: {epoch: 2880, sid: 384}
 
         User->>Coordinates: compute_spherical_coordinates()

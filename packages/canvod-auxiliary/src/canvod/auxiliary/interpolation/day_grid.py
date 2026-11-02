@@ -18,6 +18,7 @@ from canvod.auxiliary.interpolation.interpolator import (
     ClockConfig,
     ClockInterpolationStrategy,
     Sp3Config,
+    Sp3InterpolationMethod,
     Sp3InterpolationStrategy,
 )
 
@@ -88,11 +89,14 @@ def interpolate_aux_day(
     ephem_ds: xr.Dataset,
     clock_ds: xr.Dataset | None,
     target_epochs: np.ndarray,
+    *,
+    sp3_interpolation: Sp3InterpolationMethod = "lagrange",
 ) -> xr.Dataset:
     """Interpolate one day of orbits (and clocks) onto ``target_epochs``.
 
-    Orbits: polynomial of degree 10 through the 11 nearest epochs
-    (:class:`Sp3InterpolationStrategy`). Clocks: piecewise linear between
+    Orbits: the method ``sp3_interpolation`` of
+    :class:`Sp3InterpolationStrategy`, by default the polynomial of degree
+    10 through the 11 nearest epochs. Clocks: piecewise linear between
     clock jumps (:class:`ClockInterpolationStrategy`). Each part records its
     interpolator in ``attrs["interpolator_config"]``.
 
@@ -104,13 +108,16 @@ def interpolate_aux_day(
         Clock offsets, or ``None`` when clocks are not fetched.
     target_epochs : np.ndarray
         Epoch grid, see :func:`aux_epoch_grid`.
+    sp3_interpolation : str
+        ``"lagrange"`` or ``"hermite"``
+        (``processing.aux_data.sp3_interpolation``), see :class:`Sp3Config`.
 
     Returns
     -------
     xr.Dataset
         Interpolated orbits, merged with the interpolated clocks if given.
     """
-    sp3 = Sp3InterpolationStrategy(config=Sp3Config())
+    sp3 = Sp3InterpolationStrategy(config=Sp3Config(method=sp3_interpolation))
     ephem_interp = sp3.interpolate(ephem_ds, target_epochs)
     ephem_interp.attrs["interpolator_config"] = sp3.to_attrs()
     if clock_ds is None:

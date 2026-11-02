@@ -45,7 +45,11 @@ recipes run these from the command line (`just metadata-show <store>`,
   0019 D2, see `packages/canvod-store/src/canvod/store/store.py`). A new
   content setting goes into `CONTENT_KEYS` or `VOD_CONTENT_KEYS` and the
   table in `docs/guides/configuration.md`; it then needs a new
-  `CONTENT_SETTINGS_FORMAT` and a migration for stores that lack it.
+  `CONTENT_SETTINGS_FORMAT` and a migration for stores that lack it,
+  unless stores without it are compared with an implied value
+  (`IMPLIED_VALUES` in `content.py`, like `RENAMED_VALUES`), which keeps
+  the format. `processing.aux_data.sp3_interpolation` is such a setting:
+  a store without it counts as `hermite`.
 - `commit_with_rebase` refuses a store without repository metadata. Tests
   that write to a store directly give it made-up metadata first with
   `canvod.store_metadata.testing.give_test_metadata`.

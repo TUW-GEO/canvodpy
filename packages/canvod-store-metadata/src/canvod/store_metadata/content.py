@@ -64,6 +64,7 @@ CONTENT_KEYS = (
     "processing.aux_data.agency",
     "processing.aux_data.product_type",
     "processing.aux_data.fetch_clock",
+    "processing.aux_data.sp3_interpolation",
     "processing.preprocessing",
     "processing.icechunk.compression_algorithm",
     "processing.icechunk.compression_level",
@@ -108,6 +109,15 @@ RECEIVER_KEYS = ("type", "reader_format", "paired_canopies")
 #: store or a run with the old name compares equal to one with the new name.
 EPHEMERIS_SOURCE = "processing.params.ephemeris_source"
 RENAMED_VALUES = {EPHEMERIS_SOURCE: RENAMED_EPHEMERIS_SOURCES}
+
+#: Content settings added after stores began to record them, to the value
+#: every store created before has: a store without the key is compared
+#: with this value, so the stored form keeps its format. Every canvodpy
+#: before v1.1.0 interpolated the orbits with the Hermite spline. A
+#: broadcast store created before took its angles from SBF files, without
+#: interpolation: there the key is not compared.
+SP3_INTERPOLATION = "processing.aux_data.sp3_interpolation"
+IMPLIED_VALUES = {SP3_INTERPOLATION: "hermite"}
 
 #: The content settings that apply only to the precise ephemeris. A
 #: broadcast store records them as empty, and a comparison with a broadcast
@@ -190,13 +200,17 @@ def with_current_names(settings: Mapping[str, Any]) -> dict[str, Any]:
     """``settings`` (nested, as in the settings file) with renamed values new.
 
     For a settings file written from a store that records an old name
-    (:data:`RENAMED_VALUES`).
+    (:data:`RENAMED_VALUES`), or none for a setting added later
+    (:data:`IMPLIED_VALUES`, which it then gets).
     """
     current = json.loads(json.dumps(dict(settings), default=str))
     for key, renamed in RENAMED_VALUES.items():
         value = _get(current, key)
         if value in renamed:
             _put(current, key, renamed[value])
+    for key, implied in IMPLIED_VALUES.items():
+        if _get(current, key) is None:
+            _put(current, key, implied)
     return current
 
 
@@ -510,7 +524,8 @@ def differences(
     compared: a receiver the store doesn't list is refused by its own check
     (it is added on purpose, with ``canvodpy store amend``), and a run may
     leave out receivers of its site. A value under an old name
-    (:data:`RENAMED_VALUES`) is compared under its new name. When either
+    (:data:`RENAMED_VALUES`) is compared under its new name, a key the store
+    lacks with its implied value (:data:`IMPLIED_VALUES`). When either
     side uses the broadcast ephemeris, the settings of the precise ephemeris
     (:data:`PRECISE_ONLY_KEYS`) are not compared: a broadcast store created
     before they were recorded as empty keeps the defaults, and between a
@@ -532,6 +547,11 @@ def differences(
     right[RESOLVED_SIDS] = run.get("resolved_sids")
     left.pop("sites", None)
     right.pop("sites", None)
+    for key, implied in IMPLIED_VALUES.items():
+        # Only for the keys of the store type: a VOD store records none
+        if key not in left and key in right:
+            old_broadcast = _is_broadcast(left.get(EPHEMERIS_SOURCE))
+            left[key] = right.get(key) if old_broadcast else implied
     for key, renamed in RENAMED_VALUES.items():
         for side in (left, right):
             side[key] = renamed.get(side.get(key), side.get(key))
@@ -581,6 +601,14 @@ def mismatch_message(
     lines = "\n".join(
         f"  {d.key}: store {_short(d.store)}, this run {_short(d.run)}" for d in found
     )
+    if any(d.key == SP3_INTERPOLATION for d in found) and (
+        _get(stored["settings"], SP3_INTERPOLATION) is None
+    ):
+        lines += (
+            "\n  The store was created before canvodpy 1.1.0, which interpolated "
+            "the orbits with the Hermite spline: set "
+            "processing.aux_data.sp3_interpolation: hermite to continue it."
+        )
     return (
         f"The settings of this run differ from the content settings of the "
         f"{_store_label(repository)} at {store_path} in {len(found)} "

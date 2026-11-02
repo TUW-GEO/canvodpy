@@ -102,6 +102,37 @@ def test_settings_from_a_store_from_before_precise_say_precise(tmp_path):
     assert settings["processing"]["params"]["ephemeris_source"] == "precise"
 
 
+def test_settings_from_a_store_from_before_1_1_0_continue_it_with_hermite(
+    tmp_path, monkeypatch
+):
+    """A store of v1.0.0 records no sp3_interpolation: its settings say hermite."""
+    from canvod.store_metadata import content
+
+    key = "processing.aux_data.sp3_interpolation"
+    monkeypatch.setattr(
+        content, "CONTENT_KEYS", tuple(k for k in content.CONTENT_KEYS if k != key)
+    )
+    store = _create_store(tmp_path)
+    monkeypatch.undo()
+    stored = read_repository_metadata(store)["content_settings"]
+    assert "sp3_interpolation" not in stored["settings"]["processing"]["aux_data"]
+
+    settings = _fill_todo(settings_from_store(store), tmp_path)
+
+    assert settings["processing"]["aux_data"]["sp3_interpolation"] == "hermite"
+    config_dir = tmp_path / "config"
+    config_dir.mkdir()
+    metadata = settings["processing"]["metadata"]
+    metadata["author"] = "Test Author"
+    metadata["email"] = "a@example.com"
+    metadata["institution"] = "Test Institution"
+    (config_dir / "canvod-settings.yaml").write_text(
+        yaml.safe_dump(settings, sort_keys=False)
+    )
+    config = load_config(config_dir=config_dir)
+    assert differences(stored, run_content_settings(config, SITE), SITE) == []
+
+
 def test_settings_from_a_broadcast_store_load_and_match_it(tmp_path):
     """A broadcast store records no product (#574); its settings still load."""
     config = _settings(tmp_path)

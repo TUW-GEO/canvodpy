@@ -10,14 +10,15 @@ provider of the Python API and the Airflow tasks all use these functions.
 
 <div class="grid cards" markdown>
 
--   :fontawesome-solid-wave-square: &nbsp; **Polynomial of degree 10**
+-   :fontawesome-solid-wave-square: &nbsp; **Polynomial of degree 10 or Hermite spline**
 
     ---
 
     Used for **SP3 orbits** (satellite X, Y, Z).
 
-    The polynomial goes through the positions at the 11 orbit epochs
-    nearest to each target epoch.
+    By default, the polynomial through the positions at the 11 orbit
+    epochs nearest to each target epoch; or, as before v1.1.0, the cubic
+    Hermite spline through the positions and velocities.
 
 -   :fontawesome-solid-chart-line: &nbsp; **Piecewise linear**
 
@@ -32,7 +33,19 @@ provider of the Python API and the Airflow tasks all use these functions.
 
 ---
 
-## Polynomial of degree 10 (orbits)
+## Orbits
+
+The setting `processing.aux_data.sp3_interpolation` picks the method:
+
+| Value | Method |
+|---|---|
+| `lagrange` (default) | Polynomial of degree 10 through the 11 nearest orbit epochs |
+| `hermite` | Cubic Hermite spline through the positions and velocities, the method of canvodpy before v1.1.0 |
+
+Despite its name, the setting also applies to the broadcast orbits of
+RINEX navigation files (see below).
+
+### Polynomial of degree 10 (`lagrange`)
 
 Each interpolated position comes from the Lagrange polynomial of degree
 10 through the positions at the 11 orbit epochs nearest to it, as RTKLIB
@@ -48,20 +61,43 @@ The broadcast ephemeris of RINEX files goes through the same
 interpolation: its orbits are first computed on a 5-minute grid (see
 [Ephemeris sources](../readers/ephemeris-sources.md)).
 
+### Hermite spline (`hermite`)
+
+Each coordinate is interpolated with the cubic Hermite spline through the
+positions and velocities at the orbit epochs (`scipy.interpolate.CubicHermiteSpline`).
+The velocities of the precise orbits are central differences of the SP3
+positions (`Sp3File`); the velocity records of an SP3 file are not read.
+The broadcast orbits get their velocities when they are computed (see
+[Ephemeris sources](../readers/ephemeris-sources.md)). The velocities of the interpolated orbits are the
+derivative of the spline. This is the code of canvodpy v1.0.0, unchanged:
+a run with `hermite` gives the angles of v1.0.0.
+
 ```python
 from canvod.auxiliary.interpolation import Sp3Config, Sp3InterpolationStrategy
 
-interpolator = Sp3InterpolationStrategy(config=Sp3Config())
+interpolator = Sp3InterpolationStrategy(config=Sp3Config(method="hermite"))
 result = interpolator.interpolate(sp3_data, target_epochs)
 ```
 
-Nothing about the orbit interpolation is configurable.
+`Sp3Config()` is the default, `lagrange`. Another value raises a
+`ValueError`.
+
+### One method per store
+
+A GNSS store records the method in its content settings, and refuses a
+run with the other one (see
+[content settings](../../guides/configuration.md#content-settings-fixed-for-each-store)). A store created
+before v1.1.0 records none: it counts as `hermite`, the only method then.
+To continue writing to such a store, set
+`processing.aux_data.sp3_interpolation: hermite`; with the default, write
+to a new store. The log book of a store records the method of every file
+(column `orbit_interpolation`).
 
 ### Start and end of the day
 
 A daily orbit file can end before midnight (ESA's 15-minute rapid orbits
 end at 23:45; CODE's 5-minute orbits include 24:00), and near its first
-and last epoch the polynomial would have orbit epochs on one side only.
+and last epoch the interpolation would have orbit epochs on one side only.
 So every run loads the orbit and clock files of the **previous and the
 next day** too (`AuxDataPipeline.create_standard`) and keeps one hour of
 each (`AuxFile.join_days`; where files overlap, the day's own epoch is
@@ -71,7 +107,7 @@ stops with an error naming it.
 Final products come out per GPS week, so the last day of a week can be
 processed only once the next week's products are published.
 
-The polynomial goes through the epochs of the satellite with data. A
+Either method goes through the epochs of the satellite with data. A
 target epoch outside a satellite's data, or in a gap of more than 1.5
 sampling intervals, is NaN.
 

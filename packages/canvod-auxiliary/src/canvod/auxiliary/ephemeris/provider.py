@@ -30,6 +30,7 @@ from typing import TYPE_CHECKING, Any
 if TYPE_CHECKING:
     import xarray as xr
 
+    from canvod.auxiliary.interpolation import Sp3InterpolationMethod
     from canvod.auxiliary.position.position import ECEFPosition
 
 
@@ -88,7 +89,7 @@ class AgencyEphemerisProvider(EphemerisProvider):
     """SP3/CLK-based ephemeris from analysis centers.
 
     Downloads final or rapid products from COD, ESA, IGS etc.,
-    interpolates the orbits with a polynomial of degree 10, and computes theta/phi
+    interpolates the orbits (``sp3_interpolation``), and computes theta/phi
     via ECEF→spherical coordinate transformation.
 
     Parameters
@@ -106,6 +107,9 @@ class AgencyEphemerisProvider(EphemerisProvider):
     fetch_clock : bool, optional
         Whether to also download/interpolate CLK clock-correction files.
         If None, uses ``config.processing.aux_data.fetch_clock``.
+    sp3_interpolation : str
+        ``"lagrange"`` or ``"hermite"``, see
+        :class:`~canvod.auxiliary.interpolation.Sp3Config`.
     """
 
     def __init__(
@@ -116,8 +120,10 @@ class AgencyEphemerisProvider(EphemerisProvider):
         keep_sids: list[str] | None = None,
         store_radial_distance: bool = False,
         fetch_clock: bool | None = None,
+        sp3_interpolation: Sp3InterpolationMethod = "lagrange",
     ) -> None:
         self.agency = agency
+        self.sp3_interpolation = sp3_interpolation
         self.product_type = product_type
         self.aux_data_dir = aux_data_dir
         self.keep_sids = keep_sids
@@ -206,7 +212,10 @@ class AgencyEphemerisProvider(EphemerisProvider):
             shutil.rmtree(path)
         day_start = np.datetime64(YYYYDOY.from_str(str(self._date)).date, "D")
         aux = interpolate_aux_day(
-            self._ephem_ds, self._clock_ds, aux_epoch_grid(day_start, interval_s)
+            self._ephem_ds,
+            self._clock_ds,
+            aux_epoch_grid(day_start, interval_s),
+            sp3_interpolation=self.sp3_interpolation,
         )
         aux.to_zarr(path, mode="w", consolidated=False)
         self._aux_zarr_paths[interval_s] = path
@@ -316,6 +325,9 @@ class RinexNavProvider(EphemerisProvider):
         Whether to keep ``r`` in the output.
     aggregate_glonass_fdma : bool
         As for the observations.
+    sp3_interpolation : str
+        ``"lagrange"`` or ``"hermite"``, as for the agency products
+        (``processing.aux_data.sp3_interpolation``).
     """
 
     def __init__(
@@ -324,8 +336,10 @@ class RinexNavProvider(EphemerisProvider):
         keep_sids: list[str] | None = None,
         store_radial_distance: bool = False,
         aggregate_glonass_fdma: bool = True,
+        sp3_interpolation: Sp3InterpolationMethod = "lagrange",
     ) -> None:
         self.nav_files = list(nav_files)
+        self.sp3_interpolation = sp3_interpolation
         self.keep_sids = keep_sids
         self.store_radial_distance = store_radial_distance
         self.aggregate_glonass_fdma = aggregate_glonass_fdma
@@ -410,7 +424,10 @@ class RinexNavProvider(EphemerisProvider):
             )
         interval_s = sampling_interval_from_epochs(ds.epoch.values)
         aux = interpolate_aux_day(
-            self._ephem_ds, None, aux_epoch_grid(self._day_start, interval_s)
+            self._ephem_ds,
+            None,
+            aux_epoch_grid(self._day_start, interval_s),
+            sp3_interpolation=self.sp3_interpolation,
         )
         aux_slice = aux.sel(epoch=ds.epoch, method="nearest").reindex(sid=ds.sid)
         return _add_angles(ds, aux_slice, receiver_position, self.store_radial_distance)

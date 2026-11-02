@@ -251,7 +251,7 @@ All of these are replaced by one entry point: `canvodpy run`, or
 | `canvod.readers.gnss_specs.utils.file_hash`, `isfloat` | `canvod.utils.tools.file_hash`, `isfloat` |
 | `canvodpy.orchestrator.matcher.DatasetMatcher`, `canvodpy.orchestrator.interpolator.*` | `canvod.auxiliary.matching.DatasetMatcher`, `canvod.auxiliary.interpolation.*` |
 | `ProductSpec.sampling_rate`, `ProductSpec.duration`, `AuxFile.generate_filename_based_on_type()` | `ProductSpec.sp3_samplings` (every product file covers one day), `AuxFile.candidate_filenames` |
-| Arguments `use_velocities` and `fallback_method` of `Sp3Config` (since v1.1.0) | `Sp3Config()`: the orbits are interpolated from the positions alone; the arguments have no effect |
+| Arguments `use_velocities` and `fallback_method` of `Sp3Config` (since v1.1.0) | `Sp3Config(method=...)`: the arguments have no effect; `method` picks `lagrange` or `hermite` |
 
 ??? note "Internal helpers, rarely used directly"
 
@@ -279,14 +279,20 @@ All of these are replaced by one entry point: `canvodpy run`, or
   convention
   ([Ephemeris sources](../packages/readers/ephemeris-sources.md#broadcast-ephemeris-from-rinex-navigation-files)).
   Nothing changes for SBF files or for the precise ephemeris.
-- **Orbit interpolation**: the orbits are interpolated with a polynomial
-  of degree 10 through the 11 nearest orbit epochs, as RTKLIB does,
-  instead of a cubic Hermite spline with velocities estimated from the
-  positions
-  ([Interpolation methods](../packages/auxiliary/interpolation.md#polynomial-of-degree-10-orbits)).
-  This changes `theta`, `phi` and `r` between the orbit epochs. Days
-  processed after the update get the new values; days already in a store
-  keep theirs. A shared aux cache from v1.0.0 is computed again once.
+- **Orbit interpolation**: the new setting
+  `processing.aux_data.sp3_interpolation` picks the method. The default,
+  `lagrange`, is new: a polynomial of degree 10 through the 11 nearest
+  orbit epochs, as RTKLIB does. `hermite` keeps the cubic Hermite spline
+  of v1.0.0 and gives its angles exactly
+  ([Interpolation methods](../packages/auxiliary/interpolation.md#orbits)).
+  The two differ in `theta`, `phi` and `r` between the orbit epochs, so a
+  store takes one of them only.
+  **A store created with v1.0.0 counts as `hermite`, and refuses runs
+  with the new default.** To continue writing to it, set
+  `sp3_interpolation: hermite`; to use `lagrange`, write to a new store.
+  The log book records the method of every file (column
+  `orbit_interpolation`). A shared aux cache from v1.0.0 is computed
+  again once.
 
 ## New in v1.0.0
 

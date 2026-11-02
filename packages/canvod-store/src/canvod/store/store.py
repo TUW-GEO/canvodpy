@@ -74,7 +74,7 @@ from canvod.store.day_blocks import (
     to_stored_axis,
     write_file_region,
 )
-from canvod.store.prepare import NO_POSITION_COLUMN, prepare_write, split_no_position
+from canvod.store.prepare import prepare_write, split_log_book_attrs
 from canvod.store.time_encoding import with_time_units
 from canvod.store.viewer import add_rich_display_to_store
 from canvod.store.zarr_concurrency import scoped_zarr_concurrency
@@ -169,8 +169,8 @@ def _json_log_row(row: dict[str, Any]) -> dict[str, Any]:
 
     The dataset attributes (``dataset_attrs``, as the run passes them, or
     ``attrs``) become JSON in the ``attrs`` column; the preprocessing record
-    they carry moves to the ``preprocessing`` column, the satellites without
-    a position to their own column (:data:`~canvod.store.prepare.NO_POSITION_COLUMN`);
+    they carry moves to the ``preprocessing`` column, the attributes of
+    :data:`~canvod.store.prepare.LOG_BOOK_ATTRS` to their own columns;
     paths become text.
     """
     row = dict(row)
@@ -178,10 +178,11 @@ def _json_log_row(row: dict[str, Any]) -> dict[str, Any]:
     if isinstance(attrs, str):
         attrs = json.loads(attrs) if attrs else {}
     attrs, record = split_preprocessing(attrs)
-    attrs, no_position = split_no_position(attrs)
+    attrs, columns = split_log_book_attrs(attrs)
     row["attrs"] = json.dumps(attrs, default=str)
     row.setdefault("preprocessing", record)
-    row.setdefault(NO_POSITION_COLUMN, no_position)
+    for column, value in columns.items():
+        row.setdefault(column, value)
     return {k: str(v) if isinstance(v, Path) else v for k, v in row.items()}
 
 
@@ -2790,11 +2791,16 @@ class MyIcechunkStore:
                                   satellites with observations but no
                                   position, see ``NO_POSITION_ATTR``; "" in
                                   rows written before it existed)
+            orbit_interpolation
+                            str   (UTF-8, JSON of the orbit interpolation,
+                                  see ``ORBIT_INTERPOLATION_ATTR``; "" in
+                                  rows written before v1.1.0 and for angles
+                                  from the receiver)
             canonical_name  str   (UTF-8)
             physical_path   str   (UTF-8)
         """
         dataset_attrs, record = split_preprocessing(dataset_attrs)
-        dataset_attrs, no_position = split_no_position(dataset_attrs)
+        dataset_attrs, columns = split_log_book_attrs(dataset_attrs)
         written_at = datetime.now(UTC).isoformat()
         row = {
             "rinex_hash": str(rinex_hash),
@@ -2809,7 +2815,7 @@ class MyIcechunkStore:
             else VOD_WRITE_STRATEGY,
             "attrs": json.dumps(dataset_attrs, default=str),
             "preprocessing": record,
-            NO_POSITION_COLUMN: no_position,
+            **columns,
             "canonical_name": str(canonical_name) if canonical_name else "",
             "physical_path": str(physical_path) if physical_path else "",
         }
@@ -3004,8 +3010,9 @@ class MyIcechunkStore:
                                  blocks; -1 in rows without it)
         """
         dataset_attrs, record = split_preprocessing(dataset_attrs)
-        # The satellites without a position belong to the GNSS log book.
-        dataset_attrs, _ = split_no_position(dataset_attrs)
+        # The satellites without a position and the orbit interpolation
+        # belong to the GNSS log book.
+        dataset_attrs, _ = split_log_book_attrs(dataset_attrs)
         written_at = datetime.now(UTC).isoformat()
         self._set_vod_calculator(zroot, group_name, calculator_name, calculator_params)
         row = {
