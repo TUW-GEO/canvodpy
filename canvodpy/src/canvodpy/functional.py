@@ -469,6 +469,12 @@ def create_grid_to_file(
     str
         Path to output file (for Airflow XCom)
 
+    Warnings
+    --------
+    The grid file is a pickle: loading a pickle runs code from it. Load it
+    only with :func:`assign_grid_cells_to_file`, and only files you wrote
+    yourself with this function.
+
     Examples
     --------
     Airflow task:
@@ -531,6 +537,12 @@ def assign_grid_cells_to_file(
     -------
     str
         Path to output file (for Airflow XCom)
+
+    Warnings
+    --------
+    ``grid_path`` is loaded with :func:`pickle.load`, which runs code from
+    the file. Pass only a grid file you wrote yourself with
+    :func:`create_grid_to_file`; never one from someone else.
 
     Examples
     --------
