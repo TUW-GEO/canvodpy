@@ -65,8 +65,10 @@ interpolation: its orbits are first computed on a 5-minute grid (see
 
 Each coordinate is interpolated with the cubic Hermite spline through the
 positions and velocities at the orbit epochs (`scipy.interpolate.CubicHermiteSpline`).
-SP3 files without velocities get them as central differences of the
-positions (`Sp3File`). The velocities of the interpolated orbits are the
+The velocities of the precise orbits are central differences of the SP3
+positions (`Sp3File`); the velocity records of an SP3 file are not read.
+The broadcast orbits get their velocities when they are computed (see
+[Ephemeris sources](../readers/ephemeris-sources.md)). The velocities of the interpolated orbits are the
 derivative of the spline. This is the code of canvodpy v1.0.0, unchanged:
 a run with `hermite` gives the angles of v1.0.0.
 

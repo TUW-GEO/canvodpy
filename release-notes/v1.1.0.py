@@ -54,8 +54,8 @@ def _(mo):
     changes `theta`, `phi` and `r` between the epochs of the orbit product;
     the method of v1.0.0 stays available, and a store created with v1.0.0
     needs it. Apart from that and the new name of the precise ephemeris,
-    nothing changes for a run with the precise ephemeris or with SBF files. The full list
-    of changes is in the
+    nothing changes for a run with the precise ephemeris or with SBF
+    files. The full list of changes is in the
     [changelog](https://github.com/TUW-GEO/canvodpy/blob/v1.1.0/CHANGELOG.md).
 
     ---

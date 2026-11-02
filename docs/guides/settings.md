@@ -169,7 +169,7 @@ Product type. The agency must publish it: see the product registry of canvod-aux
 
 #### `processing.aux_data.sp3_interpolation` {#processing-aux_data-sp3_interpolation}
 
-How the orbits are interpolated onto the epochs of the observations. lagrange: the polynomial of degree 10 through the 11 nearest orbit epochs. hermite: the cubic Hermite spline through the positions and velocities, the method of canvodpy before `v1.1.0`. Despite the name, it also applies to the broadcast orbits of RINEX navigation files. A store records it and refuses runs with the other method; a store created before `v1.1.0` counts as hermite.
+How the orbits are interpolated onto the epochs of the observations. `lagrange`: the polynomial of degree 10 through the 11 nearest orbit epochs. `hermite`: the cubic Hermite spline through the positions and velocities, the method of canvodpy before `v1.1.0`. Despite the name, it also applies to the broadcast orbits of RINEX navigation files. A store records it and refuses runs with the other method; a store created before `v1.1.0` counts as `hermite` (a broadcast store, from SBF files then, accepts either).
 
 - Type: one of `lagrange`, `hermite`
 - Default: `lagrange`
