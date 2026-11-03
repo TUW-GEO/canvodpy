@@ -7,6 +7,7 @@ Provides specialized interpolation for:
 """
 
 from abc import ABC, abstractmethod
+from collections.abc import Callable
 from concurrent.futures import ThreadPoolExecutor
 from typing import Any, Literal, get_args
 
@@ -212,6 +213,36 @@ class Interpolator[C: InterpolatorConfig](ABC):
         }
 
 
+def _per_distinct_column(
+    interpolate_columns: Callable[[xr.Dataset, np.ndarray], xr.Dataset],
+    ds: xr.Dataset,
+    target_epochs: np.ndarray,
+    names: list[str],
+) -> xr.Dataset:
+    """Interpolate each distinct column once (#433).
+
+    On ``sid``, every signal of a satellite carries the satellite's orbit and
+    clock, so a day of 4,429 signals holds about 120 distinct columns. A
+    column's result depends only on its own data, so the first column of
+    each group of identical ones (over ``names``, NaN included) is
+    interpolated and its result given to the others: the same values, bit
+    for bit.
+    """
+    sat_dim = "sv" if "sv" in ds.dims else "sid"
+    columns = np.stack([ds[n].transpose(sat_dim, ...).values for n in names], axis=1)
+    group_of: dict[bytes, int] = {}
+    groups = np.empty(len(columns), dtype=np.intp)
+    firsts: list[int] = []
+    for j, column in enumerate(columns):
+        groups[j] = group_of.setdefault(column.tobytes(), len(group_of))
+        if groups[j] == len(firsts):
+            firsts.append(j)
+    if len(firsts) == len(columns):
+        return interpolate_columns(ds, target_epochs)
+    distinct = interpolate_columns(ds.isel({sat_dim: firsts}), target_epochs)
+    return distinct.isel({sat_dim: groups}).assign_coords({sat_dim: ds[sat_dim].values})
+
+
 @dataclass(config=ConfigDict(arbitrary_types_allowed=True))
 class Sp3InterpolationStrategy(Interpolator[Sp3Config]):
     """Interpolation of SP3 ephemeris data.
@@ -248,6 +279,14 @@ class Sp3InterpolationStrategy(Interpolator[Sp3Config]):
                 "and Vz; the orbit data have none."
             )
             raise ValueError(msg)
+        orbit_vars = [v for v in ("X", "Y", "Z", "Vx", "Vy", "Vz") if v in ds]
+        return _per_distinct_column(
+            self._interpolate_columns, ds, target_epochs, orbit_vars
+        )
+
+    def _interpolate_columns(
+        self, ds: xr.Dataset, target_epochs: np.ndarray
+    ) -> xr.Dataset:
         # Determine satellite dimension (sv or sid)
         sat_dim = "sv" if "sv" in ds.dims else "sid"
         sat_values = ds[sat_dim].values
@@ -527,6 +566,26 @@ class ClockInterpolationStrategy(Interpolator[ClockConfig]):
 
     def interpolate(self, ds: xr.Dataset, target_epochs: np.ndarray) -> xr.Dataset:
         """Interpolate clock corrections with discontinuity handling."""
+        clock_vars = [
+            var
+            for var in ds.data_vars
+            if isinstance(var, str)
+            and any(c in var for c in ["clock", "clk", "Clock", "CLK", "clock_offset"])
+        ]
+
+        if not clock_vars:
+            raise ValueError("No clock variables found in dataset")
+
+        return _per_distinct_column(
+            lambda part, targets: self._interpolate_columns(part, targets, clock_vars),
+            ds,
+            target_epochs,
+            clock_vars,
+        )
+
+    def _interpolate_columns(
+        self, ds: xr.Dataset, target_epochs: np.ndarray, clock_vars: list[str]
+    ) -> xr.Dataset:
         # Determine satellite dimension (sv or sid)
         sat_dim = "sv" if "sv" in ds.dims else "sid"
         sat_values = ds[sat_dim].values
@@ -545,17 +604,6 @@ class ClockInterpolationStrategy(Interpolator[ClockConfig]):
             .astype("timedelta64[s]")
             .astype(float)
         )
-
-        # Find clock variables
-        clock_vars = [
-            var
-            for var in ds.data_vars
-            if isinstance(var, str)
-            and any(c in var for c in ["clock", "clk", "Clock", "CLK", "clock_offset"])
-        ]
-
-        if not clock_vars:
-            raise ValueError("No clock variables found in dataset")
 
         # Process each clock variable
         for var in clock_vars:
