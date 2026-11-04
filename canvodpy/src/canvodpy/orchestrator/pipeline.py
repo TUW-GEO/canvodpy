@@ -785,11 +785,18 @@ class PipelineOrchestrator:
                         continue
                     # A canopy without files on the day is a data gap: no
                     # copy of the reference for it, which would take its
-                    # position from those files (#538).
+                    # position from those files (#538). The canopy of a VOD
+                    # analysis is reported with the days without VOD (above);
+                    # one in no analysis gets no VOD anyway.
                     if canopy_name not in days_of:
                         days_of[canopy_name] = self._receiver_days(canopy_name)
                     if date_key not in days_of[canopy_name]:
-                        self._days_without_pair[canopy_name].add(date_key)
+                        self._logger.info(
+                            "reference_copy_not_prepared",
+                            group=store_group,
+                            date=date_key,
+                            reason=f"{canopy_name} has no files",
+                        )
                         continue
                     # The canopy's files of the same day give the position
                     canopy_cfg = site_config.receivers.get(canopy_name)

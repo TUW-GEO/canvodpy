@@ -189,7 +189,9 @@ def test_a_canopy_without_files_gets_no_reference_copy(tmp_path: Path) -> None:
 
 def test_a_paired_canopy_outside_the_analyses_is_checked_too(tmp_path: Path) -> None:
     """A canopy paired with the reference but in no VOD analysis: its days
-    are looked up as well, so its gap gets no reference copy either."""
+    are looked up as well, so its gap gets no reference copy either. It
+    gets no VOD anyway, so the skipped copy is logged, not reported as a
+    day without VOD."""
     clear_discovery_cache()
     orch = _two_canopies(tmp_path, ("canopy_01",))
 
@@ -197,4 +199,10 @@ def test_a_paired_canopy_outside_the_analyses_is_checked_too(tmp_path: Path) -> 
 
     assert "reference_01_canopy_02" in grouped["2025002"]
     assert set(grouped["2025003"]) == {"canopy_01", "reference_01_canopy_01"}
-    assert orch._days_without_pair["canopy_02"] == {"2025003"}
+    assert "canopy_02" not in orch._days_without_pair
+    orch._logger.info.assert_any_call(
+        "reference_copy_not_prepared",
+        group="reference_01_canopy_02",
+        date="2025003",
+        reason="canopy_02 has no files",
+    )
