@@ -4,47 +4,22 @@ Every test here compares a freshly-built store against the frozen day 0
 baseline.  All tests must PASS both before and after any refactor — if one
 fails after a refactor, the refactor changed observable behavior.
 
-Prerequisites
--------------
-Run ``python packages/canvod-store/tests/build_day0_store.py`` once before
-starting any refactor work to establish the baseline.
-
-Markers
--------
-- Tests that open the day 0 store on disk are auto-skipped if the fixture
-  is absent (via the ``day0_store_path`` / ``day0_snapshot`` fixtures).
-- ``@pytest.mark.integration`` — tests that exercise the full write pipeline
-  (rather than just reading the frozen fixture).
+The baseline is the committed ``fixtures/day0_snapshot.json``; each test
+builds a fresh store in a temporary folder and compares it with the JSON.
+Regenerate the JSON (``build_day0_store.py``) only for a deliberate change
+of the stored output, and say why in the commit.
 """
 
 from __future__ import annotations
-
-from pathlib import Path
 
 import numpy as np
 import pytest
 import xarray as xr
 import zarr
-from _helpers import GROUP, SBF_CANOPY_DIR, make_synthetic_dataset, new_gnss_store
+from _helpers import GROUP, SBF_CANOPY_DIR, make_synthetic_dataset
 from build_day0_store import build_store
 
 from canvod.store import MyIcechunkStore
-
-# ---------------------------------------------------------------------------
-# Helpers
-# ---------------------------------------------------------------------------
-
-
-def _build_fresh_store(tmp_path: Path) -> tuple[MyIcechunkStore, list[xr.Dataset]]:
-    """Build a fresh store from the same synthetic data as the day 0 fixture."""
-    from build_day0_store import build_store as _build
-
-    store_path = tmp_path / "fresh_store"
-    _build(store_path)
-    return MyIcechunkStore(store_path), [
-        make_synthetic_dataset(slot=i) for i in range(4)
-    ]
-
 
 # ---------------------------------------------------------------------------
 # Structure tests
@@ -54,15 +29,12 @@ def _build_fresh_store(tmp_path: Path) -> tuple[MyIcechunkStore, list[xr.Dataset
 class TestStructureMatchesDay0:
     """Store structure (groups, arrays, dtypes, shapes) must be identical."""
 
-    def test_groups_present(self, day0_store_path, tmp_path):
-        store = MyIcechunkStore(day0_store_path)
-        fresh_store = new_gnss_store(tmp_path / "s")
-        # write one dataset so the group exists
-        ds = make_synthetic_dataset(slot=0)
-        fresh_store.write_initial_group(ds, group_name=GROUP)
+    def test_groups_present(self, day0_snapshot, tmp_path):
+        store_path = tmp_path / "s"
 
-        assert GROUP in store.list_groups()
-        assert GROUP in fresh_store.list_groups()
+        build_store(store_path)
+        assert day0_snapshot["group"] == GROUP
+        assert GROUP in MyIcechunkStore(store_path).list_groups()
 
     def test_shape_matches_snapshot(self, day0_snapshot, tmp_path):
         store_path = tmp_path / "s"
@@ -145,13 +117,14 @@ class TestDataMatchesDay0:
                 f"NaN fraction changed for {var}: {actual} != {expected}"
             )
 
-    def test_read_group_returns_correct_shape(self, day0_store_path):
+    def test_read_group_returns_correct_shape(self, day0_snapshot, tmp_path):
         """read_group() must return the same shape as day 0."""
-        store = MyIcechunkStore(day0_store_path)
-        ds = store.read_group(GROUP)
-        assert "epoch" in ds.dims
-        assert "sid" in ds.dims
-        assert "S1C" in ds.data_vars
+        store_path = tmp_path / "s"
+
+        build_store(store_path)
+        ds = MyIcechunkStore(store_path).read_group(GROUP)
+        assert dict(ds.sizes) == day0_snapshot["shape"]
+        assert set(ds.data_vars) == set(day0_snapshot["variables"])
 
 
 # ---------------------------------------------------------------------------

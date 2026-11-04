@@ -20,7 +20,6 @@ import xarray as xr
 
 _TESTS_DIR = Path(__file__).parent
 _FIXTURES_DIR = _TESTS_DIR / "fixtures"
-DAY0_STORE_PATH = _FIXTURES_DIR / "day0_store"
 
 TEST_DATA_ROOT = (
     Path(__file__).parents[3]

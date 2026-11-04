@@ -1,31 +1,24 @@
-"""Build the day 0 regression store fixture.
+"""Write the day 0 regression baseline, ``fixtures/day0_snapshot.json``.
 
-Run this script ONCE with the current (pre-refactor) code to establish the
-baseline. Every subsequent refactor must produce a store that matches this
-baseline exactly when tested with ``test_store_regression.py``.
+``test_store_regression.py`` builds a fresh store with :func:`build_store`
+and compares it with this committed JSON.
 
     uv run python packages/canvod-store/tests/build_day0_store.py
 
-Output
-------
-packages/canvod-store/tests/fixtures/day0_store/    — icechunk store
-packages/canvod-store/tests/fixtures/day0_snapshot.json — checksums + metadata
-
-The fixture is gitignored (stores are large). Re-run this script if:
-- The test data changes
-- A deliberate behavioral change is made to MyIcechunkStore (rare)
-- The icechunk storage format is upgraded
-
-Do NOT re-run during a refactor — the point is that the fixture stays
-frozen so you can verify the refactor produces identical output.
+Re-run it only for a deliberate change of the stored output (a behavioral
+change of MyIcechunkStore, a new Icechunk storage format), and say why in
+the commit. Do NOT re-run it during a refactor: the point is that the
+baseline stays frozen, so the tests show whether the output changed.
 """
 
 from __future__ import annotations
 
 import hashlib  # still needed for epoch checksum
 import json
+import os
 import shutil
 import sys
+import tempfile
 from pathlib import Path
 
 import numpy as np
@@ -35,7 +28,6 @@ sys.path.insert(0, str(_TESTS_DIR))
 
 from _helpers import (  # noqa: E402
     _FIXTURES_DIR,
-    DAY0_STORE_PATH,
     GROUP,
     _array_checksum,
     make_synthetic_dataset,
@@ -113,20 +105,22 @@ def build_store(store_path: Path) -> dict:
 
 
 def main() -> None:
-    print(f"Building day 0 store at {DAY0_STORE_PATH} ...")
-    _FIXTURES_DIR.mkdir(parents=True, exist_ok=True)
+    from canvod.utils import testing
 
-    snapshot = build_store(DAY0_STORE_PATH)
+    with tempfile.TemporaryDirectory() as tmp:
+        # The made-up settings of the tests, never the user's own.
+        os.environ["CANVOD_CONFIG_DIR"] = str(Path(tmp) / "settings")
+        os.environ.pop("CANVOD_CONFIG_FILE", None)
+        testing.write_settings(Path(tmp) / "settings")
+        snapshot = build_store(Path(tmp) / "day0_store")
 
     snapshot_path = _FIXTURES_DIR / "day0_snapshot.json"
-    snapshot_path.write_text(json.dumps(snapshot, indent=2))
+    snapshot_path.write_text(json.dumps(snapshot, indent=2) + "\n")
 
-    print(f"  Store:    {DAY0_STORE_PATH}")
     print(f"  Snapshot: {snapshot_path}")
     print(f"  Shape:    {snapshot['shape']}")
     print(f"  History:  {snapshot['history_count']} commits")
     print(f"  Rows:     {snapshot['metadata_table'].get('n_rows', 'n/a')}")
-    print("Done. Commit the snapshot JSON; gitignore the store directory.")
 
 
 if __name__ == "__main__":
