@@ -196,3 +196,44 @@ def test_unrecognized_recipe_fields_are_reported(
         f"Recipe {recipe}: field 'layout' is unrecognized and ignored."
         in report.warnings
     )
+
+
+DAY3 = "FANA01INK_R_20250030000_15M_05S_AA.rnx"
+
+
+def test_only_the_days_from_start_to_end_are_checked(tmp_path: Path) -> None:
+    """#540: an overlay for some days is validated over those days only."""
+    _touch(tmp_path / "rx", DAY1, DAY1_LATE, DAY2, DAY3)
+    with mock.patch(
+        "canvodpy.orchestrator.data_check.data_sampling_seconds", return_value=5.0
+    ) as read:
+        report = check_receiver_data(
+            "canopy_01",
+            {"directory": "rx", "reader_format": "rinex3"},
+            tmp_path,
+            "fangorn",
+            start="2025002",
+            end="2025003",
+        )
+    assert report.errors == []
+    assert report.days == ["2025002", "2025003"]
+    assert report.files == 2
+    assert [c.args[0].name for c in read.call_args_list] == [DAY2, DAY3]
+
+
+def test_no_files_from_start_to_end_is_a_warning(tmp_path: Path) -> None:
+    _touch(tmp_path / "rx", DAY1, DAY2)
+    report = check_receiver_data(
+        "canopy_01",
+        {"directory": "rx", "reader_format": "rinex3"},
+        tmp_path,
+        "fangorn",
+        check_sampling=False,
+        start="2025005",
+        end="2025009",
+    )
+    assert report.errors == []
+    assert report.days == []
+    assert report.warnings == [
+        f"{tmp_path / 'rx'} has no files to process from 2025005 to 2025009."
+    ]

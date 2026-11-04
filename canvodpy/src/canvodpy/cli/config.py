@@ -491,6 +491,28 @@ def _todo_placeholders(config_dir: Path) -> list[str]:
     return placeholder_keys
 
 
+def _check_days(start: str | None, end: str | None) -> None:
+    """Refuse a ``--start``/``--end`` that is no day or a start after the end."""
+    from canvod.utils.tools import YYYYDOY
+
+    for option, value in (("--start", start), ("--end", end)):
+        if value is None:
+            continue
+        try:
+            YYYYDOY.from_str(value)
+        except ValueError as e:
+            console.print(
+                f"[canvod.error]❌ {option} {value} is no day in YYYYDOY format, "
+                f"for example 2025001: {e}[/canvod.error]"
+            )
+            raise typer.Exit(1) from e
+    if start and end and start > end:
+        console.print(
+            f"[canvod.error]❌ --start {start} is after --end {end}.[/canvod.error]"
+        )
+        raise typer.Exit(1)
+
+
 @config_app.command()
 def validate(
     config_dir: Annotated[Path | None, CONFIG_DIR_OPTION] = None,
@@ -513,6 +535,24 @@ def validate(
             "one in its canonical name.",
         ),
     ] = True,
+    start: Annotated[
+        str | None,
+        typer.Option(
+            "--start",
+            help="Check the data from this day on, in YYYYDOY format, for "
+            "example 2025001. Default: the first day with files.",
+            show_default=False,
+        ),
+    ] = None,
+    end: Annotated[
+        str | None,
+        typer.Option(
+            "--end",
+            help="Check the data up to this day, in YYYYDOY format, for "
+            "example 2025007. Default: the last day with files.",
+            show_default=False,
+        ),
+    ] = None,
 ) -> None:
     """Validate the configuration and the receiver data it points to.
 
@@ -532,6 +572,9 @@ def validate(
         Sites whose data to check; ``None`` checks all sites.
     check_sampling : bool
         Compare named and actual sampling intervals.
+    start, end : str | None
+        First and last day (``YYYYDOY``) whose data to check, as for
+        ``canvodpy run``; ``None`` for no limit.
 
     Returns
     -------
@@ -540,6 +583,7 @@ def validate(
     from canvod.config.loader import load_config
     from canvodpy.orchestrator.data_check import check_site_data
 
+    _check_days(start, end)
     config_dir = get_default_config_dir()
     console.print(f"\n[bold]Validating configuration in {config_dir}...[/bold]\n")
 
@@ -610,9 +654,12 @@ def validate(
         )
         raise typer.Exit(1)
 
-    console.print("\n[bold]Checking receiver data...[/bold]")
+    days = f" from {start or 'the first day'} to {end or 'the last day'}"
+    console.print(
+        f"\n[bold]Checking receiver data{days if start or end else ''}...[/bold]"
+    )
     reports = [
-        check_site_data(name, config, check_sampling)
+        check_site_data(name, config, check_sampling, start=start, end=end)
         for name in site or list(config.sites.sites)
     ]
     for report in reports:

@@ -584,6 +584,19 @@ check one site:
 canvodpy config validate --site <site>
 ```
 
+To check only some days, give them as for `canvodpy run`, with `--start`
+and `--end`. An overlay used only for some days, for example with the
+recipes of a sampling interval the receivers used before, is checked
+over those days:
+
+```bash
+canvodpy config validate --site <site> --start 2025001 --end 2025180 \
+    --config older-days.yaml
+```
+
+Days without files in that range give a warning. The files that are
+never processed are still listed for the whole folder.
+
 ---
 
 ## Optional: non-canonical filenames
