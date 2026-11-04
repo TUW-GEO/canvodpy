@@ -6569,7 +6569,7 @@ class DistributedRinexDataProcessor(RinexDataProcessor):
             _shutil.rmtree(aux_zarr_path)
 
         self._logger.info("Preprocessing aux data (once per day)")
-        _sampling_interval = self._preprocess_aux_data(canopy_files, aux_zarr_path)
+        self._preprocess_aux_data(canopy_files, aux_zarr_path)
 
         # ====================================================================
         # STEP 2: Compute receiver position
