@@ -178,6 +178,11 @@ receiver that lacks files and logs a `days_without_vod` warning:
   no VOD on 2 days, reference_01 has no files: 2025002, 2025003
 ```
 
+Such a day is a data gap, not a failure: it doesn't count as a failed
+receiver-day and doesn't change the exit code. A reference receiver
+paired with several canopy receivers is prepared on that day only for
+the canopy receivers that have files.
+
 When the VOD of a processed day is skipped because the data of a
 receiver is missing, for example because that receiver-day failed, the
 run prints which data is missing and logs a `vod_skipped` warning; the

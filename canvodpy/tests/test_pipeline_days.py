@@ -137,3 +137,72 @@ def test_compressed_files_get_their_own_warning(tmp_path: Path) -> None:
         ".sbf.zip": "1 (e.g. FANA01INK_R_20250020030_15M_05S_AA.sbf.zip)",
     }
     assert "does not decompress" in fields["hint"]
+
+
+def _two_canopies(base: Path, analyses: tuple[str, ...]) -> PipelineOrchestrator:
+    """canopy_01 and canopy_02 paired with reference_01; one VOD analysis
+    per name in ``analyses``."""
+    orch = _orchestrator(base)
+    orch.site._site_config.receivers["canopy_02"] = SimpleNamespace(
+        type="canopy", directory="canopy2", reader_format="sbf", recipe=None
+    )
+    orch.site._site_config.resolve_paired_canopies = lambda name: [
+        "canopy_01",
+        "canopy_02",
+    ]
+    orch.site.vod_analyses = {
+        canopy: {"canopy_receiver": canopy, "reference_receiver": "reference_01"}
+        for canopy in analyses
+    }
+    _touch(
+        base / "canopy",
+        "FANA01INK_R_20250020000_15M_05S_AA.sbf",
+        "FANA01INK_R_20250030000_15M_05S_AA.sbf",
+    )
+    # canopy_02 has no files on day 3.
+    _touch(base / "canopy2", "FANA02INK_R_20250020000_15M_05S_AA.sbf")
+    _touch(
+        base / "ref",
+        "FANR01INK_R_20250020000_15M_05S_AA.sbf",
+        "FANR01INK_R_20250030000_15M_05S_AA.sbf",
+    )
+    return orch
+
+
+def test_a_canopy_without_files_gets_no_reference_copy(tmp_path: Path) -> None:
+    """#538: on a day one canopy has no files, the reference is prepared
+    only for the canopy that has, and the gap is reported, not failed."""
+    clear_discovery_cache()
+    orch = _two_canopies(tmp_path, ("canopy_01", "canopy_02"))
+
+    grouped = orch._group_by_date_and_receiver()
+
+    assert set(grouped["2025002"]) == {
+        "canopy_01",
+        "canopy_02",
+        "reference_01_canopy_01",
+        "reference_01_canopy_02",
+    }
+    assert set(grouped["2025003"]) == {"canopy_01", "reference_01_canopy_01"}
+    assert orch._days_without_pair["canopy_02"] == {"2025003"}
+
+
+def test_a_paired_canopy_outside_the_analyses_is_checked_too(tmp_path: Path) -> None:
+    """A canopy paired with the reference but in no VOD analysis: its days
+    are looked up as well, so its gap gets no reference copy either. It
+    gets no VOD anyway, so the skipped copy is logged, not reported as a
+    day without VOD."""
+    clear_discovery_cache()
+    orch = _two_canopies(tmp_path, ("canopy_01",))
+
+    grouped = orch._group_by_date_and_receiver()
+
+    assert "reference_01_canopy_02" in grouped["2025002"]
+    assert set(grouped["2025003"]) == {"canopy_01", "reference_01_canopy_01"}
+    assert "canopy_02" not in orch._days_without_pair
+    orch._logger.info.assert_any_call(
+        "reference_copy_not_prepared",
+        group="reference_01_canopy_02",
+        date="2025003",
+        reason="canopy_02 has no files",
+    )
