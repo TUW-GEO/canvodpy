@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """Test config loader works from any directory."""
 
 import os
@@ -10,6 +9,7 @@ from unittest.mock import patch
 import pytest
 
 from canvod.config import loader as loader_module
+from canvod.utils import testing
 
 
 def find_monorepo_root(start_path: Path) -> Path:
@@ -27,70 +27,41 @@ def find_monorepo_root(start_path: Path) -> Path:
     raise RuntimeError("Could not find monorepo root")
 
 
-# Find monorepo and check if the checkout has its own config
-# (``canvodpy config init`` writes config/canvod-settings.yaml; gitignored)
 MONOREPO_ROOT = find_monorepo_root(Path(__file__).parent)
-CONFIG_DIR = MONOREPO_ROOT / "config"
-HAS_CONFIG = (CONFIG_DIR / "canvod-settings.yaml").exists()
-
-# Test directories (relative to monorepo root)
-TEST_DIRS = [
-    ".",
-    "canvodpy",
-    "packages/canvod-readers",
-    "packages/canvod-readers/tests",
-    "packages/canvod-utils/src/canvod/utils/config",
-]
 
 
-@pytest.mark.skipif(not HAS_CONFIG, reason="Integration test requires config files")
-@pytest.mark.parametrize("test_dir", TEST_DIRS)
-def test_config_loader_from_directory(test_dir: str):
-    """Test that config loader works from various directories in monorepo."""
-    full_path = MONOREPO_ROOT / test_dir
-
-    # Skip if directory doesn't exist
-    if not full_path.exists():
-        pytest.skip(f"Directory doesn't exist: {test_dir}")
-
-    # Sites configured in the checkout's config, as the expected output
-    expected_sites = sorted(
-        loader_module.ConfigLoader(CONFIG_DIR).load().sites.sites.keys()
-    )
-
-    # Test loading config from this directory, with the current interpreter
-    # and without an env override, so the loader must discover config/ itself
+def test_load_config_finds_the_checkout_config_from_a_subdirectory(tmp_path):
+    """A new process in a subdirectory of a checkout, without any override,
+    reads the checkout's ``config/canvod-settings.yaml``.
+    """
+    checkout = tmp_path / "checkout"
+    (checkout / ".git").mkdir(parents=True)
+    testing.write_settings(checkout / "config")
+    subdirectory = checkout / "packages" / "canvod-readers" / "tests"
+    subdirectory.mkdir(parents=True)
     env = {
         k: v
         for k, v in os.environ.items()
         if k not in ("CANVOD_CONFIG_DIR", "CANVOD_CONFIG_FILE")
     }
+    env["XDG_CONFIG_HOME"] = str(tmp_path / "xdg")
+
     result = subprocess.run(
         [
             sys.executable,
             "-c",
             "from canvod.config import load_config; "
-            "config = load_config(); "
-            "print(f'Sites: {sorted(config.sites.sites.keys())}')",
+            "print(sorted(load_config().sites.sites))",
         ],
-        cwd=full_path,
+        cwd=subdirectory,
         env=env,
         capture_output=True,
         text=True,
-        timeout=10,
+        timeout=60,
     )
 
-    # Verify it worked
-    assert result.returncode == 0, (
-        f"Config loading failed from {test_dir}\n"
-        f"stdout: {result.stdout}\n"
-        f"stderr: {result.stderr}"
-    )
-
-    # Verify the checkout's own config was found
-    assert f"Sites: {expected_sites}" in result.stdout, (
-        f"Expected sites {expected_sites} from {test_dir}\nGot: {result.stdout}"
-    )
+    assert result.returncode == 0, result.stderr
+    assert result.stdout.strip() == str([testing.SITE_KEY])
 
 
 class TestFindMonorepoRoot:
@@ -376,40 +347,3 @@ class TestFormatValidationError:
         formatted = loader_module.format_validation_error(error)
         assert "fill in your real name" in formatted
         assert "fill in your real email" in formatted
-
-
-if __name__ == "__main__":
-    """Allow running as script for manual testing."""
-    if not HAS_CONFIG:
-        print("⚠️  Skipping: Config files not found")
-        exit(0)
-
-    print("=" * 70)
-    print("Testing config loader from multiple directories")
-    print("=" * 70)
-
-    failed = []
-    for test_dir in TEST_DIRS:
-        full_path = MONOREPO_ROOT / test_dir
-        if not full_path.exists():
-            print(f"\n📁 Testing from: {test_dir}")
-            print("   ⏭️  SKIPPED (directory doesn't exist)")
-            continue
-
-        print(f"\n📁 Testing from: {test_dir}")
-
-        try:
-            test_config_loader_from_directory(test_dir)
-            print("   ✅ SUCCESS")
-        except Exception as e:
-            print(f"   ❌ FAILED: {e}")
-            failed.append(test_dir)
-
-    print("\n" + "=" * 70)
-    if failed:
-        print(f"❌ FAILED: {len(failed)}/{len(TEST_DIRS)} directories")
-        for d in failed:
-            print(f"   - {d}")
-    else:
-        print(f"✅ SUCCESS: All {len(TEST_DIRS)} directories passed!")
-    print("=" * 70)

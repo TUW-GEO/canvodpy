@@ -1,2 +1,2 @@
-# Day 0 regression store fixture (built by build_day0_store.py)
+# Day 0 regression store, written by build_day0_store.py before #527
 fixtures/day0_store/
