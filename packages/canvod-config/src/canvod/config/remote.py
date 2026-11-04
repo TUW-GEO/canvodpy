@@ -207,14 +207,14 @@ def _recipe_names(settings: dict[str, Any]) -> list[tuple[str, str, str]]:
                 if _is_path(str(site)):
                     msg = (
                         f"Site '{site}' names recipes, so its name becomes a "
-                        "folder name: it must not hold / or \\ or start with '.'."
+                        "folder name: it must not hold /, \\ or : or start with '.'."
                     )
                     raise RemoteURLError(msg)
                 if _is_path(name):
                     msg = (
                         f"Receiver '{receiver}' of site '{site}' has the {key} "
                         f"name '{name}': a recipe name is a file name without "
-                        "folders."
+                        "folders or drive (no /, \\ or :, no leading '.')."
                     )
                     raise RemoteURLError(msg)
                 found.append((str(site), str(receiver), name))
@@ -223,8 +223,9 @@ def _recipe_names(settings: dict[str, Any]) -> list[tuple[str, str, str]]:
 
 def _is_path(name: str) -> bool:
     """True for a name that would leave its folder: one with a / or \\
-    (a folder on Windows), or one starting with '.' such as '..'."""
-    return any(c in name for c in "/\\") or name.startswith(".")
+    (a folder on Windows) or : (a drive on Windows, e.g. 'D:x'), or one
+    starting with '.' such as '..'."""
+    return any(c in name for c in "/\\:") or name.startswith(".")
 
 
 def _fetch_recipes(

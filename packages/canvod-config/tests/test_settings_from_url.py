@@ -155,7 +155,7 @@ def test_a_recipe_url_is_left_to_the_recipe_lookup(server, tmp_path):
     ]
 
 
-@pytest.mark.parametrize("name", ["../secrets", "a/b", "a\\b", "..\\secrets"])
+@pytest.mark.parametrize("name", ["../secrets", "a/b", "a\\b", "..\\secrets", "D:evil"])
 def test_a_recipe_name_that_is_a_path_is_refused(server, tmp_path, name):
     server.serve(SETTINGS_URL, _settings(tmp_path, name))
 
@@ -163,7 +163,7 @@ def test_a_recipe_name_that_is_a_path_is_refused(server, tmp_path, name):
         resolve_config_dir(SETTINGS_URL)
 
 
-@pytest.mark.parametrize("site", ["..", "a/b", "a\\b", "..\\secrets"])
+@pytest.mark.parametrize("site", ["..", "a/b", "a\\b", "..\\secrets", "D:evil"])
 def test_a_site_name_that_is_a_path_is_refused(server, tmp_path, site):
     """The site name is the recipe folder, recipes/<site>/."""
     data = json.loads(_settings(tmp_path, f"{testing.SITE_KEY}_canopy"))
