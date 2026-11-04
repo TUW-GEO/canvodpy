@@ -155,11 +155,22 @@ def test_a_recipe_url_is_left_to_the_recipe_lookup(server, tmp_path):
     ]
 
 
-@pytest.mark.parametrize("name", ["../secrets", "a/b"])
+@pytest.mark.parametrize("name", ["../secrets", "a/b", "a\\b", "..\\secrets"])
 def test_a_recipe_name_that_is_a_path_is_refused(server, tmp_path, name):
     server.serve(SETTINGS_URL, _settings(tmp_path, name))
 
     with pytest.raises(RemoteURLError, match="recipe name"):
+        resolve_config_dir(SETTINGS_URL)
+
+
+@pytest.mark.parametrize("site", ["..", "a/b", "a\\b", "..\\secrets"])
+def test_a_site_name_that_is_a_path_is_refused(server, tmp_path, site):
+    """The site name is the recipe folder, recipes/<site>/."""
+    data = json.loads(_settings(tmp_path, f"{testing.SITE_KEY}_canopy"))
+    data["sites"] = {site: data["sites"][testing.SITE_KEY]}
+    server.serve(SETTINGS_URL, json.dumps(data).encode())
+
+    with pytest.raises(RemoteURLError, match=r"Site .* folder name"):
         resolve_config_dir(SETTINGS_URL)
 
 
