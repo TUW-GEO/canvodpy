@@ -70,8 +70,9 @@ canVODpy uses a modern Python toolchain built almost entirely on the [Astral](ht
     a week (`exclude-newer = "1 week"` in `[tool.uv]`), so a broken or
     malicious release is usually withdrawn before it reaches `uv.lock`. A
     minimum version you raise by hand in a `pyproject.toml` must be a
-    release at least a week old, or `uv lock` fails. canvod-filemap, from
-    canvodpy-extensions, is exempt: a new release can be locked right away.
+    release at least a week old, or `uv lock` fails. The packages of
+    canvodpy-extensions (canvod-adapters, canvod-airflow, canvod-filemap)
+    are exempt: a new release can be locked right away.
 
     The scripts under `scripts/` that need no canvodpy package
     (`release.py`, `analyze_dependencies.py`, `check_agent_docs.py`,

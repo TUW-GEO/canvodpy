@@ -12,9 +12,9 @@ required-version = ">=0.13.0,<0.14"
 # uv lock takes only package files at least a week on PyPI, so a broken or
 # malicious release is usually withdrawn before it reaches uv.lock.
 exclude-newer = "1 week"
-# canvod-filemap is released from canvodpy-extensions and taken right away
+# The packages released from canvodpy-extensions are taken right away
 # (extensions-dependency guide).
-exclude-newer-package = { canvod-filemap = false }
+exclude-newer-package = { canvod-adapters = false, canvod-airflow = false, canvod-filemap = false }
 
 # ============================================================================
 # Development Dependencies (Workspace-wide)

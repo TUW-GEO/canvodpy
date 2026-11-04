@@ -20,10 +20,13 @@ updates:
       interval: "weekly"
       day: "monday"
     # Releases at least a week old, as uv lock takes them (exclude-newer in
-    # pyproject.toml; canvod-filemap is exempt there too).
+    # pyproject.toml; the canvodpy-extensions packages are exempt there too).
+    # Named one by one: "canvod-*" would match the workspace packages too.
     cooldown:
       default-days: 7
       exclude:
+        - "canvod-adapters"
+        - "canvod-airflow"
         - "canvod-filemap"
     labels:
       - "dependencies"
