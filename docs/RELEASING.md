@@ -263,7 +263,12 @@ tag existing is not a promise that PyPI has it.
 ??? failure "The dependency check finds a vulnerability"
     `just audit` names the package, the vulnerability and the version that
     fixes it. Raise the version in `uv.lock` (`uv lock --upgrade-package
-    NAME`) in a pull request, and tag the release on the new commit. If no
+    NAME`) in a pull request, and tag the release on the new commit. If the
+    fixed release is less than a week old, `uv lock` doesn't take it yet
+    (`exclude-newer` in `pyproject.toml`): add `NAME = false` to
+    `exclude-newer-package` in `[tool.uv]` for the fix (and the same for
+    any package that release needs in a version as new), and remove it
+    once the release is a week old. If no
     fixed version exists and the vulnerability doesn't affect canVODpy, add
     `--ignore-vuln ID` to the `just audit` call of both workflows, with a
     comment saying why, and remove it once a fix is out.

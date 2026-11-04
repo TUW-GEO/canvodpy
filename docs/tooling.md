@@ -66,6 +66,14 @@ canVODpy uses a modern Python toolchain built almost entirely on the [Astral](ht
     `uv sync` resolves `uv.lock` and creates or updates the shared workspace
     `.venv` at the repo root; all 12 packages share a single environment.
 
+    `uv lock` takes only package files that have been on PyPI for at least
+    a week (`exclude-newer = "1 week"` in `[tool.uv]`), so a broken or
+    malicious release is usually withdrawn before it reaches `uv.lock`. A
+    minimum version you raise by hand in a `pyproject.toml` must be a
+    release at least a week old, or `uv lock` fails. The packages of
+    canvodpy-extensions (canvod-adapters, canvod-airflow, canvod-filemap)
+    are exempt: a new release can be locked right away.
+
     The scripts under `scripts/` that need no canvodpy package
     (`release.py`, `analyze_dependencies.py`, `check_agent_docs.py`,
     `check_package_imports.py`) declare their Python version and
