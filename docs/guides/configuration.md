@@ -594,7 +594,7 @@ canvodpy config validate --site <site> --start 2025001 --end 2025180 \
     --config older-days.yaml
 ```
 
-Days without files in that range give a warning. The files that are
+A range without any files gives a warning. The files that are
 never processed are still listed for the whole folder.
 
 ---

@@ -491,26 +491,30 @@ def _todo_placeholders(config_dir: Path) -> list[str]:
     return placeholder_keys
 
 
-def _check_days(start: str | None, end: str | None) -> None:
-    """Refuse a ``--start``/``--end`` that is no day or a start after the end."""
+def _check_days(start: str | None, end: str | None) -> tuple[str | None, str | None]:
+    """Return ``--start``/``--end`` as YYYYDDD; refuse no day, or a start after the end."""
     from canvod.utils.tools import YYYYDOY
 
+    days: list[str | None] = []
     for option, value in (("--start", start), ("--end", end)):
         if value is None:
+            days.append(None)
             continue
         try:
-            YYYYDOY.from_str(value)
+            days.append(YYYYDOY.from_str(value).to_str())
         except ValueError as e:
             console.print(
                 f"[canvod.error]❌ {option} {value} is no day in YYYYDOY format, "
                 f"for example 2025001: {e}[/canvod.error]"
             )
             raise typer.Exit(1) from e
+    start, end = days
     if start and end and start > end:
         console.print(
             f"[canvod.error]❌ --start {start} is after --end {end}.[/canvod.error]"
         )
         raise typer.Exit(1)
+    return start, end
 
 
 @config_app.command()
@@ -583,7 +587,7 @@ def validate(
     from canvod.config.loader import load_config
     from canvodpy.orchestrator.data_check import check_site_data
 
-    _check_days(start, end)
+    start, end = _check_days(start, end)
     config_dir = get_default_config_dir()
     console.print(f"\n[bold]Validating configuration in {config_dir}...[/bold]\n")
 

@@ -273,12 +273,13 @@ def check_receiver_data(
         f"(gzip/zip, and crx2rnx for Hatanaka-compressed RINEX)."
     )
     if not report.files and all_days:
+        # The folder has files on other days: the files never processed
+        # are still listed below, as warnings.
         report.warnings.append(
             f"{directory} has no files to process from {start or 'the first day'} "
             f"to {end or 'the last day'}."
         )
-        return report
-    if not report.files:
+    elif not report.files:
         if report.compressed:
             report.errors.append(compressed_note + " Nothing would be processed.")
         if report.unrecognized:
@@ -303,7 +304,7 @@ def check_receiver_data(
         report.warnings.append(
             f"{len(report.unrecognized)} file(s) in {directory} are not processed."
         )
-    if check_sampling:
+    if check_sampling and report.days:
         for day in dict.fromkeys((report.days[0], report.days[-1])):
             _check_sampling(report, files_of_day[day][0], reader_options or {})
     return report

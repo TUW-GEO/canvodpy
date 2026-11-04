@@ -237,3 +237,25 @@ def test_no_files_from_start_to_end_is_a_warning(tmp_path: Path) -> None:
     assert report.warnings == [
         f"{tmp_path / 'rx'} has no files to process from 2025005 to 2025009."
     ]
+
+
+def test_files_never_processed_are_listed_without_files_in_the_range(
+    tmp_path: Path,
+) -> None:
+    _touch(tmp_path / "rx", DAY1, DAY2 + ".gz")
+    report = check_receiver_data(
+        "canopy_01",
+        {"directory": "rx", "reader_format": "rinex3"},
+        tmp_path,
+        "fangorn",
+        start="2025005",
+        end="2025009",
+    )
+    assert report.errors == []
+    assert [p.name for p in report.compressed] == [DAY2 + ".gz"]
+    assert report.warnings[0] == (
+        f"{tmp_path / 'rx'} has no files to process from 2025005 to 2025009."
+    )
+    assert "1 compressed file(s)" in report.warnings[1]
+    assert "Nothing would be processed" not in report.warnings[1]
+    assert report.sampling_checked == []

@@ -523,6 +523,11 @@ class TestValidateDays:
         assert check.call_args.kwargs["start"] == "2025002"
         assert check.call_args.kwargs["end"] == "2025003"
 
+    def test_the_days_reach_the_data_check_as_yyyyddd(self, tmp_path):
+        result, check = self._validate(tmp_path, "--start", "2025 02")
+        assert result.exit_code == 0, result.output
+        assert check.call_args.kwargs["start"] == "2025002"
+
     def test_no_days_check_all_of_them(self, tmp_path):
         result, check = self._validate(tmp_path)
         assert result.exit_code == 0, result.output
