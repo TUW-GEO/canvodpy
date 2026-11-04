@@ -597,10 +597,10 @@ def preprocess_with_hermite_aux(
     aggregate_glonass_fdma: bool = True,
     date_key: str | None = None,
 ) -> tuple[Path, xr.Dataset, dict[str, xr.Dataset], dict[str, list[str]]]:
-    """Read RINEX and compute coordinates using Hermite-interpolated aux data from Zarr.
+    """Read RINEX and compute coordinates using the interpolated aux data from Zarr.
 
     This function runs in separate processes, so it must be at module level.
-    The aux data has already been interpolated using proper Hermite splines.
+    The aux data has already been interpolated with the method set by ``sp3_interpolation``.
 
     Parameters
     ----------
@@ -609,7 +609,7 @@ def preprocess_with_hermite_aux(
     keep_vars : List[str]
         Variables to keep
     aux_zarr_path : Path
-        Path to preprocessed aux data Zarr store (with Hermite interpolation)
+        Path to preprocessed aux data Zarr store
     receiver_position : ECEFPosition
         Receiver position (computed once)
     receiver_type : str
@@ -766,7 +766,7 @@ def _compute_spherical_coords_fast(
     This function is used by the parallel processor and must remain
     at module level for loky / ProcessPoolExecutor serialization.
     """
-    # Get satellite positions (already interpolated with Hermite splines)
+    # Get satellite positions (already interpolated onto the epoch grid)
     sat_x = aux_ds["X"].values
     sat_y = aux_ds["Y"].values
     sat_z = aux_ds["Z"].values
@@ -1280,7 +1280,7 @@ class RinexDataProcessor:
 
     Pipeline:
     1. Initialize auxiliary data (ephemerides, clock) - ONCE
-    2. Preprocess aux data with Hermite splines to disk - ONCE per day
+    2. Preprocess aux data (orbit interpolation) to disk - ONCE per day
     3. Parallel process RINEX files via ProcessPoolExecutor
     4. Each worker reads its time slice from preprocessed Zarr
     5. Compute spherical coordinates and append to Icechunk store
@@ -1565,7 +1565,7 @@ class RinexDataProcessor:
 
         return sampling_interval
 
-    def _preprocess_aux_data_with_hermite(
+    def _preprocess_aux_data(
         self,
         rinex_files: list[Path],
         output_path: Path,
@@ -1635,8 +1635,8 @@ class RinexDataProcessor:
             day_end=str(target_epochs[-1]),
         )
 
-        # 2. Interpolate orbits (Hermite) and clocks (piecewise linear,
-        # unless fetch_clock is disabled -- see AuxDataConfig.fetch_clock)
+        # 2. Interpolate orbits (sp3_interpolation) and clocks (piecewise linear,
+        # only with fetch_clock -- see AuxDataConfig.fetch_clock)
         if ephem_ds is not None:
             clock_ds = None
         else:
@@ -2157,7 +2157,7 @@ class RinexDataProcessor:
             rmtree_seconds=round(t1 - t0, 4) if had_cache else 0,
         )
         try:
-            self._preprocess_aux_data_with_hermite(
+            self._preprocess_aux_data(
                 canopy_files,
                 aux_zarr_path,
                 reader_format=reader_format,
@@ -2304,7 +2304,7 @@ class RinexDataProcessor:
                 cache_root,
                 fingerprint,
                 date_str,
-                lambda group: self._preprocess_aux_data_with_hermite(
+                lambda group: self._preprocess_aux_data(
                     rinex_files,
                     cache_root,
                     reader_format=reader_format,
@@ -2342,7 +2342,7 @@ class RinexDataProcessor:
             nav_files=len(nav_files),
             output_path=str(path),
         )
-        self._preprocess_aux_data_with_hermite(
+        self._preprocess_aux_data(
             rinex_files, path, reader_format=reader_format, ephem_ds=ephem_ds
         )
         sanitize_directory(path)
@@ -2389,7 +2389,7 @@ class RinexDataProcessor:
             cache_root,
             fingerprint,
             date_str,
-            lambda group: self._preprocess_aux_data_with_hermite(
+            lambda group: self._preprocess_aux_data(
                 canopy_files,
                 cache_root,
                 reader_format=reader_format,
@@ -2510,7 +2510,7 @@ class RinexDataProcessor:
         keep_vars : list[str]
             Variables to keep
         aux_zarr_path : Path
-            Path to preprocessed aux Zarr store (with Hermite interpolation)
+            Path to preprocessed aux Zarr store
         receiver_position : ECEFPosition
             Receiver position (computed once)
         receiver_type : str
@@ -5215,7 +5215,7 @@ class RinexDataProcessor:
         """Generate datasets from RINEX files and append to Icechunk stores.
 
         Pipeline:
-        1. Preprocess aux data ONCE per day with Hermite splines → Zarr
+        1. Preprocess aux data ONCE per day → Zarr
         2. Compute receiver position ONCE (shared for all receivers)
         3. For each receiver type (canopy, reference):
            a. Get list of RINEX files
@@ -5256,11 +5256,11 @@ class RinexDataProcessor:
             raise ValueError(msg)
 
         # ====================================================================
-        # STEP 1: Preprocess aux data ONCE per day with Hermite splines
+        # STEP 1: Preprocess aux data ONCE per day
         # (routes through _ensure_aux_data_preprocessed -- this call site used to duplicate the rmtree+rebuild logic
         # inline, bypassing the shared-cache lookup entirely)
         # ====================================================================
-        self._logger.info("Preprocessing aux data with Hermite splines (once per day)")
+        self._logger.info("Preprocessing aux data (once per day)")
         aux_zarr_path, aux_group = self._ensure_aux_data_preprocessed(
             canopy_files, self.matched_data_dirs.yyyydoy.to_str()
         )
@@ -5727,7 +5727,7 @@ class RinexDataProcessor:
         """Generate datasets from RINEX files and append to Icechunk stores.
 
         Pipeline:
-        1. Preprocess aux data ONCE per day with Hermite splines → Zarr
+        1. Preprocess aux data ONCE per day → Zarr
         2. For each receiver:
         a. Compute receiver position (from own files or position_data_dir)
         b. Parallel process RINEX files via ProcessPoolExecutor
@@ -5780,7 +5780,7 @@ class RinexDataProcessor:
         )
 
         # ====================================================================
-        # STEP 1: Preprocess aux data ONCE per day with Hermite splines
+        # STEP 1: Preprocess aux data ONCE per day
         # ====================================================================
         # Get first receiver files to infer sampling rate
         first_receiver_name, _first_receiver_type, first_data_dir, _, first_fmt = (
@@ -6514,7 +6514,7 @@ class DistributedRinexDataProcessor(RinexDataProcessor):
         """Generate datasets from RINEX files and append to Icechunk stores.
 
         Pipeline:
-        1. Preprocess aux data ONCE per day with Hermite splines → Zarr
+        1. Preprocess aux data ONCE per day → Zarr
         2. Compute receiver position ONCE (shared for all receivers)
         3. For each receiver type (canopy, reference):
            a. Get list of RINEX files
@@ -6555,7 +6555,7 @@ class DistributedRinexDataProcessor(RinexDataProcessor):
             raise ValueError(msg)
 
         # ====================================================================
-        # STEP 1: Preprocess aux data ONCE per day with Hermite splines
+        # STEP 1: Preprocess aux data ONCE per day
         # ====================================================================
         import shutil as _shutil
 
@@ -6568,10 +6568,8 @@ class DistributedRinexDataProcessor(RinexDataProcessor):
         if aux_zarr_path.exists():
             _shutil.rmtree(aux_zarr_path)
 
-        self._logger.info("Preprocessing aux data with Hermite splines (once per day)")
-        _sampling_interval = self._preprocess_aux_data_with_hermite(
-            canopy_files, aux_zarr_path
-        )
+        self._logger.info("Preprocessing aux data (once per day)")
+        _sampling_interval = self._preprocess_aux_data(canopy_files, aux_zarr_path)
 
         # ====================================================================
         # STEP 2: Compute receiver position

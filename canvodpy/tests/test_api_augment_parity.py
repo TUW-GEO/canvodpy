@@ -1,7 +1,7 @@
 """API ephemeris augmentation vs the orchestrator on the single-day test data.
 
 The fluent API augments through ``AgencyEphemerisProvider``; the
-orchestrator through ``_preprocess_aux_data_with_hermite`` and
+orchestrator through ``_preprocess_aux_data`` and
 ``preprocess_with_hermite_aux``. Both interpolate the day onto the grid at
 the observations' sampling interval (``interpolate_aux_day``); given the
 same products, observations and receiver position they must produce the
@@ -62,7 +62,7 @@ def test_provider_augment_matches_orchestrator(tmp_path):
     provider._clock_ds = clock
     api = provider.augment_dataset(ds, pos)
 
-    # Orchestrator: the aux store _preprocess_aux_data_with_hermite writes.
+    # Orchestrator: the aux store _preprocess_aux_data writes.
     aux_zarr = tmp_path / "aux_orchestrator.zarr"
     grid = aux_epoch_grid(np.datetime64("2025-01-01"), interval)
     interpolate_aux_day(ephem, clock, grid).to_zarr(

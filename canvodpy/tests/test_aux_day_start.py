@@ -1,4 +1,4 @@
-"""Regression tests for ``_preprocess_aux_data_with_hermite``'s day_start.
+"""Regression tests for ``_preprocess_aux_data``'s day_start.
 
 SBF filenames (e.g. ``ract001a00.25_``) never match the RINEX v3 long-name
 pattern ``_parse_sampling_interval_from_filename`` expects, so every SBF site
@@ -94,9 +94,7 @@ def test_day_start_not_shifted_by_fallback_first_epoch(tmp_path: Path) -> None:
     rinex_files[0].touch()
     output_path = tmp_path / "aux_2025001.zarr"
 
-    RinexDataProcessor._preprocess_aux_data_with_hermite(
-        fake_self, rinex_files, output_path
-    )
+    RinexDataProcessor._preprocess_aux_data(fake_self, rinex_files, output_path)
 
     written = xr.open_zarr(output_path, consolidated=False, decode_timedelta=True)
     assert written.epoch.values[0] == np.datetime64("2025-01-01T00:00:00"), (

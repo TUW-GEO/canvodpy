@@ -37,7 +37,7 @@ def _fake_processor(aux_dir: Path, site_name: str) -> SimpleNamespace:
         _parse_sampling_interval_from_filename=(
             RinexDataProcessor._parse_sampling_interval_from_filename
         ),
-        _preprocess_aux_data_with_hermite=write_store,
+        _preprocess_aux_data=write_store,
     )
     fake._detect_sampling_interval = lambda files, reader_format=None: (
         RinexDataProcessor._detect_sampling_interval(fake, files, reader_format)
