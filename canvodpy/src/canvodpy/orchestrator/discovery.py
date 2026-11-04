@@ -223,12 +223,23 @@ def recipe_file(site: str, recipe: str | None) -> Path | None:
             f"installed. {FILEMAP_INSTALL_HINT}"
         )
         raise DiscoveryError(msg) from exc
+    from canvod.config.remote import settings_url
+
+    config_dir = get_default_config_dir()
     try:
-        path = find_recipe(get_default_config_dir(), site, recipe)
+        path = find_recipe(config_dir, site, recipe)
     except RemoteRecipeError as exc:
         raise DiscoveryError(str(exc)) from exc
     except RecipeNotFoundError as exc:
-        msg = f"{exc}\nCreate it with: just naming-init {site} {recipe}"
+        url = settings_url(config_dir)
+        if url is None:
+            hint = f"Create it with: just naming-init {site} {recipe}"
+        else:
+            hint = (
+                f"The settings were read from {url}; the recipe belongs next "
+                f"to them in that repository, as recipes/{site}/{recipe}.yaml."
+            )
+        msg = f"{exc}\n{hint}"
         raise DiscoveryError(msg) from exc
     recipe_fields_note(recipe, path)
     return path

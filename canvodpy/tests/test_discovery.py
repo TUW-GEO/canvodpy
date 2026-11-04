@@ -467,6 +467,24 @@ def test_missing_recipe_file_is_an_error(
         check_receivers(receivers, tmp_path, "fangorn")
 
 
+def test_missing_recipe_of_settings_from_a_url_names_the_link(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    pytest.importorskip("canvod.filemap.recipe_files")
+    from canvod.config import remote
+
+    url = "https://raw.githubusercontent.com/the-inklings/red-book/main/canvod-settings.yaml"
+    monkeypatch.setenv("CANVOD_CONFIG_DIR", str(tmp_path))
+    monkeypatch.setattr(remote, "settings_url", lambda _: url)
+    receivers = {"canopy_01": {"type": "canopy", "directory": "c", "recipe": "nope"}}
+    with pytest.raises(DiscoveryError) as exc_info:
+        check_receivers(receivers, tmp_path, "fangorn")
+    message = str(exc_info.value)
+    assert url in message
+    assert "recipes/fangorn/nope.yaml" in message
+    assert "naming-init" not in message
+
+
 def test_canonical_receivers_with_the_same_identity_are_rejected(
     tmp_path: Path,
 ) -> None:

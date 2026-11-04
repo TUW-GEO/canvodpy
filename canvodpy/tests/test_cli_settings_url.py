@@ -153,3 +153,31 @@ def test_a_new_site_is_a_new_run(server, monkeypatch):
 
     assert remote.resolve_config_dir(URL) != first
     assert len(server.requests) == 2
+
+
+@pytest.mark.parametrize("overlay_first", [False, True])
+def test_validate_with_an_overlay_reads_its_recipe_at_the_same_link(
+    server, tmp_path, monkeypatch, overlay_first
+):
+    # The overlay gives the canopy receiver a recipe the settings file
+    # doesn't name (#539); the option order must not matter.
+    monkeypatch.setenv("CANVOD_CONFIG_DIR", "")
+    recipe = f"{testing.SITE_KEY}_canopy_01s"
+    server.serve(
+        URL.replace(
+            "canvod-settings.yaml", f"recipes/{testing.SITE_KEY}/{recipe}.yaml"
+        ),
+        f"name: {recipe}\n".encode(),
+    )
+    overlay = tmp_path / "overlay.yaml"
+    sites = {testing.SITE_KEY: {"receivers": {"canopy_01": {"recipe": recipe}}}}
+    overlay.write_text(json.dumps({"sites": sites}))
+    options = [["-c", URL], ["--config", str(overlay)]]
+    if overlay_first:
+        options.reverse()
+
+    result = runner.invoke(_app(), ["config", "validate", *options[0], *options[1]])
+
+    folder = Path(os.environ["CANVOD_CONFIG_DIR"])
+    assert (folder / "recipes" / testing.SITE_KEY / f"{recipe}.yaml").is_file()
+    assert "Recipe file not found" not in _text(result.output), result.output
