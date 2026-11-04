@@ -27,6 +27,7 @@ exclude = [
   "^https://www\\.septentrio\\.com/",
   "^https://doi\\.org/10\\.3233/",
   "^https://doi\\.org/10\\.7717/",
+  "^https://doi\\.org/10\\.1137/",
   "^https://claude\\.ai/",
   "^https://opensource\\.org/",
   # Needs a login; times out for automated requests.
