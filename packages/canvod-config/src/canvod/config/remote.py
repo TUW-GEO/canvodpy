@@ -13,6 +13,7 @@ is a URL is fetched by the recipe lookup, as with local settings.
 
 :func:`resolve_config_dir` fetches the settings file and those recipes,
 once per run, and puts them into a configuration folder of the run;
+:func:`fetch_overlay_recipes` adds the recipes an overlay file names;
 everything after it reads that folder as it reads a local one. The URL is
 not recorded: stores and the run history keep the settings, not where
 they came from.
@@ -31,6 +32,7 @@ import yaml
 from canvod.config.models.sites import RECIPE_SETTINGS
 from canvod.utils.remote_file import (
     RemoteFetchError,
+    RemoteURL,
     RemoteURLError,
     fetch_remote,
     is_url,
@@ -86,23 +88,50 @@ def resolve_config_dir(url: str) -> Path:
     settings = yaml.safe_load(settings_path.read_bytes())
 
     files = {SETTINGS_FILE: settings_path}
-    for site, receiver, name in _recipe_names(settings):
-        relative = f"recipes/{site}/{name}.yaml"
-        recipe_url = remote.sibling(relative).url
-        try:
-            files[relative] = fetch_remote(recipe_url, what="recipe")
-        except RemoteFetchError as exc:
-            msg = (
-                f"Receiver '{receiver}' of site '{site}' in the settings file {url} "
-                f"names the recipe '{name}', which is read from the same repository "
-                f"at the same link: {exc}"
-            )
-            raise RemoteFetchError(msg) from None
+    files.update(_fetch_recipes(url, remote, _recipe_names(settings)))
 
     folder = _config_folder(files)
     with _LOCK:
         _FOLDERS[key] = folder
     return folder
+
+
+def fetch_overlay_recipes(config_dir: Path, sites: dict[str, Any]) -> None:
+    """Fetch the recipes an overlay names into a folder made from a URL.
+
+    :func:`resolve_config_dir` fetches the recipes the settings file names.
+    An overlay file (``--config``) applied afterwards can name other ones;
+    the settings loader passes the merged ``sites`` here, and the recipes
+    the folder doesn't hold yet are read from the same repository at the
+    same link. A local configuration folder is left as it is.
+
+    Parameters
+    ----------
+    config_dir : Path
+        The configuration folder of the settings.
+    sites : dict[str, Any]
+        The ``sites`` section of the settings, overlay applied.
+
+    Raises
+    ------
+    RemoteURLError
+        If a recipe name is a path.
+    RemoteFetchError
+        If a recipe cannot be fetched or written to the folder.
+    """
+    url = settings_url(config_dir)
+    if url is None:
+        return
+    missing = [
+        (site, receiver, name)
+        for site, receiver, name in _recipe_names({"sites": sites})
+        if not (Path(config_dir) / "recipes" / site / f"{name}.yaml").is_file()
+    ]
+    if not missing:
+        return
+    files = _fetch_recipes(url, parse_remote_url(url, what="settings file"), missing)
+    with _LOCK:
+        _copy_files(Path(config_dir), files)
 
 
 def settings_url(config_dir: Path) -> str | None:
@@ -190,11 +219,41 @@ def _recipe_names(settings: dict[str, Any]) -> list[tuple[str, str, str]]:
     return found
 
 
+def _fetch_recipes(
+    url: str, remote: RemoteURL, names: list[tuple[str, str, str]]
+) -> dict[str, Path]:
+    """Fetch the recipes ``names`` from the settings file's repository.
+
+    Returns the fetched files by their path in a configuration folder,
+    ``recipes/<site>/<name>.yaml``.
+    """
+    files = {}
+    for site, receiver, name in names:
+        relative = f"recipes/{site}/{name}.yaml"
+        recipe_url = remote.sibling(relative).url
+        try:
+            files[relative] = fetch_remote(recipe_url, what="recipe")
+        except RemoteFetchError as exc:
+            msg = (
+                f"Receiver '{receiver}' of site '{site}' in the settings file {url} "
+                f"names the recipe '{name}', which is read from the same repository "
+                f"at the same link: {exc}"
+            )
+            raise RemoteFetchError(msg) from None
+    return files
+
+
 def _config_folder(files: dict[str, Path]) -> Path:
     """A new folder of the run with ``files`` (relative path -> fetched file)."""
     parent = run_folder() / "config"
     parent.mkdir(exist_ok=True)
     folder = Path(tempfile.mkdtemp(dir=parent))
+    _copy_files(folder, files)
+    return folder
+
+
+def _copy_files(folder: Path, files: dict[str, Path]) -> None:
+    """Copy ``files`` (relative path -> fetched file) into ``folder``."""
     try:
         for relative, path in files.items():
             target = folder / relative
@@ -203,4 +262,3 @@ def _config_folder(files: dict[str, Path]) -> Path:
     except OSError as exc:
         msg = f"Cannot write the configuration folder {folder}: {exc}"
         raise RemoteFetchError(msg) from exc
-    return folder

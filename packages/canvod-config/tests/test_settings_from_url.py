@@ -252,3 +252,49 @@ def test_config_dir_variable_may_be_a_url(server, tmp_path, monkeypatch):
 
     assert settings_url(folder) == SETTINGS_URL
     assert load_config().processing.metadata.author == testing.PERSON_NAME
+
+
+def _overlay(tmp_path: Path, recipe: str) -> Path:
+    """An overlay file that gives the canopy receiver the recipe ``recipe``."""
+    path = tmp_path / "overlay.yaml"
+    sites = {testing.SITE_KEY: {"receivers": {"canopy_01": {"recipe": recipe}}}}
+    path.write_text(json.dumps({"sites": sites}))
+    return path
+
+
+def test_a_recipe_only_the_overlay_names_is_read_at_the_same_link(server, tmp_path):
+    older = f"{testing.SITE_KEY}_canopy_01s"
+    server.serve(SETTINGS_URL, _settings(tmp_path, f"{testing.SITE_KEY}_canopy"))
+    server.serve(RECIPE_URL, RECIPE)
+    server.serve(RECIPE_URL.replace("_canopy.yaml", "_canopy_01s.yaml"), RECIPE)
+    folder = resolve_config_dir(SETTINGS_URL)
+
+    config = load_config(config_dir=folder, config_file=_overlay(tmp_path, older))
+
+    receiver = config.sites.sites[testing.SITE_KEY].receivers["canopy_01"]
+    assert receiver.recipe == older
+    assert (folder / "recipes" / testing.SITE_KEY / f"{older}.yaml").is_file()
+
+
+def test_a_missing_overlay_recipe_names_the_receiver_and_the_url(server, tmp_path):
+    server.serve(SETTINGS_URL, _settings(tmp_path))
+    folder = resolve_config_dir(SETTINGS_URL)
+
+    with pytest.raises(RemoteFetchError) as excinfo:
+        load_config(config_dir=folder, config_file=_overlay(tmp_path, "entmoot"))
+
+    message = str(excinfo.value)
+    assert "'entmoot'" in message
+    assert "canopy_01" in message
+    assert f"{BASE}/recipes/{testing.SITE_KEY}/entmoot.yaml" in message
+
+
+def test_an_overlay_on_a_local_folder_fetches_nothing(server, tmp_path):
+    folder = testing.write_settings(tmp_path / "local").parent
+
+    config = load_config(config_dir=folder, config_file=_overlay(tmp_path, "entmoot"))
+
+    receiver = config.sites.sites[testing.SITE_KEY].receivers["canopy_01"]
+    assert receiver.recipe == "entmoot"
+    assert not (folder / "recipes").exists()
+    assert server.requests == []
