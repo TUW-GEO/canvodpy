@@ -496,3 +496,54 @@ class TestExplain:
 
         assert result.exit_code == 1
         assert "processing.storage.stores_root_dir" in result.output
+
+
+class TestValidateDays:
+    """``config validate --start/--end`` checks those days only (#540)."""
+
+    def _validate(self, tmp_path, *days: str):
+        from canvodpy.orchestrator.data_check import SiteReport
+
+        config_dir = testing.write_settings(tmp_path / "config").parent
+        with mock.patch(
+            "canvodpy.orchestrator.data_check.check_site_data",
+            side_effect=lambda site, *_args, **_kw: SiteReport(site),
+        ) as check:
+            result = runner.invoke(
+                _app(),
+                ["config", "validate", "--config-dir", str(config_dir), *days],
+            )
+        return result, check
+
+    def test_the_days_reach_the_data_check(self, tmp_path):
+        result, check = self._validate(
+            tmp_path, "--start", "2025002", "--end", "2025003"
+        )
+        assert result.exit_code == 0, result.output
+        assert check.call_args.kwargs["start"] == "2025002"
+        assert check.call_args.kwargs["end"] == "2025003"
+
+    def test_the_days_reach_the_data_check_as_yyyyddd(self, tmp_path):
+        result, check = self._validate(tmp_path, "--start", "2025 02")
+        assert result.exit_code == 0, result.output
+        assert check.call_args.kwargs["start"] == "2025002"
+
+    def test_no_days_check_all_of_them(self, tmp_path):
+        result, check = self._validate(tmp_path)
+        assert result.exit_code == 0, result.output
+        assert check.call_args.kwargs["start"] is None
+        assert check.call_args.kwargs["end"] is None
+
+    @pytest.mark.parametrize(
+        ("days", "message"),
+        [
+            (["--start", "25002"], "--start"),
+            (["--end", "2025400"], "--end"),
+            (["--start", "2025003", "--end", "2025002"], "after --end"),
+        ],
+    )
+    def test_wrong_days_are_refused(self, tmp_path, days, message):
+        result, check = self._validate(tmp_path, *days)
+        assert result.exit_code == 1
+        assert message in result.output
+        check.assert_not_called()

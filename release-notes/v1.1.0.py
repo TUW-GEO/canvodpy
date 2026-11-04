@@ -388,6 +388,10 @@ def _(mo):
     mo.md(r"""
     More in the terminal:
 
+    - **`canvodpy config validate --start/--end`** checks the receiver data
+      of those days only, as `canvodpy run` reads them. An overlay used for
+      some days, for example with the recipes of an older sampling
+      interval, is checked over those days.
     - **The run dashboard** of `canvodpy run --dashboard` says whether the
       run is still going and has a button, *Shut the dashboard down*, which
       stops the dashboard but never the run. `--dashboard-stop-at-end`
