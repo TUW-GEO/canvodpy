@@ -73,3 +73,4 @@ jobs:
                   uv run pytest packages/canvod-preflight/tests/ --verbose --color=yes
                   uv run pytest packages/canvod-vod/tests/ --verbose --color=yes
                   uv run pytest packages/canvod-ops/tests/ --verbose --color=yes
+                  uv run pytest packages/canvod-utils/tests/ --verbose --color=yes
