@@ -9,6 +9,12 @@ members = ["packages/*", "canvodpy"]
 # Everyone, CI included, uses the same uv minor version, so uv.lock is
 # written the same way everywhere. setup-uv reads this range.
 required-version = ">=0.13.0,<0.14"
+# uv lock takes only package files at least a week on PyPI, so a broken or
+# malicious release is usually withdrawn before it reaches uv.lock.
+exclude-newer = "1 week"
+# canvod-filemap is released from canvodpy-extensions and taken right away
+# (extensions-dependency guide).
+exclude-newer-package = { canvod-filemap = false }
 
 # ============================================================================
 # Development Dependencies (Workspace-wide)
