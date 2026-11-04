@@ -176,7 +176,7 @@
 | packages/canvod-readers/src/canvod/readers/nmea/\_\_init\_\_.py                 |        2 |        0 |    100% |           |
 | packages/canvod-readers/src/canvod/readers/nmea/exceptions.py                   |       10 |        0 |    100% |           |
 | packages/canvod-readers/src/canvod/readers/nmea/v4\_00.py                       |      387 |       51 |     87% |74-75, 184, 192, 197, 204, 258-259, 265, 272-273, 311, 319-320, 409-410, 414-416, 420-421, 491-492, 519, 523, 527, 531-535, 539, 543-547, 553, 587-588, 611, 641-643, 737, 742-743, 798-799, 824-825 |
-| packages/canvod-readers/src/canvod/readers/preprocessing.py                     |      164 |        8 |     95% |164, 168-176, 182, 250, 319, 331 |
+| packages/canvod-readers/src/canvod/readers/preprocessing.py                     |      164 |        8 |     95% |164, 168-176, 182, 250, 326, 331 |
 | packages/canvod-readers/src/canvod/readers/rinex/\_\_init\_\_.py                |        4 |        0 |    100% |           |
 | packages/canvod-readers/src/canvod/readers/rinex/nav.py                         |       87 |        5 |     94% |233, 240, 248, 250-251 |
 | packages/canvod-readers/src/canvod/readers/rinex/v2\_11.py                      |      716 |      569 |     21% |158-159, 162-164, 168-171, 186-192, 200-202, 263-265, 275-283, 291-485, 490, 493, 499-500, 516-539, 544-547, 611-622, 683-688, 692, 697, 700, 708, 714-726, 730, 736, 740-754, 758-760, 764, 768-772, 794-833, 860-872, 882-911, 929-966, 977-1062, 1082, 1096-1105, 1109, 1113-1131, 1147-1427, 1461-1514, 1522-1538, 1543-1556, 1559-1602, 1632-1654, 1679-1684 |
