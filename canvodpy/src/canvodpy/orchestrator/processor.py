@@ -5481,7 +5481,7 @@ class RinexDataProcessor:
         # physical file set (same data_dir/reader_format) -- group them so
         # each file gets one fan-out task instead of one task per (file,
         # pairing) below. Only applies to the
-        # Hermite-aux path: use_sbf_geometry pairs a reference with its own
+        # preprocess_with_hermite_aux path: use_sbf_geometry pairs a reference with its own
         # SBF geometry per canopy via broadcast_canopy_file, a separate
         # mechanism left untouched.
         reference_groups: dict[
