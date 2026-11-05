@@ -1,8 +1,9 @@
 """Every path that writes data gives a new store its metadata first (#214).
 
-Runs from the command line, Python and Airflow take the same step: a new
-store gets its repository metadata from the settings, and receivers or VOD
-analyses the metadata doesn't list are refused with the amend command.
+Runs from the command line, Python and the task functions for
+orchestrators take the same step: a new store gets its repository metadata
+from the settings, and receivers or VOD analyses the metadata doesn't list
+are refused with the amend command.
 """
 
 from __future__ import annotations
@@ -46,7 +47,7 @@ def _no_files() -> dict:
     }
 
 
-class TestAirflowTasks:
+class TestWorkflowTasks:
     @pytest.mark.parametrize("task", ["process_rinex", "process_sbf"])
     def test_a_new_site_gets_its_store_metadata(self, site_settings, task):
         from canvodpy.workflows import tasks

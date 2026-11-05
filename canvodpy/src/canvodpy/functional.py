@@ -8,10 +8,11 @@ Functional API for VOD workflow.
     signals, and skips the configured VOD output options.
     Use the terminal command ``canvodpy run`` or ``canvodpy.Site`` instead.
 
-Provides pure functions for Airflow integration and interactive use.
+Provides pure functions for interactive use and for task-based pipelines.
 Two versions of each function:
 - `func()` - Returns data (xr.Dataset)
-- `func_to_file()` - Returns path (str) for Airflow XCom
+- `func_to_file()` - Writes a file and returns its path (str), which a
+  scheduler can pass between tasks
 
 Examples
 --------
@@ -21,20 +22,15 @@ Interactive notebook:
     >>> data = read_rinex("data.rnx")
     >>> vod = calculate_vod(canopy_data, sky_data)
 
-Airflow DAG:
+Chained through files:
 
-    >>> from airflow.decorators import task, dag
     >>> from canvodpy.functional import (
     ...     read_rinex_to_file,
     ...     calculate_vod_to_file,
     ... )
-    >>>
-    >>> @task
-    >>> def process():
-    ...     canopy = read_rinex_to_file("canopy.rnx", "/tmp/canopy.nc")
-    ...     sky = read_rinex_to_file("sky.rnx", "/tmp/sky.nc")
-    ...     vod = calculate_vod_to_file(canopy, sky, "/tmp/vod.nc")
-    ...     return vod
+    >>> canopy = read_rinex_to_file("canopy.rnx", "/tmp/canopy.nc")
+    >>> sky = read_rinex_to_file("sky.rnx", "/tmp/sky.nc")
+    >>> vod = calculate_vod_to_file(canopy, sky, "/tmp/vod.nc")
 """
 
 from __future__ import annotations
@@ -372,7 +368,7 @@ def calculate_vod(
 
 
 # ============================================================================
-# Path-returning versions (for Airflow XCom)
+# Path-returning versions (results passed between tasks as files)
 # ============================================================================
 
 
@@ -391,7 +387,7 @@ def read_rinex_to_file(
     **reader_kwargs: Any,
 ) -> str:
     """
-    Read RINEX and save to NetCDF file (Airflow-compatible).
+    Read RINEX and save to NetCDF file.
 
     Parameters
     ----------
@@ -407,25 +403,16 @@ def read_rinex_to_file(
     Returns
     -------
     str
-        Path to output file (for Airflow XCom)
+        Path to output file
 
     Examples
     --------
-    Airflow task:
-
-        >>> from airflow.decorators import task
-        >>>
-        >>> @task
-        >>> def load_rinex():
-        ...     return read_rinex_to_file(
-        ...         "ROSA0010.25o",
-        ...         "/tmp/rinex.nc"
-        ...     )
+    >>> read_rinex_to_file("FANG0010.25o", "/tmp/rinex.nc")
+    '/tmp/rinex.nc'
 
     Notes
     -----
-    Suitable for use in Airflow tasks with @task decorator.
-    Returns path string that can be serialized in XCom.
+    Returns a path string, which a scheduler can pass between tasks.
     """
     log.info("read_rinex_to_file", rinex=str(rinex_path), output=str(output_path))
 
@@ -453,7 +440,7 @@ def create_grid_to_file(
     **grid_params: Any,
 ) -> str:
     """
-    Create grid and save to file (Airflow-compatible).
+    Create grid and save to file.
 
     Parameters
     ----------
@@ -467,7 +454,7 @@ def create_grid_to_file(
     Returns
     -------
     str
-        Path to output file (for Airflow XCom)
+        Path to output file
 
     Warnings
     --------
@@ -477,15 +464,8 @@ def create_grid_to_file(
 
     Examples
     --------
-    Airflow task:
-
-        >>> @task
-        >>> def make_grid():
-        ...     return create_grid_to_file(
-        ...         "/tmp/grid.pkl",
-        ...         "equal_area",
-        ...         angular_resolution=5.0,
-        ...     )
+    >>> create_grid_to_file("/tmp/grid.pkl", "equal_area", angular_resolution=5.0)
+    '/tmp/grid.pkl'
 
     Notes
     -----
@@ -501,7 +481,7 @@ def create_grid_to_file(
     output_path = Path(output_path)
     output_path.parent.mkdir(parents=True, exist_ok=True)
 
-    # Serialize grid to file (pickle for file-based Airflow tasks)
+    # Serialize grid to file (pickle, to pass it between tasks)
     import pickle
 
     with open(output_path, "wb") as f:
@@ -522,7 +502,7 @@ def assign_grid_cells_to_file(
     output_path: str | Path,
 ) -> str:
     """
-    Assign grid cells and save to file (Airflow-compatible).
+    Assign grid cells and save to file.
 
     Parameters
     ----------
@@ -536,7 +516,7 @@ def assign_grid_cells_to_file(
     Returns
     -------
     str
-        Path to output file (for Airflow XCom)
+        Path to output file
 
     Warnings
     --------
@@ -546,19 +526,12 @@ def assign_grid_cells_to_file(
 
     Examples
     --------
-    Airflow task:
-
-        >>> @task
-        >>> def assign_cells(data_path, grid_path):
-        ...     return assign_grid_cells_to_file(
-        ...         data_path,
-        ...         grid_path,
-        ...         "/tmp/with_cells.nc",
-        ...     )
+    >>> assign_grid_cells_to_file("/tmp/rinex.nc", "/tmp/grid.pkl", "/tmp/with_cells.nc")
+    '/tmp/with_cells.nc'
 
     Notes
     -----
-    Chains with other *_to_file functions for Airflow pipelines.
+    Chains with the other *_to_file functions.
     """
     log.info(
         "assign_grid_cells_to_file",
@@ -570,7 +543,7 @@ def assign_grid_cells_to_file(
     # Load datasets
     ds = xr.open_dataset(data_path)
 
-    # Load grid from file (pickle for file-based Airflow tasks)
+    # Load grid from file (pickle, written by create_grid_to_file)
     import pickle
 
     with open(grid_path, "rb") as f:
@@ -606,7 +579,7 @@ def calculate_vod_to_file(
     **calc_kwargs: Any,
 ) -> str:
     """
-    Calculate VOD and save to file (Airflow-compatible).
+    Calculate VOD and save to file.
 
     Parameters
     ----------
@@ -624,36 +597,19 @@ def calculate_vod_to_file(
     Returns
     -------
     str
-        Path to output file (for Airflow XCom)
+        Path to output file
 
     Examples
     --------
-    Airflow task:
-
-        >>> @task
-        >>> def compute_vod(canopy_path, sky_path):
-        ...     return calculate_vod_to_file(
-        ...         canopy_path,
-        ...         sky_path,
-        ...         "/tmp/vod.nc"
-        ...     )
-
-    Complete DAG:
-
-        >>> from airflow import DAG
-        >>> from airflow.decorators import task
-        >>>
-        >>> @task
-        >>> def pipeline():
-        ...     canopy = read_rinex_to_file("c.rnx", "/tmp/c.nc")
-        ...     sky = read_rinex_to_file("s.rnx", "/tmp/s.nc")
-        ...     vod = calculate_vod_to_file(canopy, sky, "/tmp/vod.nc")
-        ...     return vod
+    >>> canopy = read_rinex_to_file("c.rnx", "/tmp/c.nc")
+    >>> sky = read_rinex_to_file("s.rnx", "/tmp/s.nc")
+    >>> calculate_vod_to_file(canopy, sky, "/tmp/vod.nc")
+    '/tmp/vod.nc'
 
     Notes
     -----
-    All *_to_file functions return str paths for XCom.
-    Chain them in Airflow tasks for complete pipelines.
+    All *_to_file functions return str paths, so they chain through
+    files.
     """
     log.info(
         "calculate_vod_to_file",

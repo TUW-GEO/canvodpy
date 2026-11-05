@@ -157,7 +157,7 @@ def test_a_run_that_raises_is_failed_with_its_error_and_problems(
 
 
 def test_check_day_records_no_run(rosalia_site) -> None:
-    # Airflow retries check_day until the files arrive; each retry would
+    # An orchestrator retries check_day until the files arrive; each retry would
     # add a failed run.
     from canvodpy.workflows.tasks import check_day
 

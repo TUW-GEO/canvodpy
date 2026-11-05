@@ -1,4 +1,4 @@
-"""The file index of a run: through ``Site.pipeline()``, the CLI and Airflow.
+"""The file index of a run: through ``Site.pipeline()``, the CLI and a task.
 
 A run saves the names it finds per folder in the run history; the next run
 lists the folders that hold the days it processes and takes the others from
@@ -125,7 +125,7 @@ def test_a_folder_of_other_days_comes_from_the_file_index(
     assert "Found 2 files on 2 days for receiver canopy_01" in _dry_run(_today())
 
 
-def test_an_airflow_day_check_lists_only_the_folders_of_its_day(
+def test_a_day_check_task_lists_only_the_folders_of_its_day(
     tmp_path, monkeypatch
 ) -> None:
     from canvodpy.orchestrator.discovery import scan_directory

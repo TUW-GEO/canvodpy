@@ -1,7 +1,7 @@
 """A first run refuses before processing when a new store's settings are missing.
 
-Through the public entry points: ``Site.pipeline()`` (which Airflow's
-``process_day`` also uses) and ``canvodpy run``. The test site leaves out
+Through the public entry points: ``Site.pipeline()`` (which the task
+function ``process_day`` also uses) and ``canvodpy run``. The test site leaves out
 ``sites.fangorn.store_description``.
 """
 

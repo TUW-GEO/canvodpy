@@ -1,4 +1,4 @@
-"""Workflow definitions for automation (Airflow, Prefect, etc.)."""
+"""Task functions for running canvodpy from an orchestrator (e.g. Airflow)."""
 
 from canvodpy.workflows.tasks import (
     calculate_vod,

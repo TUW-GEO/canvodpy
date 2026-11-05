@@ -753,7 +753,7 @@ def saved_file_index(
 ) -> dict[str, FolderListing] | None:
     """A receiver directory's file index from the run history, read only.
 
-    For the lookups that are not a run (a dry run, the Airflow day check):
+    For the lookups that are not a run (a dry run, the day check task ``check_day``):
     they find the files a run would find without writing the run history.
 
     Parameters
