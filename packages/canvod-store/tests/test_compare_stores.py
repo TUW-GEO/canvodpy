@@ -410,6 +410,37 @@ def test_nested_store_attribute_names_the_inner_key(tmp_path) -> None:
     assert attr_diffs == ["site.position.lon"]
 
 
+def test_position_last_bits_are_not_reported(tmp_path) -> None:
+    # The same NMEA position computed on two platforms (#326).
+    ds = _gnss_ds(seed=0)
+    ds.attrs["APPROX POSITION X"] = 4127831.9826054345
+    ds2 = ds.copy(deep=True)
+    ds2.attrs["APPROX POSITION X"] = 4127831.9826054336
+    ref = _gnss_store(tmp_path / "ref", ds)
+    new = _gnss_store(tmp_path / "new", ds2)
+    ref.set_root_attrs({"site": {"position_ecef_m": [1.0, 2.0, 3.0]}}, branch="main")
+    new.set_root_attrs(
+        {"site": {"position_ecef_m": [1.0, 2.0, 3.0 + 1e-9]}}, branch="main"
+    )
+
+    assert compare_stores(ref, new).matches
+
+
+def test_moved_position_is_reported(tmp_path) -> None:
+    # 1 mm is above half the RINEX APPROX POSITION XYZ resolution (0.1 mm).
+    ds = _gnss_ds(seed=0)
+    ds.attrs["APPROX POSITION Y"] = 1207193.3467
+    ds2 = ds.copy(deep=True)
+    ds2.attrs["APPROX POSITION Y"] = 1207193.3477
+    ref = _gnss_store(tmp_path / "ref", ds)
+    new = _gnss_store(tmp_path / "new", ds2)
+
+    result = compare_stores(ref, new)
+
+    attr_diffs = [d for d in result.differences if d.kind == DiffKind.ATTRIBUTE]
+    assert [d.variable for d in attr_diffs] == ["APPROX POSITION Y"]
+
+
 def test_changed_store_source_format_is_reported(tmp_path) -> None:
     ds = _gnss_ds(seed=0)
     ref = _gnss_store(tmp_path / "ref2", ds)

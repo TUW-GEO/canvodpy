@@ -13,7 +13,8 @@ attributes), the float variables of :data:`FLOAT_TOLERANCES` with
 ``assert_allclose`` within their tolerance. Before comparing, the
 attributes that change with every run (:data:`VOLATILE_ATTRIBUTES`:
 times, identifiers and the software version) are dropped from the store,
-the groups and the variables; every other attribute must match.
+the groups and the variables. The receiver positions match within
+:data:`ATTRIBUTE_TOLERANCES`; every other attribute must match exactly.
 
 The report lists, per group and variable, the kind of difference, the
 number of differing values, the largest absolute difference and xarray's
@@ -69,6 +70,27 @@ FLOAT_TOLERANCES: dict[str, float] = {
     "VOD": 2e-4,
     "theta": 1e-6,
     "phi": 1e-6,
+}
+
+#: Absolute tolerances per float attribute, in m. An attribute matches by
+#: its last name, wherever it appears (``APPROX POSITION X`` of a group,
+#: ``canvod:snapshot_summary.receivers.<receiver>.position_ecef_m`` of the
+#: store). Every other attribute is compared exactly.
+#:
+#: * ``APPROX POSITION X/Y/Z``, ``position_ecef_m``,
+#:   ``canvod:position_ecef_m``: 5e-5 m. Half the resolution of the RINEX
+#:   header field APPROX POSITION XYZ, format 3F14.4 = 0.0001 m (RINEX
+#:   3.04, https://files.igs.org/pub/data/format/rinex304.pdf, Table
+#:   A2; RINEX 2.11,
+#:   https://files.igs.org/pub/data/format/rinex211.txt, Table A1). A
+#:   position computed from NMEA latitude, longitude and height differs
+#:   in the last bits between platforms.
+ATTRIBUTE_TOLERANCES: dict[str, float] = {
+    "APPROX POSITION X": 5e-5,
+    "APPROX POSITION Y": 5e-5,
+    "APPROX POSITION Z": 5e-5,
+    "position_ecef_m": 5e-5,
+    "canvod:position_ecef_m": 5e-5,
 }
 
 #: The attributes dropped before comparing, because they change with every
@@ -260,7 +282,8 @@ def _compare_attributes(
     for key in sorted(set(ref_attrs) | set(new_attrs)):
         ref_val = ref_attrs.get(key)
         new_val = new_attrs.get(key)
-        if not _same(ref_val, new_val):
+        tolerance = ATTRIBUTE_TOLERANCES.get(key.rsplit(".", 1)[-1])
+        if not _same(ref_val, new_val, tolerance):
             label = key if name is None else f"{name}.{key}"
             result.differences.append(
                 ComparisonDifference(
@@ -283,10 +306,22 @@ def _flatten(attrs: dict[str, Any], prefix: str = "") -> dict[str, Any]:
     return flat
 
 
-def _same(a: object, b: object) -> bool:
-    """Attribute equality that also works for numpy arrays."""
+def _same(a: object, b: object, tolerance: float | None = None) -> bool:
+    """Attribute equality that also works for numpy arrays.
+
+    With a ``tolerance``, numbers of the same shape match within it
+    (absolute).
+    """
     try:
-        return bool(np.array_equal(np.asarray(a), np.asarray(b)))
+        a_arr, b_arr = np.asarray(a), np.asarray(b)
+        if (
+            tolerance is not None
+            and a_arr.shape == b_arr.shape
+            and np.issubdtype(a_arr.dtype, np.number)
+            and np.issubdtype(b_arr.dtype, np.number)
+        ):
+            return bool(np.allclose(a_arr, b_arr, rtol=0, atol=tolerance))
+        return bool(np.array_equal(a_arr, b_arr))
     except TypeError, ValueError:
         return a == b
 

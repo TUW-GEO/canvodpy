@@ -1,0 +1,67 @@
+name: Reference stores
+
+# Builds the GNSS and VOD stores of every setting profile from the test
+# data and compares them with the published reference stores
+# (docs/guides/reference-stores.md). A difference fails the job and
+# uploads the report. Runs only when code that can change a stored result
+# changes: docs-only pull requests skip it.
+
+on:
+    pull_request:
+        paths:
+            - 'packages/*/src/**'
+            - 'canvodpy/src/**'
+            - 'uv.lock'
+            - 'reference/**'
+            - 'scripts/reference_stores.py'
+            - '.github/workflows/reference_check.yml'
+    push:
+        branches:
+            - main
+        paths:
+            - 'packages/*/src/**'
+            - 'canvodpy/src/**'
+            - 'uv.lock'
+            - 'reference/**'
+            - 'scripts/reference_stores.py'
+            - '.github/workflows/reference_check.yml'
+    workflow_dispatch:
+
+permissions: read-all
+
+concurrency:
+    group: reference-check-${{ github.ref }}
+    cancel-in-progress: true
+
+jobs:
+    reference_check:
+        runs-on: ubuntu-latest
+        timeout-minutes: 60
+        steps:
+            - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+            - name: Check out the test data
+              # Only the readers' test data, without its history; the demo
+              # submodule is not needed.
+              run: git submodule update --init --depth 1 packages/canvod-readers/tests/test_data
+            - name: Install uv and set the python version
+              uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2 # v10.3.3
+              with:
+                  python-version: '3.14'
+                  enable-cache: true
+            - name: Set up Python
+              run: uv python install
+            - name: Install the Project
+              run: uv sync --locked --dev
+            - name: Install just
+              uses: taiki-e/install-action@1919c4a95903d2c33e4a221102edca87309fc14b # v2.89.0
+              with:
+                  tool: just
+            - name: Compare with the reference stores
+              run: just reference-check
+            - name: Upload the report
+              if: failure()
+              uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+              with:
+                  name: reference-check-report
+                  path: reference-check.txt
+                  if-no-files-found: ignore
