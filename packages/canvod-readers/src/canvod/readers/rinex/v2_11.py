@@ -21,6 +21,7 @@ Classes:
 """
 
 import json
+import re
 from collections import Counter
 from datetime import UTC, datetime
 from itertools import pairwise
@@ -29,6 +30,7 @@ from typing import Any, ClassVar, Self
 
 import numpy as np
 import pint
+import structlog
 import xarray as xr
 from pydantic import (
     BaseModel,
@@ -75,6 +77,8 @@ from canvod.utils.tools import bytes_hash, deprecated
 # Constants
 # --------------------------------------------------------------------------- #
 
+log = structlog.get_logger(__name__)
+
 MIN_EPOCHS_FOR_INTERVAL = 2
 V2_OBS_FIELD_WIDTH = 16  # F14.3 + I1 (LLI) + I1 (SSI)
 V2_MAX_OBS_PER_LINE = 5  # Max observations per line (5 x 16 = 80 chars)
@@ -94,6 +98,18 @@ _WL_FACTOR_OPPOSITE = {1: 2, 2: 1}
 # the code's (RINEX 3.04 Table A3 notes 2-3; 2.11 does not specify).
 _SSI_SOURCE_RANK = {"L": 2, "C": 1}
 # rinex211.txt Table A1 declares no unit for S observations.
+# Epoch header, rinex211.txt Table A2: 1X,I2.2,4(1X,I2),F11.7,2X,I1,I3. Event
+# records (flags 2-5) may leave the date and time blank. An observation line
+# never matches: its F14.3 fields put a digit where the header has a blank.
+_V2_EPOCH_HEADER = re.compile(
+    r" [ \d]\d(?: [ \d]\d){4}[ \d]{3}\.\d{7}  [0-6][ \d]{2}\d"
+    r"| {28}[2-5][ \d]{2}\d"
+)
+# Observation field, rinex211.txt Table A2: F14.3 (decimal point in column
+# 10), then LLI and SSI (I1 each, blank if not known).
+_V2_OBS_VALUE = re.compile(r" *-?[0-9]*\.[0-9]{3}")
+_V2_OBS_VALUE_END = 14
+_V2_FLAG_OF_CHAR: dict[str, int | None] = {" ": None} | {str(d): d for d in range(10)}
 _V2_SNR_METADATA = {
     **SNR_METADATA,
     "description": (
@@ -877,37 +893,34 @@ class Rnxv2Obs(GNSSDataReader, BaseModel):
     ) -> tuple[float | None, int | None, int | None]:
         """Parse a single 16-char observation field: F14.3, I1(LLI), I1(SSI).
 
-        Returns (value, lli, ssi).
+        Returns (value, lli, ssi). A blank value is a missing observation,
+        and so is 0.0 (rinex211.txt Table A2).
+
+        Raises
+        ------
+        InvalidEpochError
+            If the field is neither blank nor in that form, e.g. a line cut
+            inside a value.
         """
         if not field or not field.strip():
             return None, None, None
 
-        # Pad to 16 chars if needed
+        # Pad to 16 chars: lines may omit trailing blanks
         field = field.ljust(V2_OBS_FIELD_WIDTH)
+        lli = _V2_FLAG_OF_CHAR.get(field[14], -1)
+        ssi = _V2_FLAG_OF_CHAR.get(field[15], -1)
+        value_blank = field[:_V2_OBS_VALUE_END].isspace()
+        if (
+            lli == -1
+            or ssi == -1
+            or not (value_blank or _V2_OBS_VALUE.fullmatch(field, 0, _V2_OBS_VALUE_END))
+        ):
+            msg = f"Malformed observation field: {field!r}"
+            raise InvalidEpochError(msg)
 
-        # Value is in chars 0-13 (F14.3)
-        value_str = field[:14].strip()
-        lli_char = field[14:15]
-        ssi_char = field[15:16]
-
-        value: float | None = None
-        lli: int | None = None
-        ssi: int | None = None
-
-        if value_str:
-            try:
-                value = float(value_str)
-                # RINEX spec: missing observations written as 0.0 or blanks
-                if value == 0.0:
-                    value = None
-            except ValueError:
-                pass
-
-        if lli_char.strip() and lli_char.strip().isdigit():
-            lli = int(lli_char)
-        if ssi_char.strip() and ssi_char.strip().isdigit():
-            ssi = int(ssi_char)
-
+        value = None if value_blank else float(field[:_V2_OBS_VALUE_END])
+        if value == 0.0:
+            value = None
         return value, lli, ssi
 
     def _parse_satellite_observations(
@@ -925,6 +938,14 @@ class Rnxv2Obs(GNSSDataReader, BaseModel):
         -------
         tuple[Satellite, int]
             (Satellite object with observations, next line index)
+
+        Raises
+        ------
+        IncompleteEpochError
+            If an epoch header or the end of the file comes before all of
+            the satellite's lines.
+        InvalidEpochError
+            If an observation field is malformed.
         """
         obs_types_v2 = self.header.obs_types
         n_obs = len(obs_types_v2)
@@ -936,8 +957,12 @@ class Rnxv2Obs(GNSSDataReader, BaseModel):
 
         for _line_num in range(n_lines):
             if line_idx >= len(lines):
-                break
+                msg = f"Observation records of {sv} end at the end of the file"
+                raise IncompleteEpochError(msg)
             obs_line = lines[line_idx]
+            if _V2_EPOCH_HEADER.match(obs_line):
+                msg = f"Observation records of {sv} end at line {line_idx + 1}"
+                raise IncompleteEpochError(msg)
             line_idx += 1
 
             # Parse up to 5 observations from this line
@@ -965,8 +990,18 @@ class Rnxv2Obs(GNSSDataReader, BaseModel):
 
         return satellite, line_idx
 
-    def iter_epochs(self):
+    def iter_epochs(self, rejected: list[int] | None = None):
         """Yield parsed epoch records from the file.
+
+        An epoch whose observation records end early (an epoch header or
+        the end of the file follows) is dropped; reading goes on at that
+        header. An epoch with a malformed observation field is dropped too.
+
+        Parameters
+        ----------
+        rejected : list of int or None
+            If given, the 0-based line index of each dropped epoch's header
+            is appended to it.
 
         Yields
         ------
@@ -1007,6 +1042,7 @@ class Rnxv2Obs(GNSSDataReader, BaseModel):
                 idx += 1
                 continue
 
+            epoch_line_idx = idx
             idx += 1
 
             # Handle epoch flags 2-5: special records (header info, events)
@@ -1042,6 +1078,7 @@ class Rnxv2Obs(GNSSDataReader, BaseModel):
 
             # Parse observation records for each satellite
             satellites: list[Satellite] = []
+            complete = True
             for sat_sv in sat_list:
                 try:
                     satellite, idx = self._parse_satellite_observations(
@@ -1050,7 +1087,14 @@ class Rnxv2Obs(GNSSDataReader, BaseModel):
                         sat_sv,
                     )
                     satellites.append(satellite)
-                except InvalidEpochError, IncompleteEpochError, ValueError:
+                except IncompleteEpochError, InvalidEpochError:
+                    # Records cut short or a malformed field (e.g. a line cut
+                    # inside a value): go on at the next epoch header.
+                    while idx < len(lines) and not _V2_EPOCH_HEADER.match(lines[idx]):
+                        idx += 1
+                    complete = False
+                    break
+                except ValueError:
                     # Skip malformed satellite data, advance to expected position
                     n_obs = len(self.header.obs_types)
                     n_lines_per_sat = (
@@ -1058,6 +1102,11 @@ class Rnxv2Obs(GNSSDataReader, BaseModel):
                     ) // V2_MAX_OBS_PER_LINE
                     idx += n_lines_per_sat
                     continue
+
+            if not complete:
+                if rejected is not None:
+                    rejected.append(epoch_line_idx)
+                continue
 
             yield Rnxv2EpochRecord(
                 year=year,
@@ -1285,7 +1334,8 @@ class Rnxv2Obs(GNSSDataReader, BaseModel):
 
         # Second pass: fill arrays
         t_idx = 0
-        for epoch in self.iter_epochs():
+        rejected: list[int] = []
+        for epoch in self.iter_epochs(rejected):
             dt = self.epoch_to_datetime(epoch)
             if start and dt < start:
                 continue
@@ -1335,6 +1385,16 @@ class Rnxv2Obs(GNSSDataReader, BaseModel):
                             ssi_rank[t_idx, s_idx] = rank
 
             t_idx += 1
+
+        if rejected:
+            log.warning(
+                "rinex_epochs_rejected",
+                file=self.fpath.name,
+                n_rejected=len(rejected),
+                first_lines=[i + 1 for i in rejected[:10]],
+                reason="observation records end before an epoch header or "
+                "the end of the file, or an observation field is malformed",
+            )
 
         # Build coordinates
         signal_id_coord = xr.DataArray(

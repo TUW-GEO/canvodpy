@@ -98,6 +98,14 @@ RINEX 2 satellite numbers `snn` follow the same convention as RINEX 3: for SBAS,
 
 ---
 
+## Records that end early
+
+An epoch record has `ceil(n / 5)` lines per satellite, for `n` observation types (RINEX 2.11 Table A2, five observations per line). If the next epoch header (Table A2: date, time, flag, satellite count) appears before all lines of a satellite are read, the record ends early. The reader drops that epoch, logs `rinex_epochs_rejected` with the line numbers of the dropped epoch headers, and continues at the next header, so the following epoch is kept when it is complete.
+
+The same holds when the file ends inside the last epoch, for example after a power loss: that epoch is dropped and logged. Each observation field must be blank or have the Table A2 form (F14.3, then LLI and SSI, each blank or a digit), so a line cut inside a value drops its epoch rather than read as a shorter number.
+
+---
+
 ## Loss of lock and signal strength indicators
 
 The `LLI` variable has the [RINEX 3.04 meaning](rinex-format.md#loss-of-lock-and-signal-strength-indicators) for every input format. The RINEX 2.11 bits (Table A2) differ, so the reader translates them:
