@@ -137,7 +137,9 @@ Decompress them first (for Hatanaka, `crx2rnx`). A receiver directory holding on
 compressed files fails the check below.
 
 Check a site before processing it; the check finds the files exactly as a run does and
-also lists the files a run would pass over:
+also lists the files a run would pass over, and each receiver's days without files
+from the site's first to its last day with files (or `--start` to `--end`), as ranges
+such as `2025254 to 2025256`:
 
 ```bash
 canvodpy config validate --site <site>

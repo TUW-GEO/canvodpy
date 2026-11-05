@@ -259,3 +259,79 @@ def test_files_never_processed_are_listed_without_files_in_the_range(
     assert "1 compressed file(s)" in report.warnings[1]
     assert "Nothing would be processed" not in report.warnings[1]
     assert report.sampling_checked == []
+
+
+DAY5 = "FANA01INK_R_20250050000_15M_05S_AA.rnx"
+DAY9 = "FANA01INK_R_20250090000_15M_05S_AA.rnx"
+NEW_YEAR = "FANA01INK_R_20263650000_15M_05S_AA.rnx"
+
+
+def test_days_without_files_between_the_first_and_last_day_are_listed(
+    tmp_path: Path,
+) -> None:
+    """#125: the gaps of a receiver's data, in plain language."""
+    _touch(tmp_path / "rx", DAY1, DAY2, DAY5, DAY9)
+    report, _ = _check(tmp_path)
+    assert report.errors == []
+    assert report.missing_days == [
+        "2025003",
+        "2025004",
+        "2025006",
+        "2025007",
+        "2025008",
+    ]
+    assert (
+        f"{tmp_path / 'rx'} has no files on 5 days: 2025003 to 2025004, "
+        "2025006 to 2025008." in report.warnings
+    )
+
+
+def test_days_without_files_from_start_to_end_are_listed(tmp_path: Path) -> None:
+    _touch(tmp_path / "rx", DAY2)
+    report = check_receiver_data(
+        "canopy_01",
+        {"directory": "rx", "reader_format": "rinex3"},
+        tmp_path,
+        "fangorn",
+        check_sampling=False,
+        start="2025001",
+        end="2025003",
+    )
+    assert report.missing_days == ["2025001", "2025003"]
+    assert (
+        f"{tmp_path / 'rx'} has no files on 2 days: 2025001, 2025003."
+        in report.warnings
+    )
+
+
+def test_days_without_files_cross_the_new_year(tmp_path: Path) -> None:
+    _touch(tmp_path / "rx", NEW_YEAR, "FANA01INK_R_20270020000_15M_05S_AA.rnx")
+    report, _ = _check(tmp_path)
+    assert report.missing_days == ["2027001"]
+
+
+def test_no_gaps_no_warning(tmp_path: Path) -> None:
+    _touch(tmp_path / "rx", DAY1, DAY2)
+    report, _ = _check(tmp_path)
+    assert report.missing_days == []
+    assert report.warnings == []
+
+
+def test_a_receiver_that_stops_early_misses_the_site_s_last_days(
+    tmp_path: Path,
+) -> None:
+    """Without --end, each receiver's range ends at the site's last day."""
+    from canvodpy.orchestrator.data_check import extend_to_site_days
+
+    _touch(tmp_path / "rx", DAY1, DAY2)
+    _touch(tmp_path / "ref", DAY1, DAY2, DAY5)
+    canopy, _ = _check(tmp_path)
+    reference, _ = _check(tmp_path, directory="ref")
+
+    extend_to_site_days({"canopy_01": canopy, "reference_01": reference})
+
+    assert canopy.missing_days == ["2025003", "2025004", "2025005"]
+    assert canopy.warnings == [
+        f"{tmp_path / 'rx'} has no files on 3 days: 2025003 to 2025005."
+    ]
+    assert reference.missing_days == ["2025003", "2025004"]

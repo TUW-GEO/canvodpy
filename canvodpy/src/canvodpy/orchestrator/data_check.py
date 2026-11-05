@@ -14,6 +14,7 @@ from __future__ import annotations
 import re
 from collections import Counter
 from dataclasses import dataclass, field
+from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Any
 
@@ -58,6 +59,11 @@ class ReceiverReport:
         Days (``YYYYDOY``) with files to process, sorted.
     files : int
         Number of files a run would process.
+    missing_days : list[str]
+        Days (``YYYYDOY``) without files to process, from ``start`` (or the
+        first day with files) to ``end`` (or the last day with files); for
+        a site, the first and last day of any of its receivers
+        (:func:`extend_to_site_days`).
     unrecognized : list[Path]
         Files that are never processed: neither the recipe nor the naming
         convention recognizes them, or they are of another reader format.
@@ -81,6 +87,7 @@ class ReceiverReport:
     identity: str | None = None
     days: list[str] = field(default_factory=list)
     files: int = 0
+    missing_days: list[str] = field(default_factory=list)
     unrecognized: list[Path] = field(default_factory=list)
     compressed: list[Path] = field(default_factory=list)
     sampling_checked: list[float] = field(default_factory=list)
@@ -135,6 +142,75 @@ def group_by_file_type(paths: list[Path]) -> list[tuple[str, int, Path]]:
     for p in paths:
         examples.setdefault(file_type(p), p)
     return [(t, n, examples[t]) for t, n in counts.most_common()]
+
+
+def days_without_files(days: list[str], first: str, last: str) -> list[str]:
+    """The days (``YYYYDOY``) from *first* to *last* that are not in *days*."""
+    with_files = set(days)
+    day = datetime.strptime(first, "%Y%j").date()
+    end = datetime.strptime(last, "%Y%j").date()
+    missing = []
+    while day <= end:
+        if (key := day.strftime("%Y%j")) not in with_files:
+            missing.append(key)
+        day += timedelta(days=1)
+    return missing
+
+
+def day_ranges(days: list[str], limit: int = 10) -> str:
+    """Sorted ``YYYYDOY`` days as ranges: ``2025003 to 2025004, 2025006``.
+
+    Consecutive days are joined; after *limit* ranges the rest is counted.
+    """
+    ranges: list[list[str]] = []
+    previous = None
+    for key in days:
+        day = datetime.strptime(key, "%Y%j").date()
+        if previous is not None and day - previous == timedelta(days=1):
+            ranges[-1][1] = key
+        else:
+            ranges.append([key, key])
+        previous = day
+    text = [a if a == b else f"{a} to {b}" for a, b in ranges[:limit]]
+    if len(ranges) > limit:
+        text.append(f"and {len(ranges) - limit} more")
+    return ", ".join(text)
+
+
+def _missing_days_warning(report: ReceiverReport) -> str:
+    return (
+        f"{report.directory} has no files on {len(report.missing_days)} days: "
+        f"{day_ranges(report.missing_days)}."
+    )
+
+
+def extend_to_site_days(
+    receivers: dict[str, ReceiverReport],
+    start: str | None = None,
+    end: str | None = None,
+) -> None:
+    """Count each receiver's missing days over the days of the whole site.
+
+    Without ``start`` (``end``), a receiver's range starts (ends) at the
+    first (last) day with files of any receiver of the site, so a receiver
+    that stopped while the others went on misses the days after it.
+    """
+    with_days = [r for r in receivers.values() if r.days]
+    if not with_days:
+        return
+    first = start or min(r.days[0] for r in with_days)
+    last = end or max(r.days[-1] for r in with_days)
+    for report in with_days:
+        missing = days_without_files(report.days, first, last)
+        if missing == report.missing_days:
+            continue
+        old = _missing_days_warning(report) if report.missing_days else None
+        report.missing_days = missing
+        new = _missing_days_warning(report)
+        if old in report.warnings:
+            report.warnings[report.warnings.index(old)] = new
+        else:
+            report.warnings.insert(0, new)
 
 
 def data_sampling_seconds(
@@ -297,6 +373,13 @@ def check_receiver_data(
             report.warnings.append(f"{directory} holds no files.")
         return report
 
+    # Without any file in the range, the warning above says so already
+    if report.days:
+        report.missing_days = days_without_files(
+            report.days, start or report.days[0], end or report.days[-1]
+        )
+    if report.missing_days:
+        report.warnings.append(_missing_days_warning(report))
     if report.compressed:
         report.warnings.append(compressed_note)
 
@@ -404,6 +487,7 @@ def check_site_data(
         report.receivers[name] = check_receiver_data(
             name, cfg, base_path, site, check_sampling, reader_options, start, end
         )
+    extend_to_site_days(report.receivers, start, end)
     for ref, canopy in site_config.get_reference_canopy_pairs():
         mixed = mixed_format_error(
             canopy,
