@@ -1410,6 +1410,7 @@ class RinexDataProcessor:
             self.aux_pipeline = None
         else:
             self.aux_pipeline = self._initialize_aux_pipeline()
+        self._load_aux_data = load_aux_data
 
         t_init_end = time.perf_counter()
         self._logger.info(
@@ -5414,6 +5415,13 @@ class RinexDataProcessor:
             needed for the Icechunk write phase.
 
         """
+        if not self._load_aux_data:
+            msg = (
+                "This processor was built with load_aux_data=False and cannot "
+                "prepare a day: prepare it with _prepare_day in a worker of "
+                "the run's pool."
+            )
+            raise RuntimeError(msg)
         t_batch_start = time.perf_counter()
         if keep_vars is None:
             keep_vars = self._config.processing.params.keep_gnss_observables

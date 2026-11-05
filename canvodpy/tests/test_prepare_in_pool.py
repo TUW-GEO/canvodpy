@@ -112,3 +112,24 @@ def test_a_day_whose_preparing_fails_in_a_worker_fails_its_receivers(
 
     assert [day for unit in units for day in unit.days] == [DAYS[0]]
     assert {day for _group, day in pipeline.failed_receiver_days} == {DAYS[1]}
+
+
+def test_a_day_whose_preparing_raises_in_a_worker_fails_its_receivers(
+    two_days, monkeypatch
+) -> None:
+    import canvodpy.orchestrator.pipeline as pipeline_module
+
+    prepare_day = pipeline_module._prepare_day
+
+    def unreadable_second_day(site, config, date_key, *args):
+        # Defined here, so the worker gets this function by value
+        if date_key == DAYS[1]:
+            raise OSError(f"cannot read the files of {date_key}")
+        return prepare_day(site, config, date_key, *args)
+
+    monkeypatch.setattr(pipeline_module, "_prepare_day", unreadable_second_day)
+    with _site().pipeline(n_workers=2) as pipeline:
+        units = list(pipeline.run(*DAYS))
+
+    assert [day for unit in units for day in unit.days] == [DAYS[0]]
+    assert {day for _group, day in pipeline.failed_receiver_days} == {DAYS[1]}

@@ -145,7 +145,8 @@ T = TypeVar("T")
 #: by the download server.
 PREPARE_THREADS = 4
 
-# A day prepared in Phase 1: its processor, file tasks and files per receiver.
+# A day prepared in Phase 1: its processor (without orbits and clocks: a
+# worker prepared the day), file tasks and files per receiver.
 _PreparedDate = tuple[RinexDataProcessor, list[tuple], list[tuple[str, list[Path]]]]
 
 
@@ -1472,9 +1473,9 @@ class PipelineOrchestrator:
         the calling thread waits for it. The day's processor in this
         process loads no orbits or clocks: it plans and writes.
 
-        Thread-safe: each date downloads different SP3/CLK files,
-        aux Zarr paths are date-specific, and position computation reads
-        independent RINEX headers.
+        Days prepared at once don't collide: each date downloads different
+        SP3/CLK files, aux Zarr paths are date-specific, and position
+        computation reads independent RINEX headers.
 
         Returns
         -------
@@ -1638,9 +1639,9 @@ class PipelineOrchestrator:
                     raise
                 except (OSError, ValueError) as e:
                     # Transient race: Zarr's internal directory listing can
-                    # briefly see a concurrent thread's .DS_Store cleanup
-                    # mid-scan during Phase-1 aux cache prep. Retry once
-                    # synchronously before dropping the date.
+                    # briefly see another day's .DS_Store cleanup mid-scan
+                    # during Phase-1 aux cache prep. Retry once before
+                    # dropping the date.
                     self._logger.warning(
                         "prepare_batch_failed_retrying",
                         date=date_key,
