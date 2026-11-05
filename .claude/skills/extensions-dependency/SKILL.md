@@ -35,6 +35,16 @@ To test unreleased canvod-filemap code, point the group at a local
 checkout in an uncommitted copy (`docs/guides/extensions.md`); never
 commit a git or path source.
 
+## The one-week wait
+
+`uv lock` takes only package files that have been on PyPI for at least a
+week (`exclude-newer = "1 week"` in root `[tool.uv]`). The packages
+released from canvodpy-extensions are exempt, named in
+`exclude-newer-package` and in the Dependabot cooldown `exclude` list in
+`.github/dependabot.yml`. `just check-wait-exemptions` (weekly in CI)
+fails when a list misses a released package or names one that is not
+released; add or remove the name in both places.
+
 ## Changing canvodpy API the extensions use
 
 Search the extensions first (`git -C <extensions checkout> grep -n <name>`).
