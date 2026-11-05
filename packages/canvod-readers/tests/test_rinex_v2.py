@@ -593,6 +593,28 @@ def test_record_cut_at_end_of_file_drops_the_last_epoch(
     assert rejected[0]["first_lines"] == [len(_v2_header(rinex_v2_file)) + 4]
 
 
+def test_line_cut_in_a_field_keeps_the_next_epoch(rinex_v2_file, tmp_path):
+    """G02's first line is cut inside a value and the next epoch header
+    follows (e.g. restart after power loss). With seven observation types a
+    satellite has two lines; the next epoch is still read and kept."""
+    records = _v2_sat_records(None, None)
+    body = [
+        " 25  1  1  0  0  0.0000000  0  2G01G02",
+        *records,
+        records[0][:28],
+        " 25  1  1  0  0 15.0000000  0  2G01G02",
+        *records,
+        *records,
+    ]
+    with capture_logs() as logs:
+        ds = _read_lli(tmp_path, _v2_header(rinex_v2_file), body)
+    assert ds.epoch.values.astype("datetime64[s]").tolist() == [
+        datetime(2025, 1, 1, 0, 0, 15)
+    ]
+    rejected = [e for e in logs if e["event"] == "rinex_epochs_rejected"]
+    assert rejected[0]["first_lines"] == [len(_v2_header(rinex_v2_file)) + 1]
+
+
 def test_parse_wavelength_fact_line_normalizes_satellites():
     wl1, wl2, sats = _parse_wavelength_fact_line("     1     2     3   G 9   G12    14")
     assert (wl1, wl2) == (1, 2)

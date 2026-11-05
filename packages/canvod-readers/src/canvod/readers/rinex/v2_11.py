@@ -1087,19 +1087,13 @@ class Rnxv2Obs(GNSSDataReader, BaseModel):
                         sat_sv,
                     )
                     satellites.append(satellite)
-                except IncompleteEpochError:
-                    # Go on at the epoch header that cut the records short.
+                except IncompleteEpochError, InvalidEpochError:
+                    # Records cut short or a malformed field (e.g. a line cut
+                    # inside a value): go on at the next epoch header.
                     while idx < len(lines) and not _V2_EPOCH_HEADER.match(lines[idx]):
                         idx += 1
                     complete = False
                     break
-                except InvalidEpochError:
-                    # Malformed field: drop the epoch, read on past the
-                    # satellite's lines.
-                    n_obs = len(self.header.obs_types)
-                    idx += (n_obs + V2_MAX_OBS_PER_LINE - 1) // V2_MAX_OBS_PER_LINE
-                    complete = False
-                    continue
                 except ValueError:
                     # Skip malformed satellite data, advance to expected position
                     n_obs = len(self.header.obs_types)
