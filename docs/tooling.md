@@ -72,11 +72,14 @@ canVODpy uses a modern Python toolchain built almost entirely on the [Astral](ht
     minimum version you raise by hand in a `pyproject.toml` must be a
     release at least a week old, or `uv lock` fails. The packages of
     canvodpy-extensions (canvod-adapters, canvod-airflow, canvod-filemap)
-    are exempt: a new release can be locked right away.
+    are exempt: a new release can be locked right away. The names are
+    listed in `pyproject.toml` and in `.github/dependabot.yml`;
+    `just check-wait-exemptions` (also weekly in CI) fails when either list
+    differs from the packages canvodpy-extensions releases.
 
     The scripts under `scripts/` that need no canvodpy package
     (`release.py`, `analyze_dependencies.py`, `check_agent_docs.py`,
-    `check_package_imports.py`) declare their Python version and
+    `check_package_imports.py`, `check_wait_exemptions.py`) declare their Python version and
     dependencies in a `# /// script` block at the top (inline script
     metadata, PEP 723). `uv run --script scripts/release.py` runs such a
     script in its own small environment, without the workspace; the `just`

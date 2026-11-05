@@ -159,6 +159,11 @@ check-reuse:
 check-agent-docs:
     uv run --script scripts/check_agent_docs.py
 
+# check that the one-week-wait exemptions name every canvodpy-extensions package
+[group('code quality')]
+check-wait-exemptions:
+    uv run --script scripts/check_wait_exemptions.py
+
 # check that each package imports with only its own declared dependencies
 [group('code quality')]
 check-package-imports *PACKAGES:

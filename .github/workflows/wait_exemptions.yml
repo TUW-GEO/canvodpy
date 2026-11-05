@@ -1,0 +1,38 @@
+name: Wait Exemptions
+
+# Checks that the packages exempt from the one-week uv wait (pyproject.toml,
+# dependabot.yml) are exactly the packages released from canvodpy-extensions
+# (just check-wait-exemptions). A new package there changes no file here, so
+# the check also runs weekly.
+on:
+    pull_request:
+        paths:
+            - 'pyproject.toml'
+            - '.github/dependabot.yml'
+            - 'scripts/check_wait_exemptions.py'
+            - '.github/workflows/wait_exemptions.yml'
+    schedule:
+        - cron: '0 6 * * 1' # Weekly on Monday at 06:00 UTC
+    workflow_dispatch:
+
+permissions:
+    contents: read
+
+env:
+    FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: 'true'
+
+jobs:
+    exemptions:
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+              with:
+                  persist-credentials: false
+            - name: Install uv
+              uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2 # v10.3.3
+            - name: Install just
+              uses: taiki-e/install-action@1919c4a95903d2c33e4a221102edca87309fc14b # v2.89.0
+              with:
+                  tool: just
+            - name: Check the exemptions against the canvodpy-extensions packages
+              run: just check-wait-exemptions
