@@ -315,3 +315,23 @@ def test_no_gaps_no_warning(tmp_path: Path) -> None:
     report, _ = _check(tmp_path)
     assert report.missing_days == []
     assert report.warnings == []
+
+
+def test_a_receiver_that_stops_early_misses_the_site_s_last_days(
+    tmp_path: Path,
+) -> None:
+    """Without --end, each receiver's range ends at the site's last day."""
+    from canvodpy.orchestrator.data_check import extend_to_site_days
+
+    _touch(tmp_path / "rx", DAY1, DAY2)
+    _touch(tmp_path / "ref", DAY1, DAY2, DAY5)
+    canopy, _ = _check(tmp_path)
+    reference, _ = _check(tmp_path, directory="ref")
+
+    extend_to_site_days({"canopy_01": canopy, "reference_01": reference})
+
+    assert canopy.missing_days == ["2025003", "2025004", "2025005"]
+    assert canopy.warnings == [
+        f"{tmp_path / 'rx'} has no files on 3 days: 2025003 to 2025005."
+    ]
+    assert reference.missing_days == ["2025003", "2025004"]
