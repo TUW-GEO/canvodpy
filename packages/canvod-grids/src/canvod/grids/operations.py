@@ -511,7 +511,13 @@ def store_grid(grid: GridData, store: Any, grid_name: str) -> str:
 
     Calls ``canvod.store.store_grid``. Needs ``canvod-store`` installed.
     """
-    from canvod.store.grid_storage import store_grid as _store_grid
+    try:
+        from canvod.store.grid_storage import store_grid as _store_grid
+    except ImportError as e:
+        raise ImportError(
+            "canvod-store is required to store a grid. "
+            "Install with: uv add canvod-store"
+        ) from e
 
     return _store_grid(grid, store, grid_name)
 
@@ -576,6 +582,11 @@ def load_grid(store: Any, grid_name: str) -> GridData:
 
     Calls ``canvod.store.load_grid``. Needs ``canvod-store`` installed.
     """
-    from canvod.store.grid_storage import load_grid as _load_grid
+    try:
+        from canvod.store.grid_storage import load_grid as _load_grid
+    except ImportError as e:
+        raise ImportError(
+            "canvod-store is required to load a grid. Install with: uv add canvod-store"
+        ) from e
 
     return _load_grid(store, grid_name)

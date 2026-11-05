@@ -162,7 +162,12 @@ def _geodesic_lookup(grid: GridData) -> CellLookup:
 def _healpix_lookup(grid: GridData) -> CellLookup:
     if not {"healpix_ipix", "healpix_nside"} <= set(grid.grid.columns):
         raise _missing(grid, "HEALPix pixel numbers")
-    import healpy as hp  # type: ignore[unresolved-import]
+    try:
+        import healpy as hp  # type: ignore[unresolved-import]
+    except ImportError as e:
+        raise ImportError(
+            "healpy is required for HEALPix grid. Install with: uv add healpy"
+        ) from e
 
     nside = int(grid.grid["healpix_nside"][0])
     pixel_to_cell = np.full(hp.nside2npix(nside), np.nan)

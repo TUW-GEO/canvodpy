@@ -34,6 +34,9 @@ canVODpy requires Python 3.14.
 
 ## Example
 
+The example reads a RINEX file with canvod-readers, so install it too
+(`uv add canvod-readers`):
+
 ```python
 from canvod.readers import Rnxv3Obs
 from canvod.ops import Pipeline, TemporalAggregate

@@ -118,6 +118,7 @@ class VODCalculator(ABC, BaseModel):
         """
         try:
             from canvod.store import MyIcechunkStore
+            from canvod.store.day_blocks import load_group
         except ImportError as e:
             raise ImportError(
                 "canvod-store package required for from_icechunkstore(). "
@@ -125,8 +126,6 @@ class VODCalculator(ABC, BaseModel):
             ) from e
 
         store = MyIcechunkStore(icechunk_store_pth)
-
-        from canvod.store.day_blocks import load_group
 
         # load_group, not xr.open_zarr: it drops the padding of day blocks.
         with store.readonly_session() as session:
