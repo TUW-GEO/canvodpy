@@ -45,6 +45,7 @@ def _processor() -> RinexDataProcessor:
     proc._config.processing.params.store_radial_distance = False
     proc._config.processing.params.store_sbf_raw_observables = True
     proc.use_sbf_geometry = True
+    proc._load_aux_data = True
     proc.keep_sids = None
     proc._reader_name = "sbf"
     proc._logger = MagicMock()
