@@ -13,8 +13,8 @@ import os
 import pickle
 from pathlib import Path
 
+import canvodpy.orchestrator.pipeline as pipeline_module
 import pytest
-from canvodpy.orchestrator.pipeline import _prepare_day
 from synthetic_days import RECEIVERS, site_data
 
 from canvod.utils import testing
@@ -53,8 +53,12 @@ def test_a_day_prepared_in_a_worker_is_the_day_prepared_here(two_days) -> None:
         ((date_key, receivers),) = orchestrator._filter_dates(grouped, DAYS[0], DAYS[0])
         args = orchestrator._prepare_day_args(date_key, receivers, None)
 
-        here = _prepare_day(*args)
-        in_worker = orchestrator.worker_pool().submit(_prepare_day, *args).result()
+        here = pipeline_module._prepare_day(*args)
+        in_worker = (
+            orchestrator.worker_pool()
+            .submit(pipeline_module._prepare_day, *args)
+            .result()
+        )
 
     assert here is not None
     assert in_worker == here
@@ -92,10 +96,8 @@ def test_a_run_prepares_its_days_in_worker_processes(two_days) -> None:
 def test_a_day_whose_preparing_fails_in_a_worker_fails_its_receivers(
     two_days, monkeypatch
 ) -> None:
-    from canvodpy.orchestrator.pipeline import PipelineOrchestrator
-
     data_root = Path(two_days.sites.sites[testing.SITE_KEY].gnss_site_data_root)
-    prepare_batch = PipelineOrchestrator._prepare_batch
+    prepare_batch = pipeline_module.PipelineOrchestrator._prepare_batch
 
     def files_gone_before_preparing(self, batch, keep_vars, index):
         # Found, then gone: preparing the second day finds no files.
@@ -105,7 +107,9 @@ def test_a_day_whose_preparing_fails_in_a_worker_fails_its_receivers(
         return prepare_batch(self, batch, keep_vars, index)
 
     monkeypatch.setattr(
-        PipelineOrchestrator, "_prepare_batch", files_gone_before_preparing
+        pipeline_module.PipelineOrchestrator,
+        "_prepare_batch",
+        files_gone_before_preparing,
     )
     with _site().pipeline(n_workers=2) as pipeline:
         units = list(pipeline.run(*DAYS))
@@ -117,8 +121,6 @@ def test_a_day_whose_preparing_fails_in_a_worker_fails_its_receivers(
 def test_a_day_whose_preparing_raises_in_a_worker_fails_its_receivers(
     two_days, monkeypatch
 ) -> None:
-    import canvodpy.orchestrator.pipeline as pipeline_module
-
     prepare_day = pipeline_module._prepare_day
 
     def unreadable_second_day(site, config, date_key, *args):
