@@ -54,11 +54,11 @@ uv tool install canvodpy
 uv tool update-shell   # once: puts the tool folder on your PATH
 ```
 
-With the extension for naming recipes, for files that don't have canVOD
-names:
+Extension packages go into the same tool with `--with`, for example
+`canvod-airflow`:
 
 ```bash
-uv tool install canvodpy --with canvod-filemap
+uv tool install canvodpy --with canvod-airflow
 ```
 
 To use canVODpy from Python, add it to your uv project instead:
