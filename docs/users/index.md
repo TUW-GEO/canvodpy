@@ -108,6 +108,31 @@ You need:
     canvodpy --help
     ```
 
+    If your receivers' files don't have canVOD names, install the
+    extension for naming recipes with it
+    (see [File names](#file-names) below):
+
+    ```bash
+    uv tool install canvodpy --with canvod-filemap
+    ```
+
+    For a run you want to repeat later, install fixed versions:
+
+    ```bash
+    uv tool install canvodpy==1.0.0 --with canvod-filemap==1.0.0
+    ```
+
+    canVODpy pins only its own packages exactly. The versions of the other
+    packages (pandas, netCDF4, ...) depend on the day of the install. To
+    record them, list the tool's environment:
+
+    ```bash
+    uv pip freeze --python "$(uv tool dir)/canvodpy/bin/python"
+    ```
+
+    On Windows, the Python of the tool is `Scripts\python.exe` instead of
+    `bin/python`.
+
     To update or remove the tool, run `uv tool upgrade canvodpy` or
     `uv tool uninstall canvodpy`.
 

@@ -128,6 +128,7 @@ Because each sub-package is self-contained, users install only what they need:
 uv add canvod-readers                # readers only
 uv add canvod-readers canvod-store   # subset
 uv add canvodpy                      # everything
+uv tool install canvodpy             # the command line, as a uv tool
 ```
 
 ---
