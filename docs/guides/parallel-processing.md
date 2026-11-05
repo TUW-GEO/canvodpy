@@ -24,7 +24,7 @@ go to VOD, the workers read the next unit.
 ```text
  days of one unit
         │
-        ▼   one thread per day
+        ▼   one task per day, in the worker processes
  1. Prepare: orbit and clock data, receiver positions
         │
         ▼   one task per group of files, in date order
@@ -39,9 +39,12 @@ go to VOD, the workers read the next unit.
 
 1. **Prepare.** Each day of the unit gets its orbit and clock data,
    downloaded and interpolated or taken from the cache, and the receiver
-   positions. Up to four days of a unit are prepared at the same time,
-   one thread per day, so that the download server gets at most four
-   requests at once. A day whose orbit and clock files are not out yet is
+   positions. Each day is prepared by one of the worker processes, up to
+   four days of a unit at the same time, so that the download server
+   gets at most four requests at once. Reading the orbit and clock files
+   and interpolating them is Python code that runs one thread at a time
+   within a process (Python's global interpreter lock), so threads of the
+   main process could prepare only one day at a time. A day whose orbit and clock files are not out yet is
    left out of the unit and stays open for the next run; the other days
    go on.
 2. **Read and write.** A task for the worker processes holds the files
@@ -230,7 +233,10 @@ each task, the worker writes its memory before the task and its peak
 during the task (`worker_memory_peak`), so you can check the estimates
 on your data and set the budget. The VOD phase's tasks log the same
 event, with `task` set to `compute_vod_into_fork` and `input_mb` 0,
-since they read from the GNSS store, not from files.
+since they read from the GNSS store, not from files. Preparing a day
+logs it too, with `task` set to `_prepare_day` and `input_mb` 0: the
+worker then holds the day's orbit and clock data, which the estimate of
+the workers does not count.
 
 The run also writes the memory use of the machine to the log before each
 unit (`memory_stats`). Every run also writes memory, CPU, and disk use

@@ -234,44 +234,32 @@ def test_sites_the_run_does_not_process_are_not_checked(tmp_path, monkeypatch):
     _assert_angles(stores)
 
 
-def _count_orbit_computations(monkeypatch) -> list[list[str]]:
-    """The navigation files of each orbit computation of the run."""
-    from canvod.auxiliary.ephemeris import broadcast
+def _cache_misses(tmp_path: Path) -> int:
+    """The orbit computations of the runs so far: one per cache miss.
 
-    calls: list[list[str]] = []
-    compute = broadcast.broadcast_ephemerides
-
-    def counting(nav_files, *args, **kwargs):
-        calls.append(sorted(Path(f).name for f in nav_files))
-        return compute(nav_files, *args, **kwargs)
-
-    monkeypatch.setattr(broadcast, "broadcast_ephemerides", counting)
-    return calls
+    Counted in the run logs, since the days are prepared in worker
+    processes (#433)."""
+    return sum(
+        '"aux_cache_miss"' in line
+        for path in (tmp_path / "settings" / "logs").rglob("*.json*")
+        for line in path.read_text(encoding="utf-8").splitlines()
+    )
 
 
 def _cache_entries(cache: Path) -> set[str]:
     return {p.name for p in (cache / "aux_cache.zarr").iterdir() if p.is_dir()}
 
 
-def _cheap_cache_grid(monkeypatch) -> None:
-    """The cache grid at the files' 5 s instead of 1 s: a fifth of the work."""
-    from canvodpy.orchestrator import processor
-
-    monkeypatch.setattr(processor, "CANONICAL_AUX_GRID_SECONDS", 5.0)
-
-
 def test_a_rerun_reuses_the_cached_orbits(tmp_path, monkeypatch):
     cache = tmp_path / "cache"
     stores = _settings(tmp_path, monkeypatch, shared_cache=cache)
-    _cheap_cache_grid(monkeypatch)
-    computed = _count_orbit_computations(monkeypatch)
 
     result = _run()
 
     assert result.exit_code == 0, result.output
     _assert_angles(stores)
     # One entry per receiver: each has its own navigation files
-    assert len(computed) == 2
+    assert _cache_misses(tmp_path) == 2
     entries = _cache_entries(cache)
     assert len(entries) == 2
     # Once per satellite, with the signals they hold
@@ -289,7 +277,7 @@ def test_a_rerun_reuses_the_cached_orbits(tmp_path, monkeypatch):
     result = _run()
 
     assert result.exit_code == 0, result.output
-    assert len(computed) == 2
+    assert _cache_misses(tmp_path) == 2
     assert _cache_entries(cache) == entries
     gnss = MyIcechunkStore(stores / "gnss", store_type="gnss_store")
     xr.testing.assert_equal(
@@ -300,8 +288,6 @@ def test_a_rerun_reuses_the_cached_orbits(tmp_path, monkeypatch):
 def test_a_changed_navigation_file_gives_a_new_cache_entry(tmp_path, monkeypatch):
     cache = tmp_path / "cache"
     stores = _settings(tmp_path, monkeypatch, shared_cache=cache)
-    _cheap_cache_grid(monkeypatch)
-    computed = _count_orbit_computations(monkeypatch)
     assert _run().exit_code == 0
     entries = _cache_entries(cache)
 
@@ -316,8 +302,7 @@ def test_a_changed_navigation_file_gives_a_new_cache_entry(tmp_path, monkeypatch
 
     assert result.exit_code == 0, result.output
     # Only the canopy's orbits are computed again, into a new entry
-    assert len(computed) == 3
-    assert computed[-1][-1] == nav.name
+    assert _cache_misses(tmp_path) == 3
     new = _cache_entries(cache) - entries
     assert len(new) == 1
     assert entries < _cache_entries(cache)
