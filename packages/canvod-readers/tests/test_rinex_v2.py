@@ -1,10 +1,12 @@
 """Test RINEX v2.11 reader functionality."""
 
+from datetime import datetime
 from pathlib import Path
 
 import numpy as np
 import pytest
 import xarray as xr
+from structlog.testing import capture_logs
 
 from canvod.readers.gnss_specs.constellations import V2_UNRESOLVED_CODES
 from canvod.readers.preprocessing import pad_to_global_sid
@@ -511,6 +513,53 @@ def test_wavelength_factor_changed_by_event_flag_4(rinex_v2_file, tmp_path):
     ds = _read_lli(tmp_path, _v2_header(rinex_v2_file), body)
     lli_l2 = ds.LLI.sel(sid="G09|L2|u").values.tolist()
     assert lli_l2 == [-1, 2]
+
+
+def test_truncated_record_drops_its_epoch_and_keeps_the_next(rinex_v2_file, tmp_path):
+    """#185: G02 of the first epoch lost its second line (e.g. power loss,
+    restart appended to the file). That epoch is dropped and reported; the
+    next epoch header is not read as observations."""
+    records = _v2_sat_records(None, None)
+    body = [
+        " 25  1  1  0  0  0.0000000  0  2G01G02",
+        *records,
+        records[0],
+        " 25  1  1  0  0 15.0000000  0  2G01G02",
+        *records,
+        *records,
+        " 25  1  1  0  0 30.0000000  0  2G01G02",
+        *records,
+        *records,
+    ]
+    with capture_logs() as logs:
+        ds = _read_lli(tmp_path, _v2_header(rinex_v2_file), body)
+    assert ds.epoch.values.astype("datetime64[s]").tolist() == [
+        datetime(2025, 1, 1, 0, 0, 15),
+        datetime(2025, 1, 1, 0, 0, 30),
+    ]
+    assert ds.SNR.sel(sid="G02|L2|u").values.tolist() == [40.0, 40.0]
+    rejected = [e for e in logs if e["event"] == "rinex_epochs_rejected"]
+    assert len(rejected) == 1
+    assert rejected[0]["n_rejected"] == 1
+    assert rejected[0]["first_lines"] == [len(_v2_header(rinex_v2_file)) + 1]
+
+
+def test_truncated_record_before_an_event_without_date(rinex_v2_file, tmp_path):
+    """An event record may leave the date blank (RINEX 2.11 Table A2, epoch
+    flags 2-5); it ends a truncated record too."""
+    records = _v2_sat_records(None, None)
+    body = [
+        " 25  1  1  0  0  0.0000000  0  1G01",
+        records[0],
+        f"{'':28}4  1",
+        f"{'COMMENT AFTER RESTART':<60}COMMENT",
+        " 25  1  1  0  0 15.0000000  0  1G01",
+        *records,
+    ]
+    ds = _read_lli(tmp_path, _v2_header(rinex_v2_file), body)
+    assert ds.epoch.values.astype("datetime64[s]").tolist() == [
+        datetime(2025, 1, 1, 0, 0, 15)
+    ]
 
 
 def test_parse_wavelength_fact_line_normalizes_satellites():
