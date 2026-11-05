@@ -16,7 +16,7 @@ This check fails when the two lists differ from each other or from the
 packages canvodpy-extensions releases (the ``name`` of each
 ``packages/*/pyproject.toml`` on its main branch, fetched with a shallow
 ``git clone``). canvodpy-extensions runs the same check the other way
-round (scripts/check_wait_exemptions.py there).
+round (tools/check_wait_exemptions.py there).
 
 Usage: ``uv run --script scripts/check_wait_exemptions.py``
 """
@@ -61,8 +61,10 @@ def pyproject_exemptions() -> set[str]:
 def dependabot_exemptions() -> set[str]:
     """The packages the uv ecosystem's cooldown excludes."""
     config = yaml.safe_load((ROOT / ".github" / "dependabot.yml").read_text())
-    (uv,) = [u for u in config["updates"] if u["package-ecosystem"] == "uv"]
-    return set(uv["cooldown"]["exclude"])
+    for update in config["updates"]:
+        if update["package-ecosystem"] == "uv":
+            return set(update["cooldown"]["exclude"])
+    raise SystemExit(".github/dependabot.yml has no uv entry")
 
 
 def main() -> int:
