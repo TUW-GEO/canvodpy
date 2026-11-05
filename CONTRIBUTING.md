@@ -143,6 +143,7 @@ just docs                      # Preview documentation
 just docs-lint                 # Language check of the docs (Vale)
 just docs-lint-changed         # Vale on the pages changed since origin/main
 just docs-links                # Link check of the built docs (lychee)
+just reference-check           # Compare with the reference stores (needs the test data)
 ```
 
 ## Continuous integration
@@ -159,6 +160,18 @@ Every push and pull request runs these checks on GitHub Actions:
 - **Platform Tests:** the test suite on Linux, Windows, and macOS.
 - **Docs Quality:** a language check (Vale) of the changed pages and root
   files, and a link check (lychee) of the built site.
+- **Reference stores:** on a change of the package sources or `uv.lock`,
+  builds the GNSS and VOD stores of every setting profile from the test
+  data and compares them with the published reference stores
+  (`just reference-check`, Linux only). A difference fails the job and
+  uploads the report, `reference-check.txt`, as the artifact
+  `reference-check-report`. If your change alters a result on purpose,
+  say why in the pull request, attach the report, and change the
+  reference stores as
+  [Reference stores](https://canvodpy.eu/guides/reference-stores/#changing-the-reference-stores)
+  describes; the job fails until the new stores are published and
+  pinned. Otherwise the difference is a bug: run `just reference-check`
+  locally to fix it.
 
 ## Pull request guidelines
 
