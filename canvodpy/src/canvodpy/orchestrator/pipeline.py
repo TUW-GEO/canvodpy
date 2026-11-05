@@ -139,13 +139,77 @@ from canvodpy.run_history import (
 # A module-level TypeVar is unambiguous to both type checkers and CodeQL.
 T = TypeVar("T")
 
-#: Days of a unit prepared at the same time. Each one may download its
-#: orbit and clock files, and a unit has up to 31 days; more connections at
-#: once than this risk being refused by the download server.
+#: Days of a unit prepared at the same time, each in a worker of the run's
+#: pool (#433). Each one may download its orbit and clock files, and a unit
+#: has up to 31 days; more connections at once than this risk being refused
+#: by the download server.
 PREPARE_THREADS = 4
 
 # A day prepared in Phase 1: its processor, file tasks and files per receiver.
 _PreparedDate = tuple[RinexDataProcessor, list[tuple], list[tuple[str, list[Path]]]]
+
+
+@dataclass(frozen=True)
+class _DayTasks:
+    """A day prepared in a worker: what the main process needs of it.
+
+    The day's orbits and clocks stay in the aux Zarr the worker wrote,
+    which the file tasks read.
+    """
+
+    task_descriptors: list[tuple]
+    receiver_file_map: list[tuple[str, list[Path]]]
+    canonical_names: dict[Path, str]
+
+
+def _matched_dirs(
+    date_key: str,
+    receiver_configs: list[tuple[str, str, ReceiverDay, ReceiverDay | None, str]],
+) -> MatchedDirs:
+    """The ``MatchedDirs`` of a day's processor: the first receiver's folder."""
+    first_data_dir = receiver_configs[0][2]
+    return MatchedDirs(
+        canopy_data_dir=first_data_dir.directory,
+        reference_data_dir=first_data_dir.directory,
+        yyyydoy=YYYYDOY.from_str(date_key),
+    )
+
+
+def _prepare_day(
+    site: GnssResearchSite,
+    config: CanvodConfig,
+    date_key: str,
+    receiver_configs: list[tuple[str, str, ReceiverDay, ReceiverDay | None, str]],
+    keep_vars: list[str] | None,
+    n_max_workers: int | None,
+) -> _DayTasks | None:
+    """Prepare one day (Phase 1) in a worker process of the run's pool.
+
+    Reads the orbit and clock products, interpolates them onto the day's
+    epochs, computes the receiver positions and builds one task per file
+    (:meth:`RinexDataProcessor.prepare_batch_tasks`). This work holds the
+    GIL, so a worker process does it, not a thread of the main process
+    (#433). Takes the run's settings, never the settings file.
+
+    Returns
+    -------
+    _DayTasks | None
+        ``None`` if the day gets no tasks.
+    """
+    processor = RinexDataProcessor(
+        matched_data_dirs=_matched_dirs(date_key, receiver_configs),
+        site=site,
+        n_max_workers=n_max_workers,
+        config=config,
+    )
+    task_descriptors, receiver_file_map = processor.prepare_batch_tasks(
+        keep_vars, receiver_configs
+    )
+    if not task_descriptors:
+        return None
+    return _DayTasks(
+        task_descriptors, receiver_file_map, dict(processor._canonical_names)
+    )
 
 
 def _windowed_completions(  # noqa: UP047 -- see TypeVar comment above
@@ -1367,6 +1431,8 @@ class PipelineOrchestrator:
         self,
         date_key: str,
         receivers: dict[str, tuple[ReceiverDay, str, ReceiverDay | None, str]],
+        *,
+        load_aux_data: bool = True,
     ) -> RinexDataProcessor:
         """Create a RinexDataProcessor for a single DOY.
 
@@ -1376,6 +1442,9 @@ class PipelineOrchestrator:
             YYYYDOY string.
         receivers : dict
             ``{store_group: (data_dir, receiver_type, position_data_dir, reader_format)}``.
+        load_aux_data : bool, default True
+            As for ``RinexDataProcessor``: ``False`` for a day prepared in
+            a worker, whose processor only plans and writes.
 
         Returns
         -------
@@ -1383,17 +1452,12 @@ class PipelineOrchestrator:
 
         """
         receiver_configs = self._build_receiver_configs(receivers)
-        first_data_dir = receiver_configs[0][2]
-        matched_dirs = MatchedDirs(
-            canopy_data_dir=first_data_dir.directory,
-            reference_data_dir=first_data_dir.directory,
-            yyyydoy=YYYYDOY.from_str(date_key),
-        )
         return RinexDataProcessor(
-            matched_data_dirs=matched_dirs,
+            matched_data_dirs=_matched_dirs(date_key, receiver_configs),
             site=self.site,
             n_max_workers=self.n_max_workers,
             config=self._config,
+            load_aux_data=load_aux_data,
         )
 
     def _prepare_single_date(
@@ -1403,6 +1467,10 @@ class PipelineOrchestrator:
         keep_vars: list[str] | None,
     ) -> _PreparedDate | None:
         """Prepare one DOY for flat loky submission (Phase 1 helper).
+
+        A worker of the run's pool prepares the day (:func:`_prepare_day`);
+        the calling thread waits for it. The day's processor in this
+        process loads no orbits or clocks: it plans and writes.
 
         Thread-safe: each date downloads different SP3/CLK files,
         aux Zarr paths are date-specific, and position computation reads
@@ -1420,14 +1488,34 @@ class PipelineOrchestrator:
             If auxiliary data download fails.
 
         """
-        processor = self._create_processor_for_date(date_key, receivers)
-        receiver_configs = self._build_receiver_configs(receivers)
-        task_descriptors, receiver_file_map = processor.prepare_batch_tasks(
-            keep_vars, receiver_configs
+        args = self._prepare_day_args(date_key, receivers, keep_vars)
+        day = cast(
+            "_DayTasks | None",
+            self.worker_pool().submit(run_measured, 0, _prepare_day, *args).result(),
         )
-        if not task_descriptors:
+        if day is None:
             return None
-        return processor, task_descriptors, receiver_file_map
+        processor = self._create_processor_for_date(
+            date_key, receivers, load_aux_data=False
+        )
+        processor._canonical_names.update(day.canonical_names)
+        return processor, day.task_descriptors, day.receiver_file_map
+
+    def _prepare_day_args(
+        self,
+        date_key: str,
+        receivers: dict[str, tuple[ReceiverDay, str, ReceiverDay | None, str]],
+        keep_vars: list[str] | None,
+    ) -> tuple:
+        """The arguments of :func:`_prepare_day` for one day of this run."""
+        return (
+            self.site,
+            self._config,
+            date_key,
+            self._build_receiver_configs(receivers),
+            keep_vars,
+            self.n_max_workers,
+        )
 
     def _grow_day_blocks(
         self,
@@ -1496,11 +1584,13 @@ class PipelineOrchestrator:
         dict[str, tuple[RinexDataProcessor, list[tuple[str, list[Path]]]]],
         dict[str, list[tuple]],
     ]:
-        """Phase 1 of a batch: prepare its dates, one thread per date.
+        """Phase 1 of a batch: prepare its dates in the run's worker pool.
 
         Auxiliary data (SP3/CLK interpolation or cache), receiver positions
-        and one task per file. Reads no store, so it runs while the batch
-        before is read and written. A date whose orbit products cannot be
+        and one task per file, each date in a worker process
+        (:meth:`_prepare_single_date`); one thread per date here waits for
+        it, at most ``PREPARE_THREADS`` at a time. Reads no store, so it
+        runs while the batch before is read and written. A date whose orbit products cannot be
         downloaded is left out. A receiver-day that gets no tasks (its
         files give no receiver position, for example), or whose date fails
         otherwise, also on a second try, is recorded as failed.

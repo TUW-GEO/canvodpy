@@ -284,7 +284,10 @@ def test_a_run_logs_its_sizes_and_the_worker_peaks(rosalia_site):
     peaks = _log_events(log_dir, "worker_memory_peak")
     assert peaks
     assert all(p["peak_gb"] >= p["before_gb"] > 0 for p in peaks)
-    assert all(p["input_mb"] > 0 for p in peaks)
+    # Preparing a day reads no input files (#433); the file tasks do
+    file_peaks = [p for p in peaks if p["task"] != "_prepare_day"]
+    assert file_peaks
+    assert all(p["input_mb"] > 0 for p in file_peaks)
 
 
 @pytest.mark.integration

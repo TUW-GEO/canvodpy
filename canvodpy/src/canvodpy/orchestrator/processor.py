@@ -1298,6 +1298,10 @@ class RinexDataProcessor:
         Maximum parallel workers (CPUs) for RINEX processing.
         ``None`` lets ``ProcessPoolExecutor`` auto-detect via
         ``os.cpu_count()``.
+    load_aux_data : bool, default True
+        Load the day's orbit and clock products. ``False`` for a day
+        prepared in a worker of the run's pool (#433): this processor then
+        only plans and writes the day's files, and cannot prepare it.
 
     """
 
@@ -1310,6 +1314,8 @@ class RinexDataProcessor:
         reader_name: str = "rinex3",
         use_sbf_geometry: bool = False,
         config: CanvodConfig | None = None,
+        *,
+        load_aux_data: bool = True,
     ) -> None:
         t_init_start = time.perf_counter()
 
@@ -1400,6 +1406,8 @@ class RinexDataProcessor:
                 "aux_pipeline_skipped",
                 reason="ephemeris_source=broadcast, using SBF SatVisibility",
             )
+        elif not load_aux_data:
+            self.aux_pipeline = None
         else:
             self.aux_pipeline = self._initialize_aux_pipeline()
 

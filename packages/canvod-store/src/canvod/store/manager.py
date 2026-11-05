@@ -101,6 +101,22 @@ class GnssResearchSite:
             vod_store=str(self.vod_store_path),
         )
 
+    def __getstate__(self) -> dict[str, Any]:
+        """The site without its open stores and its logger.
+
+        A run sends the site to its worker processes (canvodpy #433); a
+        copy opens its stores again from their paths on first use.
+        """
+        state = dict(vars(self))
+        for name in ("gnss_store", "vod_store", "_logger"):
+            state.pop(name, None)
+        return state
+
+    def __setstate__(self, state: dict[str, Any]) -> None:
+        """Restore a pickled site; see :meth:`__getstate__`."""
+        vars(self).update(state)
+        self._logger = structlog.get_logger(__name__).bind(site=self.site_name)
+
     @functools.cached_property
     def gnss_store(self) -> MyIcechunkStore:
         """The site's GNSS store, opened on first use.
