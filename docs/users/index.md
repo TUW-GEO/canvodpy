@@ -124,7 +124,7 @@ You need:
 
     canVODpy pins only its own packages exactly. The versions of the other
     packages (pandas, netCDF4, ...) depend on the day of the install, and
-    the patch version of Python 3.14 can differ between installs. To
+    the Python version can differ between installs. To
     record them, list the tool's environment and its Python:
 
     === "macOS / Linux"
