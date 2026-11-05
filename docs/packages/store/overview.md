@@ -406,6 +406,14 @@ A new or changed setting shows under
 it changes what the store records about how it was built, so it counts
 as a difference.
 
+Attributes are compared exactly, except the receiver positions
+(`APPROX POSITION X/Y/Z` and `position_ecef_m`). They match within
+5e-5 m, half the resolution of the RINEX header field APPROX POSITION
+XYZ, format 3F14.4 = 0.0001 m (RINEX 3.04, header section; RINEX 2.11,
+Table A1). A position computed from NMEA latitude, longitude and height
+differs in the last bits between platforms. The table is
+`ATTRIBUTE_TOLERANCES` in the same module.
+
 The log books (`metadata/table`) are not compared. They record how a
 run wrote each file (write times, snapshot ids, run ids, paths); what
 the files hold is compared through the groups, and which files were

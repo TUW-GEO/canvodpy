@@ -124,7 +124,9 @@ difference, the job fails and uploads the report as the artifact
 
 Integer and flag variables, coordinates, groups, and every attribute
 except the ones that change with every run (times, ids, the software
-version; `VOLATILE_ATTRIBUTES`) must match exactly. Float variables are compared within one
+version; `VOLATILE_ATTRIBUTES`) must match exactly. The receiver
+positions are the one exception: they match within 5e-5 m
+(`ATTRIBUTE_TOLERANCES`). Float variables are compared within one
 absolute tolerance per variable, derived from the finest resolution any
 format records. The table, with the derivation and its sources, is in
 the [store overview](../packages/store/overview.md); the code holds it
