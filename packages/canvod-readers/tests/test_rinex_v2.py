@@ -562,6 +562,37 @@ def test_truncated_record_before_an_event_without_date(rinex_v2_file, tmp_path):
     ]
 
 
+@pytest.mark.parametrize(
+    "last_lines",
+    [
+        pytest.param(lambda records: [records[0]], id="file-ends-before-a-line"),
+        pytest.param(
+            lambda records: [records[0], records[1][:28]], id="line-cut-in-a-field"
+        ),
+    ],
+)
+def test_record_cut_at_end_of_file_drops_the_last_epoch(
+    rinex_v2_file, tmp_path, last_lines
+):
+    """A file that ends inside the last epoch (e.g. power loss) loses that
+    epoch, also when the cut falls inside an F14.3 field (RINEX 2.11 Table
+    A2), which would otherwise read as a shorter number."""
+    records = _v2_sat_records(None, None)
+    body = [
+        " 25  1  1  0  0  0.0000000  0  1G01",
+        *records,
+        " 25  1  1  0  0 15.0000000  0  1G01",
+        *last_lines(records),
+    ]
+    with capture_logs() as logs:
+        ds = _read_lli(tmp_path, _v2_header(rinex_v2_file), body)
+    assert ds.epoch.values.astype("datetime64[s]").tolist() == [
+        datetime(2025, 1, 1, 0, 0, 0)
+    ]
+    rejected = [e for e in logs if e["event"] == "rinex_epochs_rejected"]
+    assert rejected[0]["first_lines"] == [len(_v2_header(rinex_v2_file)) + 4]
+
+
 def test_parse_wavelength_fact_line_normalizes_satellites():
     wl1, wl2, sats = _parse_wavelength_fact_line("     1     2     3   G 9   G12    14")
     assert (wl1, wl2) == (1, 2)

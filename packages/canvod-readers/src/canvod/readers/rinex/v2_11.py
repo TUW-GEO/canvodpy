@@ -105,6 +105,11 @@ _V2_EPOCH_HEADER = re.compile(
     r" [ \d]\d(?: [ \d]\d){4}[ \d]{3}\.\d{7}  [0-6][ \d]{2}\d"
     r"| {28}[2-5][ \d]{2}\d"
 )
+# Observation field, rinex211.txt Table A2: F14.3 (decimal point in column
+# 10), then LLI and SSI (I1 each, blank if not known).
+_V2_OBS_VALUE = re.compile(r" *-?[0-9]*\.[0-9]{3}")
+_V2_OBS_VALUE_END = 14
+_V2_FLAG_OF_CHAR: dict[str, int | None] = {" ": None} | {str(d): d for d in range(10)}
 _V2_SNR_METADATA = {
     **SNR_METADATA,
     "description": (
@@ -888,37 +893,34 @@ class Rnxv2Obs(GNSSDataReader, BaseModel):
     ) -> tuple[float | None, int | None, int | None]:
         """Parse a single 16-char observation field: F14.3, I1(LLI), I1(SSI).
 
-        Returns (value, lli, ssi).
+        Returns (value, lli, ssi). A blank value is a missing observation,
+        and so is 0.0 (rinex211.txt Table A2).
+
+        Raises
+        ------
+        InvalidEpochError
+            If the field is neither blank nor in that form, e.g. a line cut
+            inside a value.
         """
         if not field or not field.strip():
             return None, None, None
 
-        # Pad to 16 chars if needed
+        # Pad to 16 chars: lines may omit trailing blanks
         field = field.ljust(V2_OBS_FIELD_WIDTH)
+        lli = _V2_FLAG_OF_CHAR.get(field[14], -1)
+        ssi = _V2_FLAG_OF_CHAR.get(field[15], -1)
+        value_blank = field[:_V2_OBS_VALUE_END].isspace()
+        if (
+            lli == -1
+            or ssi == -1
+            or not (value_blank or _V2_OBS_VALUE.fullmatch(field, 0, _V2_OBS_VALUE_END))
+        ):
+            msg = f"Malformed observation field: {field!r}"
+            raise InvalidEpochError(msg)
 
-        # Value is in chars 0-13 (F14.3)
-        value_str = field[:14].strip()
-        lli_char = field[14:15]
-        ssi_char = field[15:16]
-
-        value: float | None = None
-        lli: int | None = None
-        ssi: int | None = None
-
-        if value_str:
-            try:
-                value = float(value_str)
-                # RINEX spec: missing observations written as 0.0 or blanks
-                if value == 0.0:
-                    value = None
-            except ValueError:
-                pass
-
-        if lli_char.strip() and lli_char.strip().isdigit():
-            lli = int(lli_char)
-        if ssi_char.strip() and ssi_char.strip().isdigit():
-            ssi = int(ssi_char)
-
+        value = None if value_blank else float(field[:_V2_OBS_VALUE_END])
+        if value == 0.0:
+            value = None
         return value, lli, ssi
 
     def _parse_satellite_observations(
@@ -940,7 +942,10 @@ class Rnxv2Obs(GNSSDataReader, BaseModel):
         Raises
         ------
         IncompleteEpochError
-            If an epoch header comes before all of the satellite's lines.
+            If an epoch header or the end of the file comes before all of
+            the satellite's lines.
+        InvalidEpochError
+            If an observation field is malformed.
         """
         obs_types_v2 = self.header.obs_types
         n_obs = len(obs_types_v2)
@@ -952,7 +957,8 @@ class Rnxv2Obs(GNSSDataReader, BaseModel):
 
         for _line_num in range(n_lines):
             if line_idx >= len(lines):
-                break
+                msg = f"Observation records of {sv} end at the end of the file"
+                raise IncompleteEpochError(msg)
             obs_line = lines[line_idx]
             if _V2_EPOCH_HEADER.match(obs_line):
                 msg = f"Observation records of {sv} end at line {line_idx + 1}"
@@ -987,8 +993,9 @@ class Rnxv2Obs(GNSSDataReader, BaseModel):
     def iter_epochs(self, rejected: list[int] | None = None):
         """Yield parsed epoch records from the file.
 
-        An epoch whose observation records end early (an epoch header
-        follows) is dropped; reading goes on at that header.
+        An epoch whose observation records end early (an epoch header or
+        the end of the file follows) is dropped; reading goes on at that
+        header. An epoch with a malformed observation field is dropped too.
 
         Parameters
         ----------
@@ -1082,11 +1089,18 @@ class Rnxv2Obs(GNSSDataReader, BaseModel):
                     satellites.append(satellite)
                 except IncompleteEpochError:
                     # Go on at the epoch header that cut the records short.
-                    while not _V2_EPOCH_HEADER.match(lines[idx]):
+                    while idx < len(lines) and not _V2_EPOCH_HEADER.match(lines[idx]):
                         idx += 1
                     complete = False
                     break
-                except InvalidEpochError, ValueError:
+                except InvalidEpochError:
+                    # Malformed field: drop the epoch, read on past the
+                    # satellite's lines.
+                    n_obs = len(self.header.obs_types)
+                    idx += (n_obs + V2_MAX_OBS_PER_LINE - 1) // V2_MAX_OBS_PER_LINE
+                    complete = False
+                    continue
+                except ValueError:
                     # Skip malformed satellite data, advance to expected position
                     n_obs = len(self.header.obs_types)
                     n_lines_per_sat = (
@@ -1384,7 +1398,8 @@ class Rnxv2Obs(GNSSDataReader, BaseModel):
                 file=self.fpath.name,
                 n_rejected=len(rejected),
                 first_lines=[i + 1 for i in rejected[:10]],
-                reason="observation records end before an epoch header",
+                reason="observation records end before an epoch header or "
+                "the end of the file, or an observation field is malformed",
             )
 
         # Build coordinates
