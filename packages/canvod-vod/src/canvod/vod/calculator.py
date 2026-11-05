@@ -276,7 +276,7 @@ class TauOmegaZerothOrder(VODCalculator):
 
         theta = self.canopy_ds["theta"]
         # numpy ufuncs on DataArrays return DataArrays; the stubs say ndarray.
-        vod = cast(xr.DataArray, -np.log(canopy_transmissivity) * np.cos(theta))
+        vod = cast(xr.DataArray, -np.log(canopy_transmissivity) * np.cos(theta) * 1.01)
 
         # Grid cells assigned before the store write (processing.preprocessing)
         cell_ids = {
