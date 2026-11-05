@@ -41,7 +41,7 @@
 | canvodpy/src/canvodpy/logging/run\_history\_handler.py                          |       76 |        4 |     95% |115, 128, 130, 132 |
 | canvodpy/src/canvodpy/logging/stage\_timer.py                                   |       11 |        2 |     82% |     17-18 |
 | canvodpy/src/canvodpy/orchestrator/\_\_init\_\_.py                              |       14 |        4 |     71% |39-41, 43-45 |
-| canvodpy/src/canvodpy/orchestrator/data\_check.py                               |      160 |       17 |     89% |147-160, 266-268, 349-350, 394-398, 415 |
+| canvodpy/src/canvodpy/orchestrator/data\_check.py                               |      208 |       19 |     91% |176, 211, 223-236, 342-344, 432-433, 477-481, 499 |
 | canvodpy/src/canvodpy/orchestrator/discovery.py                                 |      351 |       12 |     97% |153, 220-225, 326-327, 432, 581-582, 635-636, 720 |
 | canvodpy/src/canvodpy/orchestrator/forked\_writes.py                            |      181 |       24 |     87% |197-207, 233-236, 245, 251-254, 258, 260-261, 359-360, 403-405 |
 | canvodpy/src/canvodpy/orchestrator/interpolator.py                              |       21 |        0 |    100% |           |
@@ -176,7 +176,7 @@
 | packages/canvod-readers/src/canvod/readers/nmea/\_\_init\_\_.py                 |        2 |        0 |    100% |           |
 | packages/canvod-readers/src/canvod/readers/nmea/exceptions.py                   |       10 |        0 |    100% |           |
 | packages/canvod-readers/src/canvod/readers/nmea/v4\_00.py                       |      387 |       51 |     87% |74-75, 184, 192, 197, 204, 258-259, 265, 272-273, 311, 319-320, 409-410, 414-416, 420-421, 491-492, 519, 523, 527, 531-535, 539, 543-547, 553, 587-588, 611, 641-643, 737, 742-743, 798-799, 824-825 |
-| packages/canvod-readers/src/canvod/readers/preprocessing.py                     |      164 |        8 |     95% |164, 168-176, 182, 250, 326, 331 |
+| packages/canvod-readers/src/canvod/readers/preprocessing.py                     |      164 |        8 |     95% |164, 168-176, 182, 250, 319, 331 |
 | packages/canvod-readers/src/canvod/readers/rinex/\_\_init\_\_.py                |        4 |        0 |    100% |           |
 | packages/canvod-readers/src/canvod/readers/rinex/nav.py                         |       87 |        5 |     94% |233, 240, 248, 250-251 |
 | packages/canvod-readers/src/canvod/readers/rinex/v2\_11.py                      |      733 |      579 |     21% |174-175, 178-180, 184-187, 202-208, 216-218, 279-281, 291-299, 307-501, 506, 509, 515-516, 532-555, 560-563, 627-638, 699-704, 708, 713, 716, 724, 730-742, 746, 752, 756-770, 774-776, 780, 784-788, 810-849, 876-888, 905-924, 950-991, 1012-1111, 1131, 1145-1154, 1158, 1162-1180, 1196-1487, 1521-1574, 1582-1598, 1603-1616, 1619-1662, 1692-1714, 1739-1744 |
@@ -248,7 +248,7 @@
 | packages/canvod-viz/src/canvod/viz/widgets/hemisphere\_widgets.py               |       27 |        0 |    100% |           |
 | packages/canvod-vod/src/canvod/vod/\_\_init\_\_.py                              |        4 |        0 |    100% |           |
 | packages/canvod-vod/src/canvod/vod/calculator.py                                |       76 |        8 |     89% |55, 77, 127-136 |
-| **TOTAL**                                                                       | **30319** | **8426** | **72%** |           |
+| **TOTAL**                                                                       | **30367** | **8428** | **72%** |           |
 
 
 ## Setup coverage badge
