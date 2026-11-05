@@ -334,9 +334,9 @@ canvodpy config validate --site ExampleSite
 ```
 
 The check finds the files of each receiver exactly as a run does. It
-lists the days and files a run would process, the files it would skip,
-and the problems that would stop the run, for example two files that
-cover the same time.
+lists the days and files a run would process, the days in between
+without files, the files it would skip, and the problems that would stop
+the run, for example two files that cover the same time.
 
 ---
 
