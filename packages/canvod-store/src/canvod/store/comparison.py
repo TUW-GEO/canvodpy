@@ -80,8 +80,8 @@ FLOAT_TOLERANCES: dict[str, float] = {
 #: * ``APPROX POSITION X/Y/Z``, ``position_ecef_m``,
 #:   ``canvod:position_ecef_m``: 5e-5 m. Half the resolution of the RINEX
 #:   header field APPROX POSITION XYZ, format 3F14.4 = 0.0001 m (RINEX
-#:   3.04, https://files.igs.org/pub/data/format/rinex304.pdf, header
-#:   section; RINEX 2.11,
+#:   3.04, https://files.igs.org/pub/data/format/rinex304.pdf, Table
+#:   A2; RINEX 2.11,
 #:   https://files.igs.org/pub/data/format/rinex211.txt, Table A1). A
 #:   position computed from NMEA latitude, longitude and height differs
 #:   in the last bits between platforms.
