@@ -100,7 +100,7 @@ RINEX 2 satellite numbers `snn` follow the same convention as RINEX 3: for SBAS,
 
 ## Records that end early
 
-An epoch record has `ceil(n / 5)` lines per satellite, for `n` observation types (RINEX 2.11 Table A2, five observations per line). If the next epoch header (Table A2: date, time, flag, satellite count) appears before all lines of a satellite are read, the record ends early. The reader drops that epoch, logs `rinex_epochs_rejected` with the line numbers of the dropped epoch headers, and continues at the next header, so the following epoch is kept.
+An epoch record has `ceil(n / 5)` lines per satellite, for `n` observation types (RINEX 2.11 Table A2, five observations per line). If the next epoch header (Table A2: date, time, flag, satellite count) appears before all lines of a satellite are read, the record ends early. The reader drops that epoch, logs `rinex_epochs_rejected` with the line numbers of the dropped epoch headers, and continues at the next header, so the following epoch is kept when it is complete.
 
 ---
 
