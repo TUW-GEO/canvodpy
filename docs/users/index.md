@@ -123,15 +123,23 @@ You need:
     ```
 
     canVODpy pins only its own packages exactly. The versions of the other
-    packages (pandas, netCDF4, ...) depend on the day of the install. To
-    record them, list the tool's environment:
+    packages (pandas, netCDF4, ...) depend on the day of the install, and
+    the patch version of Python 3.14 can differ between installs. To
+    record them, list the tool's environment and its Python:
 
-    ```bash
-    uv pip freeze --python "$(uv tool dir)/canvodpy/bin/python"
-    ```
+    === "macOS / Linux"
 
-    On Windows, the Python of the tool is `Scripts\python.exe` instead of
-    `bin/python`.
+        ```bash
+        uv pip freeze --python "$(uv tool dir)/canvodpy/bin/python"
+        "$(uv tool dir)/canvodpy/bin/python" --version
+        ```
+
+    === "Windows (PowerShell)"
+
+        ```powershell
+        uv pip freeze --python "$(uv tool dir)\canvodpy\Scripts\python.exe"
+        & "$(uv tool dir)\canvodpy\Scripts\python.exe" --version
+        ```
 
     To update or remove the tool, run `uv tool upgrade canvodpy` or
     `uv tool uninstall canvodpy`.
