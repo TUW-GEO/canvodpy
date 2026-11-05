@@ -98,8 +98,9 @@ published to PyPI on its own, all of them except `canvod-preflight` so
 far, so you can install only the parts you need:
 
 ```bash
-uv add canvod-readers   # the readers only
-uv add canvodpy         # everything
+uv add canvod-readers     # the readers only
+uv add canvodpy           # everything
+uv tool install canvodpy  # the command line, as a uv tool
 ```
 
 ---
