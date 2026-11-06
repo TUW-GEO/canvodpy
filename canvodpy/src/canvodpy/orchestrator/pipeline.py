@@ -145,6 +145,9 @@ T = TypeVar("T")
 #: by the download server.
 PREPARE_THREADS = 4
 
+#: Held while a thread gets or replaces a run's worker pool.
+_POOL_LOCK = threading.Lock()
+
 # A day prepared in Phase 1: its processor (without orbits and clocks: a
 # worker prepared the day), file tasks and files per receiver.
 _PreparedDate = tuple[RinexDataProcessor, list[tuple], list[tuple[str, list[Path]]]]
@@ -513,6 +516,9 @@ class PipelineOrchestrator:
         (:meth:`_warn_satellites_without_position`). Default None (no-op).
 
     """
+
+    #: The run's worker pool (:meth:`worker_pool`), once a thread asked for it.
+    _pool: Executor | None = None
 
     @deprecate_no_effect_arguments
     @deprecated_argument(
@@ -2362,8 +2368,25 @@ class PipelineOrchestrator:
         """The run's worker pool: loky's reusable executor, sized for the run.
 
         The GNSS phase and a run's VOD phase share it; asking loky for an
-        executor with other settings would restart its workers.
+        executor with other settings would restart its workers. loky keeps
+        one executor per thread, and a run asks from several threads (the
+        main thread, the one reading the units, those preparing the days),
+        so the run keeps the first one and hands it to every thread: one
+        pool, the workers the memory budget planned (#433). A pool that
+        broke or was shut down is replaced.
         """
+        with _POOL_LOCK:
+            pool = self._pool
+            flags = getattr(pool, "_flags", None)  # loky's state of the pool
+            if (
+                pool is None
+                or getattr(flags, "broken", None)
+                or getattr(flags, "shutdown", False)
+            ):
+                self._pool = pool = self._new_pool()
+            return pool
+
+    def _new_pool(self) -> Executor:
         resources = self._config.processing.params.resolve_resources()
         return _loky_reusable(
             max_workers=self.pool_workers,
