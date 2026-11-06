@@ -43,7 +43,7 @@
 | canvodpy/src/canvodpy/logging/stage\_timer.py                                   |       11 |        2 |     82% |     17-18 |
 | canvodpy/src/canvodpy/orchestrator/\_\_init\_\_.py                              |       14 |        4 |     71% |39-41, 43-45 |
 | canvodpy/src/canvodpy/orchestrator/data\_check.py                               |      208 |       19 |     91% |176, 211, 223-236, 342-344, 432-433, 477-481, 499 |
-| canvodpy/src/canvodpy/orchestrator/discovery.py                                 |      351 |       12 |     97% |153, 220-225, 326-327, 432, 581-582, 635-636, 720 |
+| canvodpy/src/canvodpy/orchestrator/discovery.py                                 |      357 |       12 |     97% |153, 220-225, 326-327, 432, 581-582, 635-636, 720 |
 | canvodpy/src/canvodpy/orchestrator/forked\_writes.py                            |      181 |       24 |     87% |197-207, 233-236, 245, 251-254, 258, 260-261, 359-360, 403-405 |
 | canvodpy/src/canvodpy/orchestrator/interpolator.py                              |       21 |        0 |    100% |           |
 | canvodpy/src/canvodpy/orchestrator/matcher.py                                   |       48 |        8 |     83% |    94-102 |
@@ -108,7 +108,7 @@
 | packages/canvod-config/src/canvod/config/models/references.py                   |       18 |        0 |    100% |           |
 | packages/canvod-config/src/canvod/config/models/root.py                         |       17 |        0 |    100% |           |
 | packages/canvod-config/src/canvod/config/models/sids.py                         |       37 |        3 |     92% |     81-83 |
-| packages/canvod-config/src/canvod/config/models/sites.py                        |      190 |        5 |     97% |476, 500-503 |
+| packages/canvod-config/src/canvod/config/models/sites.py                        |      190 |        5 |     97% |477, 501-504 |
 | packages/canvod-config/src/canvod/config/models/storage.py                      |       85 |        5 |     94% |308, 350-353 |
 | packages/canvod-config/src/canvod/config/remote.py                              |      106 |        7 |     93% |131, 172-174, 271-273 |
 | packages/canvod-config/src/canvod/config/settings\_help.py                      |      185 |        5 |     97% |132, 142, 309, 326-327 |
@@ -249,7 +249,7 @@
 | packages/canvod-viz/src/canvod/viz/widgets/hemisphere\_widgets.py               |       27 |        0 |    100% |           |
 | packages/canvod-vod/src/canvod/vod/\_\_init\_\_.py                              |        4 |        0 |    100% |           |
 | packages/canvod-vod/src/canvod/vod/calculator.py                                |       76 |        8 |     89% |55, 77, 121, 128-135 |
-| **TOTAL**                                                                       | **30537** | **8431** | **72%** |           |
+| **TOTAL**                                                                       | **30543** | **8431** | **72%** |           |
 
 
 ## Setup coverage badge
