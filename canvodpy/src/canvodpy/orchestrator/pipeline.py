@@ -36,6 +36,7 @@ import structlog
 import xarray as xr
 from icechunk.session import ForkSession
 from loky import get_reusable_executor as _loky_reusable
+from loky.process_executor import ProcessPoolExecutor as _LokyPool
 
 from canvod.config import CanvodConfig, load_config
 from canvod.config.models import mixed_format_error, reference_store_group
@@ -518,7 +519,7 @@ class PipelineOrchestrator:
     """
 
     #: The run's worker pool (:meth:`worker_pool`), once a thread asked for it.
-    _pool: Executor | None = None
+    _pool: _LokyPool | None = None
 
     @deprecate_no_effect_arguments
     @deprecated_argument(
@@ -2373,20 +2374,21 @@ class PipelineOrchestrator:
         main thread, the one reading the units, those preparing the days),
         so the run keeps the first one and hands it to every thread: one
         pool, the workers the memory budget planned (#433). A pool that
-        broke or was shut down is replaced.
+        broke or was shut down, or that a new memory plan resized, is
+        replaced.
         """
         with _POOL_LOCK:
             pool = self._pool
-            flags = getattr(pool, "_flags", None)  # loky's state of the pool
             if (
                 pool is None
-                or getattr(flags, "broken", None)
-                or getattr(flags, "shutdown", False)
+                or pool._flags.broken  # loky's state of the pool
+                or pool._flags.shutdown
+                or pool._max_workers != self.pool_workers
             ):
                 self._pool = pool = self._new_pool()
             return pool
 
-    def _new_pool(self) -> Executor:
+    def _new_pool(self) -> _LokyPool:
         resources = self._config.processing.params.resolve_resources()
         return _loky_reusable(
             max_workers=self.pool_workers,
