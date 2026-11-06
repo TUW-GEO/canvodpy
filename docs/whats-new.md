@@ -7,9 +7,10 @@ description: The changes canVODpy v1.1.0 and v1.0.0 bring, by area
 
 ## v1.1.0
 
-The release notebook shows each change, on the demo data where it can:
-[release-notes/v1.1.0.py](https://github.com/TUW-GEO/canvodpy/blob/main/release-notes/v1.1.0.py)
-([open in molab](https://molab.marimo.io/github/TUW-GEO/canvodpy/blob/main/release-notes/v1.1.0.py)).
+The release notebook shows each change, on the demo data where it can.
+
+[Open the release notebook](https://molab.marimo.io/github/TUW-GEO/canvodpy/blob/main/release-notes/v1.1.0.py){ .md-button .md-button--primary }
+[View it on GitHub](https://github.com/TUW-GEO/canvodpy/blob/main/release-notes/v1.1.0.py){ .md-button }
 
 !!! warning "A store created with v1.0.0"
 
