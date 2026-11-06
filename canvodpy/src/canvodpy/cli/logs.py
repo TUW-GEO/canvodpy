@@ -97,6 +97,7 @@ def _copy_log_files(log_dir: Path, dest: Path) -> tuple[int, int, int]:
         with handle, target.open("wb") as out:
             shutil.copyfileobj(handle, out)
             status = os.fstat(handle.fileno())
+        os.chmod(target, stat.S_IMODE(status.st_mode))
         os.utime(target, ns=(status.st_atime_ns, status.st_mtime_ns))
         count += 1
         size += target.stat().st_size
