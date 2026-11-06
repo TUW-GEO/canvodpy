@@ -29,6 +29,7 @@ from canvodpy.orchestrator.memory_budget import (
     main_day_bytes,
     plan_memory,
     task_peak_bytes,
+    worker_peaks,
 )
 
 from canvod.utils import testing
@@ -70,10 +71,45 @@ def test_the_workers_stay_within_the_cap():
     assert _plan(64, [_file("0000", MB)], max_workers=4).workers == 4
 
 
+# A worker of the run's pool also prepares days and computes VOD (#433).
+# On the test data, a day the budget counts at 30 MB: preparing it grows a
+# worker by 0.62 GB, its VOD by 0.10 GB. On a 90-day run of RINEX v3 days
+# counted at 0.35 GB: at most 0.80 and 1.03 GB.
+
+
+def test_a_worker_has_room_to_prepare_a_day_of_the_test_data():
+    peaks = worker_peaks([_file("0000", MB)], day_bytes=30 * MB)
+    assert peaks["prepare"] - WORKER_BASE_BYTES >= int(0.62 * GB)
+    assert peaks["vod"] - WORKER_BASE_BYTES >= int(0.10 * GB)
+
+
+def test_a_worker_has_room_for_a_day_of_the_90_day_run():
+    peaks = worker_peaks([_file("0000", MB)], day_bytes=int(0.35 * GB))
+    assert peaks["prepare"] - WORKER_BASE_BYTES >= int(0.80 * GB)
+    assert peaks["vod"] - WORKER_BASE_BYTES >= int(1.03 * GB)
+    # Neither by more than a fifth.
+    assert peaks["prepare"] - WORKER_BASE_BYTES <= int(1.2 * 0.80 * GB)
+    assert peaks["vod"] - WORKER_BASE_BYTES <= int(1.2 * 1.03 * GB)
+
+
+def test_the_workers_have_room_for_their_largest_task():
+    task = [_file("0000", MB)]
+    day = int(0.35 * GB)
+    worker = max(worker_peaks(task, day_bytes=day).values())
+    assert worker > task_peak_bytes(task)
+    main = int(0.5 * GB) + UNITS_IN_MEMORY * day
+    # Room for three such workers, not four.
+    plan = _plan((main + 3 * worker + worker // 2) / GB, task, day_bytes=day)
+    assert plan.workers == 3
+    fields = plan.log_fields()
+    assert fields["worker_peak_task"] == "vod"
+    assert fields["worker_peak_gb"] == round(worker / GB, 2)
+
+
 def test_a_unit_gets_the_days_the_memory_left_by_the_workers_holds():
     task = [_file("0000", MB)]
-    peak = task_peak_bytes(task)
     day = int(0.25 * GB)
+    peak = max(worker_peaks(task, day_bytes=day).values())
     # Room for the main process with three days per unit and one worker.
     budget = int(0.5 * GB) + UNITS_IN_MEMORY * 3 * day + peak
     plan = _plan(budget / GB, task, day_bytes=day, days_to_run=10, max_workers=1)
@@ -82,8 +118,8 @@ def test_a_unit_gets_the_days_the_memory_left_by_the_workers_holds():
 
 def test_the_workers_come_before_the_days_of_a_unit():
     task = [_file("0000", MB)]
-    peak = task_peak_bytes(task)
     day = int(0.25 * GB)
+    peak = max(worker_peaks(task, day_bytes=day).values())
     # Room for four workers with one day, or one worker with more days.
     budget = int(0.5 * GB) + UNITS_IN_MEMORY * day + 4 * peak
     plan = _plan(budget / GB, task, day_bytes=day, days_to_run=10)
@@ -309,6 +345,8 @@ def test_each_run_sizes_from_the_deprecated_cap_and_records_the_sized_workers(
             day_bytes=0,
             task_peak_bytes=0,
             largest_task=(),
+            worker_peak_bytes=0,
+            worker_peak_task="read",
             workers=1,
             unit_days=1,
             unit_limit="memory",

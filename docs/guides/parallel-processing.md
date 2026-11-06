@@ -106,7 +106,9 @@ missing orbit or clock file, is reported as failed for each receiver.
 The workers are a reusable process pool of
 [loky](https://loky.readthedocs.io/), a dependency of canVODpy. They start
 with the first unit and stay for the next units, so Python and the
-scientific libraries are loaded once per worker, not once per day.
+scientific libraries are loaded once per worker, not once per day. All
+of a run's work in processes goes to this one pool: preparing the days,
+reading the files, and computing the VOD.
 
 Before the first file is read, the run prepares the first unit. On a
 first run this includes downloading the orbit and clock files, so the
@@ -183,16 +185,18 @@ holds two things:
   days in flight. Since the run goes one unit ahead, that is two units of
   days.
 - **The workers:** each holds Python and its libraries, about 0.3 GB,
-  plus its largest task. A task reads the files of one receiver that
-  share an epoch chunk, one after the other, and holds their data until
-  it writes them. A reference receiver paired with several canopy
-  receivers counts once for each pairing.
+  plus the largest of its tasks. A file task reads the files of one
+  receiver that share an epoch chunk, one after the other, and holds
+  their data until it writes them. A reference receiver paired with
+  several canopy receivers counts once for each pairing. The same
+  workers prepare the days (orbit and clock data, receiver positions)
+  and compute the VOD of a day, which can need more than a file task.
 
 Before it reads a file, the run estimates both from the size of the
 files. The workers come first:
 
 ```text
-workers = min(worker cap, (budget - main process with one day) / largest task)
+workers = min(worker cap, (budget - main process with one day) / largest worker task)
 ```
 
 The worker cap is `n_max_threads` with `manual` (or `--workers`), and
@@ -217,7 +221,10 @@ processing:
 The estimates come from factors measured on the test data, with a
 margin: reading a file needs about 45 times its size for RINEX v3, 100
 times for RINEX v2, 25 times for SBF and 15 times for NMEA, and a task
-holds about 1.6 times the size of its files once read. For each day in
+holds about 1.6 times the size of its files once read. Preparing a day
+needs about 0.65 GB for the orbit and clock data plus half the day's
+data, and the VOD of a day 3.5 times the day's data, each counted as for
+the main process below. For each day in
 flight, the main process holds about the size of the day's files for
 RINEX v3, 2.5 times for RINEX v2 and NMEA (small files) and a quarter
 for SBF, whose files hold much that a run doesn't keep. These were
@@ -227,16 +234,16 @@ measured keeping only `SNR`; keeping more observables
 its sizes to the log (`memory_budget`): the workers, the days per unit
 (`unit_days`) and what set them (`unit_limit`: `memory`,
 `max_unit_days`, `days_to_run`, or the deprecated `days_per_batch`),
-the tasks per day and per worker, as a warning when the budget lowered
+the tasks per day and per worker, the estimated peak of a worker and
+the task that sets it (`worker_peak_gb`, `worker_peak_task`: `read`,
+`prepare` or `vod`), as a warning when the budget lowered
 the workers or the days per unit. After
 each task, the worker writes its memory before the task and its peak
 during the task (`worker_memory_peak`), so you can check the estimates
 on your data and set the budget. The VOD phase's tasks log the same
 event, with `task` set to `compute_vod_into_fork` and `input_mb` 0,
 since they read from the GNSS store, not from files. Preparing a day
-logs it too, with `task` set to `_prepare_day` and `input_mb` 0: the
-worker then holds the day's orbit and clock data, which the estimate of
-the workers does not count.
+logs it too, with `task` set to `_prepare_day` and `input_mb` 0.
 
 The run also writes the memory use of the machine to the log before each
 unit (`memory_stats`). Every run also writes memory, CPU, and disk use
