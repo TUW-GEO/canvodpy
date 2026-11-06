@@ -8,6 +8,7 @@ rsync or scp.
 from __future__ import annotations
 
 import json
+import sys
 from pathlib import Path
 
 import pytest
@@ -250,6 +251,14 @@ def _two_log_files(log_dir):
     return machine
 
 
+# Windows refuses to rename a file another process holds open, so a log
+# handler can't rotate a file there while the copy reads it.
+_ROTATES_WHILE_OPEN = pytest.mark.skipif(
+    sys.platform == "win32", reason="Windows doesn't rename an open file"
+)
+
+
+@_ROTATES_WHILE_OPEN
 def test_a_log_file_renamed_during_the_copy_is_not_copied_twice(tmp_path, monkeypatch):
     machine = _two_log_files(tmp_path / "logs")
     dest = tmp_path / "collected"
@@ -264,6 +273,7 @@ def test_a_log_file_renamed_during_the_copy_is_not_copied_twice(tmp_path, monkey
     assert "1 log file was removed or renamed during the copy" in result.output
 
 
+@_ROTATES_WHILE_OPEN
 def test_one_run_reads_no_event_twice_when_a_log_file_is_renamed(tmp_path, monkeypatch):
     log_dir = tmp_path / "logs"
     machine = _two_log_files(log_dir)
