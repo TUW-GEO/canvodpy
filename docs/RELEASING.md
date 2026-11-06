@@ -108,20 +108,27 @@ just release-check 1.1.0
 writes nothing. It prints one line per check: ✓ passed, ⚠ a warning to
 judge, ✗ failed. It exits 1 if any check failed. It checks:
 
-- `HEAD` is `main` on GitHub, and CI passed on it.
-- The version goes up, has no tag yet, and its increment is at least what
-  the commits since the last release call for: a breaking change (`feat!:`
-  or `BREAKING CHANGE`) a major, a feature or a deprecation a minor.
-- The branch `release/vX.Y.Z` doesn't exist, and the release files are
-  clean.
+- `HEAD` is `main` on GitHub, and CI passed on it. CI runs
+  `just check-release-notes`, so the release notebook's format is checked
+  there.
+- `just release` would accept the version: it goes up and has no tag yet,
+  the branch `release/vX.Y.Z` doesn't exist, the citation files have their
+  fields, the ranges between packages admit the versions, and the release
+  files are clean.
+- The increment is at least what the commits since the last release call
+  for: a breaking change (`feat!:` or a `BREAKING CHANGE:` footer) a major,
+  a feature or a deprecation a minor. A deprecation is a commit whose
+  subject says "deprecate"; commits of the types `docs`, `test`, `ci`,
+  `chore`, `build` and `style` change no behavior and never count as one.
 - Both submodule pointers are their repository's `main`; ⚠ when the
   test-data commit has no tag.
 - Every demo notebook pins the last release, as above.
 - For a minor or major release: the release notebook is on `HEAD`, pins
   the new version, and is linked from `release-notes/README.md` and
-  `docs/whats-new.md`. ⚠ lists the feature and fix pull requests since
-  the last release that the notebook doesn't name by number: compare
-  them with the notebook.
+  `docs/whats-new.md` on `HEAD`. ⚠ lists the pull requests since the last
+  release, merged or squashed, with a feature, fix or deprecation among
+  their commits that the notebook doesn't name by number (`#123`):
+  compare them with the notebook.
 
 It doesn't judge whether the release notebook and What's new describe
 every change users notice; that stays your call.

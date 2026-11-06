@@ -62,7 +62,7 @@ def notebook(pins: list[str]) -> str:
 
 
 @dataclass
-class FakeRemote:
+class FakeRemote(release.Remote):
     """GitHub as the tests see it: each repository's main, tags and CI."""
 
     mains: dict[str, str] = field(default_factory=dict)
@@ -142,6 +142,13 @@ def repo(tmp_path: Path) -> Repo:
         '[project]\nname = "canvod-store"\nversion = "1.0.0"\n',
     )
     _write(root, "CHANGELOG.md", "# Changelog\n")
+    _write(root, "CITATION.cff", "version: 1.0.0\ndate-released: '2026-10-01'\n")
+    _write(
+        root, ".zenodo.json", '{"version": "1.0.0", "publication_date": "2026-10-01"}\n'
+    )
+    _write(
+        root, "codemeta.json", '{"version": "1.0.0", "datePublished": "2026-10-01"}\n'
+    )
     _write(
         root,
         ".gitmodules",
@@ -158,7 +165,8 @@ def repo(tmp_path: Path) -> Repo:
         "canvodpy",
         "packages/canvod-store/pyproject.toml",
     )
-    _git(root, "add", "CHANGELOG.md", ".gitmodules")
+    _git(root, "add", "CHANGELOG.md", ".gitmodules", "CITATION.cff")
+    _git(root, "add", ".zenodo.json", "codemeta.json")
     remote = FakeRemote()
     repo = Repo(root, root / "demo", root / TEST_DATA_PATH, remote)
     demo_sha = _git(repo.demo, "rev-parse", "HEAD")
@@ -265,6 +273,7 @@ def test_a_head_behind_main_fails(repo: Repo, capsys) -> None:
     code, out = repo.check("1.1.0", capsys)
     assert code == 1
     assert _line(out, "✗", "is not main on GitHub")
+    assert _line(out, "⚠", "CI is not checked: HEAD is not main.")
 
 
 @pytest.mark.parametrize("state", ["pending", "failure", "none"])
@@ -339,7 +348,7 @@ def test_a_release_notebook_missing_from_whats_new_fails(repo: Repo, capsys) -> 
     repo.commit("docs: whats-new")
     code, out = repo.check("1.1.0", capsys)
     assert code == 1
-    assert _line(out, "✗", "docs/whats-new.md does not link the notebook")
+    assert _line(out, "✗", "docs/whats-new.md on HEAD does not link the notebook")
     assert _line(out, "✓", "release-notes/README.md links the notebook")
 
 
@@ -360,21 +369,7 @@ def test_an_existing_release_branch_fails(repo: Repo, capsys) -> None:
 def test_a_feature_pull_request_the_notebook_does_not_name_warns(
     repo: Repo, capsys
 ) -> None:
-    _git(repo.root, "switch", "-q", "-c", "feat/102-overlay")
-    _commit(repo.root, "feat(viz): overlay recipes")
-    _git(repo.root, "switch", "-q", "main")
-    _git(
-        repo.root,
-        "merge",
-        "-q",
-        "--no-ff",
-        "feat/102-overlay",
-        "-m",
-        "Merge pull request #103 from TUW-GEO/feat/102-overlay",
-    )
-    head = _git(repo.root, "rev-parse", "HEAD")
-    repo.remote.mains[CANVODPY_URL] = head
-    repo.remote.checks[head] = "success"
+    _merge(repo, "feat/102-overlay", 103, "feat(viz): overlay recipes")
     code, out = repo.check("1.1.0", capsys)
     assert code == 0, out
     assert _line(out, "⚠", "#103 feat/102-overlay")
@@ -384,3 +379,156 @@ def test_a_version_that_is_no_version_is_refused(repo: Repo, capsys) -> None:
     code, out = repo.check("v1.1.0", capsys)
     assert code == 2
     assert "not a version" in out
+
+
+def test_a_release_notebook_missing_from_the_readme_fails(repo: Repo, capsys) -> None:
+    _write(repo.root, "release-notes/README.md", "| Release | Open |\n|---|---|\n")
+    repo.commit("docs(release-notes): readme")
+    code, out = repo.check("1.1.0", capsys)
+    assert code == 1
+    assert _line(out, "✗", "release-notes/README.md on HEAD does not link the notebook")
+
+
+def test_a_link_only_in_the_working_tree_is_not_on_head(repo: Repo, capsys) -> None:
+    _write(repo.root, "docs/whats-new.md", "# What's new in v1.0.0\n")
+    repo.commit("docs: whats-new")
+    _write(repo.root, "docs/whats-new.md", "release-notes/v1.1.0.py\n")
+    code, out = repo.check("1.1.0", capsys)
+    assert code == 1
+    assert _line(out, "✗", "docs/whats-new.md on HEAD does not link the notebook")
+
+
+def test_a_version_not_above_the_current_one_fails(repo: Repo, capsys) -> None:
+    code, out = repo.check("1.0.0", capsys)
+    assert code == 1
+    assert _line(out, "✗", "canvodpy: 1.0.0 is not above the current 1.0.0")
+
+
+def test_a_version_tagged_already_fails(repo: Repo, capsys) -> None:
+    _git(repo.root, "tag", "v1.1.0")
+    code, out = repo.check("1.1.0", capsys)
+    assert code == 1
+    assert _line(out, "✗", "tag v1.1.0 exists already")
+
+
+def test_a_missing_citation_field_fails_as_in_just_release(repo: Repo, capsys) -> None:
+    _write(repo.root, "codemeta.json", '{"datePublished": "2026-10-01"}\n')
+    repo.commit("chore: codemeta")
+    code, out = repo.check("1.1.0", capsys)
+    assert code == 1
+    assert _line(out, "✗", "codemeta.json has no field matching")
+
+
+def test_a_demo_submodule_that_is_not_checked_out_fails(repo: Repo, capsys) -> None:
+    sha = "f" * 40
+    repo.set_pointer("demo", sha)
+    repo.remote.mains[DEMO_URL] = sha
+    # Commit the index as it is: `git add -A` would record the checked-out commit.
+    _git(
+        repo.root, "commit", "-q", "-m", "chore(demo): pointer to a commit not fetched"
+    )
+    head = _git(repo.root, "rev-parse", "HEAD")
+    repo.remote.mains[CANVODPY_URL] = head
+    repo.remote.checks[head] = "success"
+    code, out = repo.check("1.1.0", capsys)
+    assert code == 1
+    assert _line(out, "✗", "git submodule update --init demo"), out
+
+
+def test_without_an_earlier_release_the_history_checks_warn(repo: Repo, capsys) -> None:
+    _git(repo.root, "tag", "-d", "v1.0.0")
+    _, out = repo.check("1.1.0", capsys)
+    assert _line(out, "⚠", "No earlier release tag: the increment is not checked")
+    assert _line(out, "⚠", "No earlier release tag: the demo headers are not checked")
+
+
+def test_a_breaking_change_footer_calls_for_a_major(repo: Repo, capsys) -> None:
+    repo.commit(
+        "refactor(store): new layout\n\nBREAKING CHANGE: stores need a migration"
+    )
+    code, out = repo.check("1.1.0", capsys)
+    assert code == 1
+    assert _line(out, "✗", "call for a major: ")
+
+
+def test_a_deprecation_mentioned_in_the_docs_calls_for_no_minor(
+    repo: Repo, capsys
+) -> None:
+    _release_v110(repo)
+    repo.commit("docs(functional): the deprecated *_to_file functions write a pickle")
+    code, out = repo.check("1.1.1", capsys)
+    assert _line(out, "✓", "the commits since v1.1.0 call for a patch")
+
+
+def test_a_demo_pin_written_shorter_is_the_same_version(repo: Repo, capsys) -> None:
+    _demo_commit(
+        repo, {"03_grids.py": notebook(["canvodpy==1.0", "canvod-store==1.0.0"])}
+    )
+    code, out = repo.check("1.1.0", capsys)
+    assert code == 0, out
+
+
+def test_a_demo_notebook_with_a_broken_header_fails(repo: Repo, capsys) -> None:
+    broken = notebook(["canvodpy==1.0.0"]).replace("# ]\n", "")
+    _demo_commit(repo, {"03_grids.py": broken})
+    code, out = repo.check("1.1.0", capsys)
+    assert code == 1
+    assert _line(out, "✗", "03_grids.py has an unreadable script header")
+
+
+def _merge(repo: Repo, branch: str, number: int, subject: str) -> None:
+    _git(repo.root, "switch", "-q", "-c", branch)
+    _commit(repo.root, subject)
+    _git(repo.root, "switch", "-q", "main")
+    _git(
+        repo.root,
+        "merge",
+        "-q",
+        "--no-ff",
+        branch,
+        "-m",
+        f"Merge pull request #{number} from TUW-GEO/{branch}",
+    )
+    head = _git(repo.root, "rev-parse", "HEAD")
+    repo.remote.mains[CANVODPY_URL] = head
+    repo.remote.checks[head] = "success"
+
+
+def test_a_deprecation_pull_request_is_listed(repo: Repo, capsys) -> None:
+    _merge(
+        repo,
+        "refactor/529-sensor",
+        104,
+        "refactor(airflow): deprecate check_sp3_availability",
+    )
+    _, out = repo.check("1.1.0", capsys)
+    assert _line(out, "⚠", "#104 refactor/529-sensor")
+
+
+def test_a_documentation_pull_request_is_not_listed(repo: Repo, capsys) -> None:
+    _merge(repo, "docs/105-typos", 105, "docs: fix typos")
+    _, out = repo.check("1.1.0", capsys)
+    assert "#105" not in out
+
+
+def test_a_squashed_pull_request_is_listed(repo: Repo, capsys) -> None:
+    repo.commit("fix(readers): keep truncated records (#106)")
+    _, out = repo.check("1.1.0", capsys)
+    assert _line(out, "⚠", "#106 fix(readers): keep truncated records")
+
+
+def test_a_pull_request_the_notebook_names_is_not_listed(repo: Repo, capsys) -> None:
+    _write(
+        repo.root,
+        "release-notes/v1.1.0.py",
+        notebook(["canvodpy==1.1.0"]) + "# Broadcast ephemeris (#100)\n",
+    )
+    repo.commit("docs(release-notes): name the pull request")
+    _, out = repo.check("1.1.0", capsys)
+    assert _line(out, "✓", "The notebook names every notable pull request")
+
+
+def test_an_origin_outside_github_stops_with_a_reason(repo: Repo) -> None:
+    _git(repo.root, "remote", "set-url", "origin", "https://example.org/canvodpy.git")
+    with pytest.raises(SystemExit, match="not a GitHub repository"):
+        release.main(["check", "1.1.0"], root=repo.root)
