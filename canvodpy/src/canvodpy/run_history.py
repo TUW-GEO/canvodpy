@@ -794,6 +794,30 @@ class RunHistory:
 
     # -- copies --------------------------------------------------------
 
+    def copy(self, target: Path | str) -> None:
+        """Write a copy of the whole run history to *target*, one file.
+
+        The copy is consistent while runs write: it holds every committed
+        record, also those still in the WAL file, and needs no ``-wal``
+        or ``-shm`` file beside it.
+
+        Raises
+        ------
+        FileExistsError
+            If *target* exists.
+        """
+        target = Path(target)
+        if target.exists():
+            msg = f"{target} exists"
+            raise FileExistsError(msg)
+        copy = sqlite3.connect(target, autocommit=True)
+        try:
+            with self._lock:
+                self._db.backup(copy)
+            copy.execute("PRAGMA journal_mode = DELETE")
+        finally:
+            copy.close()
+
     def copy_runs(self, run_ids: Iterable[str], target: Path | str) -> None:
         """Write a copy of the run history that holds only *run_ids*.
 
@@ -808,16 +832,10 @@ class RunHistory:
         FileExistsError
             If *target* exists.
         """
-        target = Path(target)
-        if target.exists():
-            msg = f"{target} exists"
-            raise FileExistsError(msg)
         keep = sorted(set(run_ids))
+        self.copy(target)
         copy = sqlite3.connect(target, autocommit=True)
         try:
-            with self._lock:
-                self._db.backup(copy)
-            copy.execute("PRAGMA journal_mode = DELETE")
             copy.execute("CREATE TEMP TABLE keep (run_id TEXT PRIMARY KEY)")
             copy.executemany("INSERT INTO keep VALUES (?)", [(r,) for r in keep])
             # A copy of an older run history lacks the file index and the

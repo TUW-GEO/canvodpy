@@ -1,8 +1,8 @@
 """canvodpy console-script entry point.
 
-Composes the config/run/doctor/store/stac subcommands into a single Typer
+Composes the config/run/doctor/store/stac/logs subcommands into a single Typer
 app. All CLI code lives in this package — the entry point, ``config``,
-``run``, ``doctor``, ``store`` and ``stac`` — matching where the rest of
+``run``, ``doctor``, ``store``, ``stac`` and ``logs`` — matching where the rest of
 canvodpy's user-facing surface (``Site``, ``Pipeline``)
 already lives.
 """
@@ -36,6 +36,7 @@ main_app = typer.Typer(
 
 from canvodpy.cli.config import config_app  # noqa: E402
 from canvodpy.cli.doctor import doctor as doctor_command  # noqa: E402
+from canvodpy.cli.logs import logs_app  # noqa: E402
 from canvodpy.cli.perf_dashboard import dashboard as dashboard_command  # noqa: E402
 from canvodpy.cli.run import run as run_command  # noqa: E402
 from canvodpy.cli.stac import stac_app  # noqa: E402
@@ -46,6 +47,7 @@ from canvodpy.cli.vod import vod_reconcile as vod_reconcile_command  # noqa: E40
 main_app.add_typer(config_app, name="config")
 main_app.add_typer(store_app, name="store")
 main_app.add_typer(stac_app, name="stac")
+main_app.add_typer(logs_app, name="logs")
 main_app.command("run")(run_command)
 main_app.command(
     "vod",
