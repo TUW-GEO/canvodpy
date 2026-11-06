@@ -663,8 +663,19 @@ class SatelliteCatalog:
         -------
         polars.DataFrame
             Catalog data suitable for plotting, filtering, joining.
+
+        Raises
+        ------
+        ImportError
+            If ``polars`` is not installed.
         """
-        import polars as pl
+        try:
+            import polars as pl
+        except ImportError as e:
+            raise ImportError(
+                "polars is required for SatelliteCatalog.to_dataframe(). "
+                "Install with: uv add polars"
+            ) from e
 
         if on_date is not None:
             rows = []

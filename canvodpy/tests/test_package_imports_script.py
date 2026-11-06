@@ -53,6 +53,12 @@ def optional():
         pass
     if TYPE_CHECKING:
         import polars
+    if not TYPE_CHECKING:
+        import xarray
+
+
+def namespace():
+    from canvod import vod
 """
 
 
@@ -69,6 +75,14 @@ def test_only_required_imports_in_function_bodies_are_found(tmp_path: Path) -> N
     )
 
     # Module-level imports, the package's own modules, the standard
-    # library, guarded imports and optional extras are left out
-    assert sorted(found) == ["canvod.store.day_blocks", "pymap3d"]
+    # library, imports guarded by ImportError or TYPE_CHECKING and optional
+    # extras are left out. A broader except hides a missing dependency too,
+    # so psutil counts.
+    assert sorted(found) == [
+        "canvod.store.day_blocks",
+        "canvod.vod",
+        "psutil",
+        "pymap3d",
+        "xarray",
+    ]
     assert found["pymap3d"].endswith("geometry.py:11")

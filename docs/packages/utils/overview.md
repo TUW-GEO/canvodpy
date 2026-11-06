@@ -15,7 +15,8 @@ packages share:
 - the run identifier and the timing of the processing stages, which go
   into the logs.
 
-It depends on `pydantic` and `structlog` only. The settings live in
+It depends on `pydantic`, `structlog` and `psutil` (for the CPU affinity
+of worker processes) only. The settings live in
 [canvod-config](../config/overview.md), and the `canvodpy` package holds
 the [command line](../../api/cli.md).
 

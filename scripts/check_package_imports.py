@@ -21,7 +21,9 @@ imports guarded by ``try``/``except ImportError`` or ``TYPE_CHECKING``.
 Last, it runs the ``## Example`` code of the package's README in the same
 environment, from an empty folder. An example that needs input files (a
 RINEX file, a store; ``EXAMPLE_NEEDS``) runs its import lines only, which
-still finds an example that imports what the package doesn't install.
+still finds an example that imports what the package doesn't install; the
+part that reads the files is not checked. The other examples run in full,
+so one that downloads would make the check need the network.
 
 Optional extras are not installed by this check, so a submodule that an
 optional extra provides (``canvod.viz.widgets`` behind the ``widgets``
@@ -168,25 +170,43 @@ def _optional_excludes(dist_name: str, import_name: str) -> list[str]:
     return [f"{import_name}.{extra.replace('-', '_')}" for extra in extras]
 
 
+def _is_type_checking(test: ast.expr) -> bool:
+    """``if TYPE_CHECKING`` or ``if typing.TYPE_CHECKING``, not its negation."""
+    if isinstance(test, ast.Name):
+        return test.id == "TYPE_CHECKING"
+    return isinstance(test, ast.Attribute) and test.attr == "TYPE_CHECKING"
+
+
 def _guarded(node: ast.AST, parents: dict[ast.AST, ast.AST]) -> bool:
     """Whether an import is optional: in the ``try`` of a handler that
-    catches ``ImportError`` (or a broader exception), or under
-    ``if TYPE_CHECKING``."""
-    catching = {"ImportError", "ModuleNotFoundError", "Exception", "BaseException"}
+    catches ``ImportError`` (or ``ModuleNotFoundError``), or in the body of
+    ``if TYPE_CHECKING``.
+
+    A broader handler (``except Exception``, a bare ``except``) is no
+    guard: it also hides a missing dependency without a word.
+    """
     child, parent = node, parents.get(node)
     while parent is not None:
         if isinstance(parent, ast.Try) and child in parent.body:
             for handler in parent.handlers:
-                if handler.type is None:  # a bare except
-                    return True
+                if handler.type is None:
+                    continue
                 names = (
                     handler.type.elts
                     if isinstance(handler.type, ast.Tuple)
                     else [handler.type]
                 )
-                if any(isinstance(n, ast.Name) and n.id in catching for n in names):
+                if any(
+                    isinstance(n, ast.Name)
+                    and n.id in {"ImportError", "ModuleNotFoundError"}
+                    for n in names
+                ):
                     return True
-        if isinstance(parent, ast.If) and "TYPE_CHECKING" in ast.unparse(parent.test):
+        if (
+            isinstance(parent, ast.If)
+            and child in parent.body
+            and _is_type_checking(parent.test)
+        ):
             return True
         child, parent = parent, parents.get(parent)
     return False
@@ -218,7 +238,13 @@ def deferred_imports(
                 elif (
                     isinstance(node, ast.ImportFrom) and node.level == 0 and node.module
                 ):
-                    names = [node.module]
+                    # canvod is a namespace package: ``from canvod import
+                    # store`` imports the module canvod.store
+                    names = (
+                        [f"canvod.{alias.name}" for alias in node.names]
+                        if node.module == "canvod"
+                        else [node.module]
+                    )
                 else:
                     continue
                 if _guarded(node, parents):

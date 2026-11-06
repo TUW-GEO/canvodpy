@@ -45,7 +45,6 @@ dependencies = [
     "canvod-utils>=1.0.0,<2",
     "canvod-config>=1.0.0,<2",
     "pymap3d>=3.0.0",
-    "polars>=1.0.0",
 ]
 
 [dependency-groups]
