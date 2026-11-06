@@ -219,13 +219,15 @@ processing:
 |---|---|---|
 | `max_memory_gb` | none | Memory budget of a run in GB. Without it, the memory available when the run starts. With `auto` and `manual` alike. In Python, `site.pipeline(max_memory_gb=...)`. |
 
-The estimates come from factors measured on the test data, with a
-margin: reading a file needs about 45 times its size for RINEX v3, 100
+The estimates come from factors measured on the test data and on a
+90-day run of RINEX v3 days, with a margin: reading a file needs about 45 times its size for RINEX v3, 100
 times for RINEX v2, 25 times for SBF and 15 times for NMEA, and a task
 holds about 1.6 times the size of its files once read. Preparing a day
-needs about 0.65 GB for the orbit and clock data plus half the day's
-data, and the VOD of a canopy and its reference receiver for one day 3.5
-times the data of the two, each counted as for the main process below. For each day in
+needs about 0.6 GB for the orbit and clock data plus 1.3 times the
+day's data, and the VOD of a canopy and its reference receiver for one
+day 3.5 times the data of the two, each counted as for the main process
+below. A worker runs many tasks one after the other and holds memory from
+earlier tasks, so each task is counted on top of 0.9 GB. For each day in
 flight, the main process holds about the size of the day's files for
 RINEX v3, 2.5 times for RINEX v2 and NMEA (small files) and a quarter
 for SBF, whose files hold much that a run doesn't keep. These were
