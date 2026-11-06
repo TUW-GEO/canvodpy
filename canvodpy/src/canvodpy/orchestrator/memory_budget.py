@@ -21,7 +21,8 @@ largest worker task). A unit then gets as many days as the rest of the budget
 holds, at most :data:`MAX_UNIT_DAYS` (ADR 0021). A run in which not even
 one worker fits with one day stops before reading a file
 (:class:`MemoryBudgetError`). The estimates come from the factors below,
-measured on the test data; the workers log their real peaks
+measured on the test data and on a 90-day run of RINEX v3 days; the
+workers log their real peaks
 (``worker_memory_peak``, :func:`~canvodpy.orchestrator.resources.run_measured`).
 """
 
