@@ -424,8 +424,11 @@ def _(mo):
     - The arguments `use_velocities` and `fallback_method` of `Sp3Config`
       have no effect: `Sp3Config(method=...)` picks the interpolation.
       Leave them out.
+    - `canvodpy.workflows.tasks.check_sp3_availability`, the only
+      function in canvodpy that needs Airflow: use
+      `canvod.airflow.sensors.check_sp3_availability` from canvod-airflow.
 
-    All three are removed with v2.0.0.
+    All four are removed with v2.0.0.
 
     ## Fixes
 
