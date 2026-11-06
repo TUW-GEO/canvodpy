@@ -705,7 +705,9 @@ Copy the log folder of the settings to DEST.
 Every log file is copied with its folders (human/, machine/,
 component/). The run history is copied through SQLite, with the
 records a running run hasn't merged out of its WAL file yet, as one
-file. Nothing in DEST is overwritten: it must be new or empty.
+file. Nothing in DEST is overwritten: it must be new or empty. A log
+file that a running run rotates away during the copy is skipped, and
+the command says how many.
 
 With --run-id, DEST gets that run's records of the run history and its
 events, from the main process and the workers, in DEST/<run-id>.json.

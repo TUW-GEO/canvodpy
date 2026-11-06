@@ -3,8 +3,9 @@
 An unattended run leaves its logs on the machine it ran on. ``collect``
 copies the log folder (``processing.logging.log_dir``) to one new folder,
 which the operator sends on with rsync or scp. The run history is copied
-through SQLite (:meth:`canvodpy.run_history.RunHistory.copy`), so a copy
-taken while a run writes is consistent.
+through SQLite (:meth:`canvodpy.run_history.RunHistory.copy`), so its
+copy is consistent while a run writes. A log file that the run's log
+rotation removes during the copy is skipped and counted.
 """
 
 from __future__ import annotations
@@ -40,20 +41,28 @@ def _log_dir() -> Path:
     return log_dir
 
 
-def _copy_log_files(log_dir: Path, dest: Path) -> tuple[int, int]:
-    """Copy every file but the run history; return their count and size."""
+def _copy_log_files(log_dir: Path, dest: Path) -> tuple[int, int, int]:
+    """Copy every file but the run history.
+
+    Returns the count and size of the copied files, and the count of the
+    files a running run's log rotation removed after they were listed.
+    """
     from canvodpy.run_history import FILE_NAME
 
-    count = size = 0
+    count = size = gone = 0
     for source in sorted(log_dir.rglob("*")):
-        if not source.is_file() or source.name.startswith(FILE_NAME):
+        if source.is_dir() or source.name.startswith(FILE_NAME):
             continue
         target = dest / source.relative_to(log_dir)
         target.parent.mkdir(parents=True, exist_ok=True)
-        shutil.copy2(source, target)
+        try:
+            shutil.copy2(source, target)
+        except FileNotFoundError:
+            gone += 1
+            continue
         count += 1
         size += target.stat().st_size
-    return count, size
+    return count, size, gone
 
 
 def _run_events(log_dir: Path, run_id: str) -> list[str]:
@@ -64,7 +73,11 @@ def _run_events(log_dir: Path, run_id: str) -> list[str]:
     """
     found = []
     for path in sorted((log_dir / "machine").glob("agent*.json*")):
-        with path.open(encoding="utf-8", errors="replace") as lines:
+        try:
+            lines = path.open(encoding="utf-8", errors="replace")
+        except FileNotFoundError:
+            continue  # rotated away by a running run since the listing
+        with lines:
             for line in lines:
                 try:
                     event = json.loads(line)
@@ -101,7 +114,9 @@ def collect(
     Every log file is copied with its folders (human/, machine/,
     component/). The run history is copied through SQLite, with the
     records a running run hasn't merged out of its WAL file yet, as one
-    file. Nothing in DEST is overwritten: it must be new or empty.
+    file. Nothing in DEST is overwritten: it must be new or empty. A log
+    file that a running run rotates away during the copy is skipped, and
+    the command says how many.
 
     With --run-id, DEST gets that run's records of the run history and its
     events, from the main process and the workers, in DEST/<run-id>.json.
@@ -117,11 +132,17 @@ def collect(
         return
     dest.mkdir(parents=True, exist_ok=True)
 
-    count, size = _copy_log_files(log_dir, dest)
+    count, size, gone = _copy_log_files(log_dir, dest)
     console.print(
         f"[canvod.ok]✓ {count} log files ({size / 1e6:.1f} MB) copied to "
         f"{escape(str(dest))}[/canvod.ok]"
     )
+    if gone:
+        console.print(
+            f"[canvod.warning]  {gone} log file{'s were' if gone > 1 else ' was'} "
+            "rotated away during the copy: a run is writing. Collect between "
+            "runs for a complete copy.[/canvod.warning]"
+        )
     if run_history_path(log_dir).exists():
         with RunHistory.open(log_dir, read_only=True) as history:
             history.copy(run_history_path(dest))
