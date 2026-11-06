@@ -439,7 +439,7 @@ def _(mo):
     mo.md(r"""
     ## Parallel runs
 
-    - The days of a unit are prepared (orbit and clock data, receiver
+    - The days of a unit are prepared (orbit data, receiver
       positions) in the run's worker processes, up to four days at the
       same time. Before, threads of the main process prepared them, one
       day at a time

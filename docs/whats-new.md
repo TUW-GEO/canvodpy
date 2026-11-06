@@ -81,8 +81,8 @@ The full list is in the
     ---
 
     - `canvodpy run`, `vod` and `vod-reconcile` process data and compute VOD
-    - `canvodpy config` creates, checks, shows, and explains the settings
-    - `canvodpy store` lists, inspects, maintains, migrates, and amends stores
+    - `canvodpy config` creates, checks, shows and explains the settings
+    - `canvodpy store` lists, inspects, maintains, migrates and amends stores
     - `canvodpy stac`, `doctor` and `dashboard`
 
     [:octicons-arrow-right-24: Command line](api/cli.md)
@@ -143,7 +143,7 @@ The full list is in the
 
     ---
 
-    - Every run records itself, its stage timings, and its resource use
+    - Every run records itself, its stage timings and its resource use
     - A dashboard shows each run, the sites, and compares runs
 
     [:octicons-arrow-right-24: Diagnostics](guides/diagnostics.md#the-run-history)
