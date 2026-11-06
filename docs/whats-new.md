@@ -1,9 +1,72 @@
 ---
-title: What's new in v1.0.0
-description: The changes canVODpy v1.0.0 brings, by area
+title: What's new
+description: The changes canVODpy v1.1.0 and v1.0.0 bring, by area
 ---
 
-# What's new in v1.0.0
+# What's new
+
+## v1.1.0
+
+The release notebook shows each change, on the demo data where it can:
+[release-notes/v1.1.0.py](https://github.com/TUW-GEO/canvodpy/blob/main/release-notes/v1.1.0.py)
+([open in molab](https://molab.marimo.io/github/TUW-GEO/canvodpy/blob/main/release-notes/v1.1.0.py)).
+
+!!! warning "A store created with v1.0.0"
+
+    The orbits are now interpolated with a polynomial of degree 10 by
+    default. A store created with v1.0.0 records the cubic Hermite spline
+    and refuses runs with the new method: set
+    `processing.aux_data.sp3_interpolation: hermite` to keep writing to it,
+    or write to a new store
+    ([Interpolation methods](packages/auxiliary/interpolation.md)).
+
+<div class="grid cards" markdown>
+
+-   :fontawesome-solid-satellite: &nbsp; **Broadcast ephemeris for RINEX**
+
+    ---
+
+    - `ephemeris_source: broadcast` takes the satellite positions from the
+      receiver's RINEX 3.04/3.05 navigation files (`nav_directory`)
+    - The ephemeris source `final` is now called `precise`; `final` warns
+      until v2.0.0
+    - Every run names the satellites it observed without a position
+
+    [:octicons-arrow-right-24: Ephemeris sources](packages/readers/ephemeris-sources.md)
+
+-   :fontawesome-solid-terminal: &nbsp; **Command line**
+
+    ---
+
+    - `canvodpy store log --path` shows the history of any store; `--svg` and
+      `--plain` draw it as an image or as plain text
+    - `canvodpy logs collect` copies the logs and the run history to send on
+    - `canvodpy config validate` checks chosen days and names the days
+      without files
+    - Colors that follow the terminal, `--help-all`, a dashboard button
+      that shuts the dashboard down
+
+    [:octicons-arrow-right-24: Command line](api/cli.md)
+
+-   :fontawesome-solid-play: &nbsp; **Runs**
+
+    ---
+
+    - The days of a unit are prepared in the worker processes, several at
+      a time
+    - The memory budget counts preparing a day and computing its VOD per
+      worker
+    - SBAS satellites of SBF files keep their signals; RINEX 2.11 epochs
+      that end early are left out
+
+    [:octicons-arrow-right-24: Parallel processing](guides/parallel-processing.md)
+
+</div>
+
+The full list is in the
+[changelog](https://github.com/TUW-GEO/canvodpy/blob/main/CHANGELOG.md).
+
+## v1.0.0
 
 !!! warning "Upgrading from 0.x?"
 
