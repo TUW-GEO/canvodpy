@@ -364,6 +364,49 @@ are in the log files only.
 
 ---
 
+## Copy the logs off the server
+
+To look at the logs of a server run on another machine, or to send them
+to someone, copy the log folder to one new folder first:
+
+```bash
+canvodpy logs collect ~/logs-copy
+```
+
+The command copies every log file, with its folders `human/`,
+`machine/`, and `component/`. It copies the run history through SQLite,
+as one file that holds every record so far, so the copy is complete
+even while a run is writing. Copying `run_history.sqlite` with `cp` or
+`rsync` during a run can miss the newest records, which are still in
+the `run_history.sqlite-wal` file. The log folder is the one of the
+settings, also with `--config-dir` and `--config`. Nothing is
+overwritten: the folder you give must be new or empty. The whole log
+folder can grow to several gigabytes: `machine/agent.json` alone keeps
+150 older files of up to 100 MB.
+
+To copy one run only, give its run ID:
+
+```bash
+canvodpy logs collect ~/logs-copy --run-id ExampleSite-20261010-030000-3f9a1c
+```
+
+The folder then holds the run history with only that run, and
+`ExampleSite-20261010-030000-3f9a1c.json` with every event the run
+logged, from the main process and the workers, in time order. The
+readable logs in `human/` and `component/` are left out, since they
+mix runs.
+
+Then send the folder on with the tool you use for files, for example:
+
+```bash
+rsync -ah ~/logs-copy/ my-laptop:server-logs/
+```
+
+The copy holds the paths and settings of this machine. Check it before
+you share it outside your group.
+
+---
+
 ## See where a run spends its time
 
 Finding the files is the first thing a run does, before it reads a file.

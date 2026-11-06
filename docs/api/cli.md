@@ -39,6 +39,7 @@ $ canvodpy [OPTIONS] COMMAND [ARGS]...
 * `config`: Create, check, show, and edit...
 * `store`: Inspect the Icechunk stores of the sites...
 * `stac`: Write the STAC catalog of every store...
+* `logs`: Copy the log folder of this machine, to...
 
 ## `canvodpy run`
 
@@ -677,6 +678,54 @@ $ canvodpy stac release [OPTIONS] {tag}
 
 * `--root <path>`: Data root to catalog. Default: storage.stores_root_dir in the settings.
 * `-c, --config-dir <path|url>`: Configuration directory, holding canvod-settings.yaml and recipes/, or the URL of a settings file in a GitHub repository, fetched by each run (https://raw.githubusercontent.com/<account>/<repo>/<commit, tag or branch>/.../canvod-settings.yaml). Default: $CANVOD_CONFIG_DIR, else config/ of the canvodpy checkout, else ~/.config/canvodpy.
+* `--help`: Show this message and exit.
+
+## `canvodpy logs`
+
+Copy the log folder of this machine, to send it on.
+
+**Usage**:
+
+```console
+$ canvodpy logs [OPTIONS] COMMAND [ARGS]...
+```
+
+**Options**:
+
+* `--help`: Show this message and exit.
+
+**Commands**:
+
+* `collect`: Copy the log folder of the settings to DEST.
+
+### `canvodpy logs collect`
+
+Copy the log folder of the settings to DEST.
+
+Every log file is copied with its folders (human/, machine/,
+component/). The run history is copied through SQLite, with the
+records a running run hasn't merged out of its WAL file yet, as one
+file. Nothing in DEST is overwritten: it must be new or empty.
+
+With --run-id, DEST gets that run's records of the run history and its
+events, from the main process and the workers, in DEST/<run-id>.json.
+The readable logs are left out: they mix runs.
+
+**Usage**:
+
+```console
+$ canvodpy logs collect [OPTIONS] {dest}
+```
+
+**Arguments**:
+
+* `dest`: New or empty folder for the copy.  [required]
+
+**Options**:
+
+* `--run-id <str>`: Copy only this run: its records of the run history and its events from machine/agent*.json, as DEST/<run-id>.json.
+* `-c, --config-dir <path|url>`: Configuration directory, holding canvod-settings.yaml and recipes/, or the URL of a settings file in a GitHub repository, fetched by each run (https://raw.githubusercontent.com/<account>/<repo>/<commit, tag or branch>/.../canvod-settings.yaml). Default: $CANVOD_CONFIG_DIR, else config/ of the canvodpy checkout, else ~/.config/canvodpy.
+* `--config <path>`: Settings file whose values replace those of canvod-settings.yaml.
 * `--help`: Show this message and exit.
 
 ## In the terminal
