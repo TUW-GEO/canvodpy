@@ -71,6 +71,9 @@ def seeded(store: MyIcechunkStore, files) -> MyIcechunkStore:  # noqa: F811
 class _Pool:
     """A worker pool that runs each task here, across a pickle round trip."""
 
+    _max_workers = 1
+    _flags = SimpleNamespace(broken=None, shutdown=False)  # loky's state
+
     def submit(self, fn, *args) -> Future:
         future: Future = Future()
         try:
