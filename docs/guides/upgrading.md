@@ -275,8 +275,7 @@ All of these are replaced by one entry point: `canvodpy run`, or
   satellite positions from their own navigation files. Set the new
   receiver setting `nav_directory` to the folder of those files on each
   receiver with RINEX files (in shared-position mode, only the canopy
-  receivers), and `nav_recipe` if their names don't follow the
-  convention
+  receivers). The navigation files need canonical names
   ([Ephemeris sources](../packages/readers/ephemeris-sources.md#broadcast-ephemeris-from-rinex-navigation-files)).
   Nothing changes for SBF files or for the precise ephemeris.
 - **Orbit interpolation**: the new setting

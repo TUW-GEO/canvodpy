@@ -127,7 +127,7 @@ class ReceiverConfig(_StrictModel):
             "with RINEX files: the satellite positions come from these files. "
             "In shared-position mode a reference receiver uses its canopy's "
             "files instead: it needs none, and its own are not read. They "
-            "need canonical names of type 'nav', or a 'nav_recipe'."
+            "need canonical names of type 'nav'."
         ),
     )
 
@@ -136,8 +136,9 @@ class ReceiverConfig(_StrictModel):
         description=(
             "Naming recipe of the files in 'nav_directory', given like "
             "'recipe' (a name or a raw GitHub URL), with file_type 'nav'. "
-            "Without it, only navigation files with canonical canVOD names "
-            "are read."
+            "canvod-filemap has no file type 'nav' yet, so a run with it "
+            "stops with an error; leave it unset and give the navigation "
+            "files canonical canVOD names."
         ),
     )
 

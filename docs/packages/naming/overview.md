@@ -162,9 +162,8 @@ sites:
 ```
 
 The recipe gives each file a canonical name without renaming it on disk.
-RINEX navigation files (`nav_directory`, for the broadcast ephemeris) take
-a recipe of their own, with `file_type: nav`, set as `nav_recipe` on the
-same receiver
+RINEX navigation files (`nav_directory`, for the broadcast ephemeris) need
+canonical names: canvod-filemap has no recipes for navigation files yet
 ([Ephemeris sources](../readers/ephemeris-sources.md#broadcast-ephemeris-from-rinex-navigation-files)).
 Naming recipes need an optional extension; see
 [Optional extensions](../../guides/extensions.md).

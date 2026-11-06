@@ -18,8 +18,8 @@ other source stops at an existing store. Give that run a store of its own
 
 1. Choose the source (see [Choosing an ephemeris source](#choosing-an-ephemeris-source)).
 2. With `broadcast`, give each receiver with RINEX files the folder of its
-   navigation files as `nav_directory`, and a `nav_recipe` if their names
-   don't follow the convention. In shared-position mode (the default)
+   navigation files as `nav_directory`; the files need canonical names.
+   In shared-position mode (the default)
    only the canopy receivers need them (see
    [Broadcast ephemeris from RINEX navigation files](#broadcast-ephemeris-from-rinex-navigation-files)).
    SBF files need nothing more.
@@ -232,9 +232,9 @@ the folder `nav_directory` names, relative to the site data root like
 `directory` (it may be the same folder), and need canonical names of type
 `nav` with sampling `00U`, for example
 `FANA01INK_R_20250010000_15M_00U_AA.nav`. Navigation files with other
-names need a naming recipe with `file_type: nav`, set as the receiver's
-`nav_recipe` (given like `recipe`; see
-[Files that don't follow the convention](../naming/overview.md#files-that-dont-follow-the-convention)).
+names must be renamed or linked under their canonical names: canvod-filemap
+has no naming recipes for navigation files yet, and a receiver with a
+`nav_recipe` stops with an error that says so.
 In per-receiver mode (`receiver_position_mode: per_receiver`) every
 receiver with RINEX files reads its own navigation files.
 
@@ -303,7 +303,6 @@ sites:
       canopy_01:
         directory: 02_canopy
         nav_directory: 02_canopy_nav
-        nav_recipe: my_site_canopy_nav  # only for names outside the convention
         reader_format: rinex3
 ```
 
@@ -311,8 +310,7 @@ Under `broadcast`, `canvodpy run` and `canvodpy config validate` refuse a
 site with a receiver whose `reader_format` is a RINEX format but that has
 no `nav_directory`; in shared-position mode, reference receivers are
 exempt. Only the site a run processes is checked, so one settings file
-can hold sites that a broadcast run can't process. A `nav_recipe` without
-`nav_directory` is refused when the settings load. In Airflow, `check_day` waits for the
+can hold sites that a broadcast run can't process. In Airflow, `check_day` waits for the
 navigation files as it waits for the observation files.
 
 ---

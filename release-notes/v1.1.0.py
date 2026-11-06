@@ -91,7 +91,6 @@ def _(mo):
           canopy_01:
             directory: 02_canopy
             nav_directory: 02_canopy_nav
-            nav_recipe: fangorn_canopy_nav  # only for names outside the convention
             reader_format: rinex3
     ```
 
@@ -123,9 +122,11 @@ def _(mo):
     mo.md(r"""
     ### Navigation files have canonical names too
 
-    Without a `nav_recipe`, canvodpy reads the navigation files with
-    canonical canVOD names: type `nav` and sampling `00U`. Files with other
-    names need a naming recipe with `file_type: nav`.
+    canvodpy reads the navigation files with canonical canVOD names: type
+    `nav` and sampling `00U`, for example
+    `FANA01INK_R_20250010000_15M_00U_AA.nav`. canvod-filemap has no naming
+    recipes for navigation files yet, so files with other names must be
+    renamed or linked under their canonical names.
     """)
     return
 
