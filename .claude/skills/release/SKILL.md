@@ -1,59 +1,60 @@
 ---
 name: release
-description: Release canvodpy and chosen packages (each package has its own version) - versions, changelogs, PR, tags, GitHub Release, PyPI. Use only when the user asks to release.
+description: Conduct a canvodpy release across canvodpy, canvodpy-test-data, canvodpy-demo and canvodpy-extensions - checks, versions, release commit, tags, GitHub release, PyPI, and the follow-ups in the other repositories. Use only when the user asks to release.
 disable-model-invocation: true
 ---
 
 # Release canvodpy
 
-Each package has its own version and tag `<package>-vX.Y.Z`; the umbrella
-`canvodpy` pins every package exactly, is part of every release and keeps
-the tag `vX.Y.Z` (ADR 0010). The long form, with troubleshooting, is
-`docs/RELEASING.md`. Tags, GitHub Releases and PyPI uploads are public and
-permanent: the user chooses the packages and versions; confirm them before
-preparing the release, again before tagging, and again before publishing
-to PyPI.
+`docs/RELEASING.md` is the checklist; this skill holds no steps of its
+own. Walk it phase by phase (Before, Release, After), tell the user where
+you are, and stop at every gate below. Tags, GitHub releases and PyPI
+uploads are public and permanent.
+
+## Gates: the user decides, you never do these
+
+| Gate | What you do | What the user does |
+|---|---|---|
+| Versions | run `just release-status`, show it, propose increments by the versioning rule (fix: patch; feature, setting or deprecation: minor; removal or store format: major) | chooses the packages and versions |
+| Merges | push a feature branch, open the PR | reviews and merges |
+| Tags | print `just tag-release` and the push commands | creates and pushes the tags |
+| Draft release | check that it exists and links the release notebook | publishes it |
+| PyPI | print `gh workflow run publish_pypi.yml --ref vX.Y.Z` | runs it, approves the `pypi` environment |
+
+An agent never merges, approves, pushes `main` or tags, or force-pushes
+(`CODING_STANDARDS.md`, Git and GitHub).
 
 ## Before
 
-- Submodule pointers (`demo`, `packages/canvod-readers/tests/test_data`)
-  point at the commits meant for this release.
-- canvod-filemap is taken from a tag or commit of canvodpy-extensions, not
-  a branch (root `pyproject.toml`, see the `extensions-dependency` guide).
-- Deprecated code stays in every 1.x release; v2.0.0 removes it.
-- A major release (and its pre-releases) has an upgrade guide,
-  `docs/guides/upgrading.md` for v1.0.0: stores to migrate, changed
-  settings and behavior, everything deprecated, what is new. The notices
-  in `README.md` (also the PyPI page), `docs/index.md`,
-  `docs/users/index.md`, the release's `CHANGELOG.md` section and the
-  GitHub release notes (Zenodo takes its text from them) link it.
-- `just check`, `just test` and `just test-network` pass.
-- The release files (`pyproject.toml` files, `uv.lock`, the `CHANGELOG.md`
-  files, `CITATION.cff`, `.zenodo.json`, `codemeta.json`) have no
-  uncommitted changes; `just release` refuses otherwise and
-  commits only those files.
+1. Ask the user for the canvodpy version, after showing `just release-status`.
+2. Run `just release-check X.Y.Z` on an up-to-date `main` with both
+   submodules initialised. Show the output.
+3. For every ✗: fix it in a pull request of its own (in canvodpy-demo or
+   canvodpy-test-data where the line says so), wait for the merge, run
+   the check again. For every ⚠: show it and ask. Don't continue while a
+   ✗ is left.
+4. Go through the items of RELEASING.md's Before list that the check can't
+   judge (the release notebook and What's new describe the changes users
+   notice; an upgrade guide for a major release). Ask the user to confirm
+   them.
 
-## Steps
+## Release
 
-1. `just release-status` lists, per package, the commits since its last
-   tag. Show it to the user; the user chooses the packages and versions.
-2. `just release <package>=X.Y.Z ... canvodpy=X.Y.Z`. It runs the tests,
-   checks the choice (canvodpy included, its increment at least the
-   largest, ranges between packages admit the new versions), writes the
-   versions, canvodpy's pins, the changelogs, canvodpy's version and the
-   date in the citation files (Zenodo takes the version from them) and
-   `uv.lock`, and commits
-   them on the new branch `release/vX.Y.Z` (canvodpy's version); no tag.
-   It refuses when that branch exists already: the user deletes the old
-   one first (for v1.0.0, the integration branch after #262 is merged).
-   Push that branch and open a PR. The user merges it; an agent never
-   merges (`CODING_STANDARDS.md`, Git and GitHub).
-3. On the merged `main`, the user runs `just tag-release` and pushes the
-   tags it names; an agent never creates or pushes release tags. GitHub
-   Actions drafts the GitHub Release of the canvodpy tag; the user
-   publishes it.
-4. PyPI is a separate, manual step the user triggers:
-   `gh workflow run publish_pypi.yml --ref vX.Y.Z`. It publishes the
-   packages whose release tag points at that commit.
-5. Afterwards canvodpy-extensions takes the new versions from PyPI (their
-   `canvodpy-dependency` guide).
+5. `just release <package>=X.Y.Z ... canvodpy=X.Y.Z` with the versions
+   the user chose. Show `git show --stat`, push `release/vX.Y.Z`, open the
+   PR. Wait for the user's merge.
+6. Tags, draft release and PyPI: the gates above, in RELEASING.md's order
+   (the canvodpy tag pushed on its own).
+7. The extensions, canvodpy first: for each extension package the user
+   wants released, follow the `release-package` skill of
+   canvodpy-extensions. Its release notebook
+   (`release-notes/<package>-vX.Y.Z.py`) goes into its release PR.
+
+## After
+
+8. Walk RELEASING.md's After list: PyPI, the published GitHub release,
+   the docs site, the demo headers (script header only, prose stays), the
+   demo pointer, the install line in `docs/users/index.md`, the
+   extensions' docs and lock, Zenodo. Each change is a pull request; open
+   them, the user merges.
+9. Tell the user what is done and what is left.

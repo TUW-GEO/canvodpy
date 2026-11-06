@@ -25,6 +25,11 @@ Commands
     On the merged release commit: creates the annotated tags of every package
     whose version has no tag yet (``canvod-store-v1.1.0``; ``v1.1.0`` for
     canvodpy). Does not push.
+``check VERSION``
+    Read-only: checks that the repository is ready for ``prepare`` of
+    canvodpy ``VERSION`` (main and CI, the version and its increment, the
+    submodule pointers, the demo notebook headers, the release notebook).
+    One line per check (✓, ⚠, ✗); exits 1 if any check fails.
 ``tagged``
     Prints the packages whose release tag points at HEAD: what the publish
     workflows build.
@@ -44,6 +49,7 @@ import sys
 import tomllib
 from dataclasses import dataclass
 from pathlib import Path
+from typing import Protocol
 
 from packaging.requirements import Requirement
 from packaging.version import InvalidVersion, Version
@@ -86,11 +92,9 @@ class Package:
 
     @property
     def changelog(self) -> Path:
-        return (
-            ROOT / "CHANGELOG.md"
-            if self.name == UMBRELLA
-            else self.folder / "CHANGELOG.md"
-        )
+        # canvodpy's changelog is the repository's, one folder up.
+        folder = self.folder.parent if self.name == UMBRELLA else self.folder
+        return folder / "CHANGELOG.md"
 
     @property
     def version(self) -> Version:
@@ -112,16 +116,16 @@ class Package:
         return [req for req in reqs if req.name.startswith("canvod")]
 
 
-def _packages() -> dict[str, Package]:
-    found = {UMBRELLA: Package(UMBRELLA, ROOT / "canvodpy")}
-    for pyproject in sorted(ROOT.glob("packages/*/pyproject.toml")):
+def _packages(root: Path = ROOT) -> dict[str, Package]:
+    found = {UMBRELLA: Package(UMBRELLA, root / "canvodpy")}
+    for pyproject in sorted(root.glob("packages/*/pyproject.toml")):
         name = tomllib.loads(pyproject.read_text())["project"]["name"]
         found[name] = Package(name, pyproject.parent)
     return found
 
 
-def _git(*args: str) -> str:
-    result = subprocess.run(["git", *args], cwd=ROOT, capture_output=True, text=True)
+def _git(*args: str, root: Path = ROOT) -> str:
+    result = subprocess.run(["git", *args], cwd=root, capture_output=True, text=True)
     if result.returncode != 0:
         raise SystemExit(
             f"git {' '.join(args)} failed:\n{result.stdout}{result.stderr}"
@@ -336,9 +340,9 @@ def _set_citation(version: Version, date: dt.date, root: Path = ROOT) -> None:
         path.write_text(text)
 
 
-def _release_files(packages: dict[str, Package]) -> list[Path]:
-    files = [ROOT / "pyproject.toml", ROOT / "uv.lock"]
-    files += [ROOT / name for name in CITATION_FIELDS]
+def _release_files(packages: dict[str, Package], root: Path = ROOT) -> list[Path]:
+    files = [root / "pyproject.toml", root / "uv.lock"]
+    files += [root / name for name in CITATION_FIELDS]
     for pkg in packages.values():
         files += [pkg.pyproject, pkg.changelog]
     return files
@@ -553,7 +557,435 @@ def tagged(packages: dict[str, Package]) -> int:
     return 0
 
 
-def main(argv: list[str]) -> int:
+# ---------------------------------------------------------------------------
+# check: is the repository ready for ``prepare``? (docs/RELEASING.md)
+# ---------------------------------------------------------------------------
+
+PASS, WARN, FAIL = "✓", "⚠", "✗"
+DEMO = "demo"
+TEST_DATA = "packages/canvod-readers/tests/test_data"
+KINDS = ("patch", "minor", "major")
+DEPRECATION = re.compile(r"\bdeprecat", re.IGNORECASE)
+#: Commit types that change no behaviour, so they never call for a minor.
+NO_BEHAVIOUR = {"docs", "test", "ci", "chore", "build", "style"}
+MERGED_PR = re.compile(
+    r"^Merge pull request #(?P<number>\d+) from [^/]+/(?P<branch>\S+)"
+)
+RELEASE_VERSION = re.compile(r"\d+\.\d+\.\d+(?:(?:a|b|rc)\d+)?")
+HEADER = re.compile(r"(?ms)^# /// script\n(?P<body>.*?)^# ///$")
+
+
+@dataclass
+class Check:
+    status: str
+    text: str
+
+
+class Remote(Protocol):
+    """What only GitHub knows. ``GitHubRemote`` asks it; tests pass a fake."""
+
+    def main_head(self, url: str) -> str | None:
+        """The commit ``main`` of the repository at ``url`` points at."""
+        ...
+
+    def tags_at(self, url: str, sha: str) -> list[str]:
+        """The tags of the repository at ``url`` that point at ``sha``."""
+        ...
+
+    def ci(self, sha: str) -> str:
+        """CI of canvodpy's commit ``sha``: success, failure, pending or none."""
+        ...
+
+
+class GitHubRemote:
+    """The remote through ``git ls-remote`` and the ``gh`` command line."""
+
+    def __init__(self, repository: str) -> None:
+        self.repository = repository  # owner/name of canvodpy on GitHub
+
+    def _ls_remote(self, *args: str) -> list[tuple[str, str]]:
+        result = subprocess.run(
+            ["git", "ls-remote", *args], capture_output=True, text=True, check=True
+        )
+        return [
+            tuple(line.split("\t", 1)) for line in result.stdout.splitlines() if line
+        ]
+
+    def main_head(self, url: str) -> str | None:
+        refs = self._ls_remote(url, "refs/heads/main")
+        return refs[0][0] if refs else None
+
+    def tags_at(self, url: str, sha: str) -> list[str]:
+        # An annotated tag is listed twice; "^{}" marks the commit it points at.
+        return [
+            ref.removeprefix("refs/tags/").removesuffix("^{}")
+            for commit, ref in self._ls_remote("--tags", url)
+            if commit == sha
+        ]
+
+    def ci(self, sha: str) -> str:
+        result = subprocess.run(
+            [
+                "gh",
+                "api",
+                "--paginate",
+                f"repos/{self.repository}/commits/{sha}/check-runs",
+                "--jq",
+                ".check_runs[] | [.status, .conclusion] | @tsv",
+            ],
+            capture_output=True,
+            text=True,
+            check=True,
+        )
+        runs = [line.split("\t") for line in result.stdout.splitlines() if line]
+        if not runs:
+            return "none"
+        if any(status != "completed" for status, _ in runs):
+            return "pending"
+        passed = {"success", "skipped", "neutral"}
+        return "success" if all(c in passed for _, c in runs) else "failure"
+
+
+def _submodule_urls(root: Path) -> dict[str, str]:
+    """Submodule path -> URL, from ``.gitmodules``."""
+    out = _git(
+        "config",
+        "--file",
+        ".gitmodules",
+        "--get-regexp",
+        r"^submodule\..*\.(path|url)$",
+        root=root,
+    )
+    paths, urls = {}, {}
+    for line in out.splitlines():
+        key, value = line.split(" ", 1)
+        name, _, kind = key.removeprefix("submodule.").rpartition(".")
+        (paths if kind == "path" else urls)[name] = value
+    return {path: urls[name] for name, path in paths.items()}
+
+
+def _pointer(root: Path, path: str) -> str:
+    """The commit canvodpy's ``HEAD`` records for the submodule at ``path``."""
+    mode, kind, sha = (
+        _git("ls-tree", "HEAD", "--", path, root=root).split("\t")[0].split()
+    )
+    return sha
+
+
+def _last_release(root: Path) -> Version | None:
+    """canvodpy's newest final version among the ``v*`` tags reachable from HEAD."""
+    versions = []
+    for name in _git("tag", "--merged", "HEAD", "--list", "v*", root=root).splitlines():
+        try:
+            versions.append(Version(name.removeprefix("v")))
+        except InvalidVersion:
+            continue
+    finals = [v for v in versions if not v.is_prerelease]
+    return max(finals) if finals else None
+
+
+def _needed_increment(subject: str) -> int:
+    """The increment one commit calls for: breaking major, feature or deprecation minor."""
+    match = SUBJECT.match(subject)
+    kind = match["type"] if match else ""
+    if (match and match["bang"]) or "BREAKING CHANGE" in subject:
+        return 2
+    if kind == "feat" or (kind not in NO_BEHAVIOUR and DEPRECATION.search(subject)):
+        return 1
+    return 0
+
+
+def _header_pins(text: str) -> dict[str, str] | None:
+    """Package -> exact version of the canvodpy pins in a notebook's script header.
+
+    ``None`` when the notebook has no script header.
+    """
+    header = HEADER.search(text)
+    if header is None:
+        return None
+    body = "\n".join(
+        line.removeprefix("#").strip() for line in header["body"].splitlines()
+    )
+    deps = tomllib.loads(body).get("dependencies", [])
+    pins = {}
+    for line in deps:
+        req = Requirement(line)
+        if req.name.startswith("canvod"):
+            exact = [s.version for s in req.specifier if s.operator == "=="]
+            pins[req.name] = exact[0] if exact else str(req.specifier) or "(no version)"
+    return pins
+
+
+def _check_main(root: Path, remote: Remote, url: str) -> Check:
+    head = _git("rev-parse", "HEAD", root=root)
+    main = remote.main_head(url)
+    if head != main:
+        return Check(
+            FAIL,
+            f"HEAD {head[:9]} is not main on GitHub ({(main or 'none')[:9]}): release from an up-to-date main (git switch main && git pull).",
+        )
+    return Check(PASS, f"HEAD is main on GitHub ({head[:9]})")
+
+
+def _check_ci(root: Path, remote: Remote) -> Check:
+    head = _git("rev-parse", "HEAD", root=root)
+    state = remote.ci(head)
+    if state == "success":
+        return Check(PASS, "CI passed on HEAD")
+    reasons = {
+        "pending": "is still running",
+        "failure": "failed",
+        "none": "has no runs",
+    }
+    return Check(
+        FAIL,
+        f"CI {reasons.get(state, state)} on HEAD {head[:9]}: release only a commit whose checks passed.",
+    )
+
+
+def _check_version(packages: dict[str, Package], root: Path, new: Version) -> Check:
+    current = packages[UMBRELLA].version
+    if new <= current:
+        return Check(FAIL, f"canvodpy {new} is not above the current {current}.")
+    if _git("tag", "--list", f"v{new}", root=root):
+        return Check(FAIL, f"The tag v{new} exists already.")
+    return Check(PASS, f"canvodpy {current} -> {new}")
+
+
+def _check_increment(root: Path, last: Version | None, new: Version) -> Check:
+    if last is None:
+        return Check(WARN, "No earlier release tag: the increment is not checked.")
+    commits = _git("log", "--no-merges", "--format=%h %s", f"v{last}..HEAD", root=root)
+    needed, why = 0, []
+    for line in commits.splitlines():
+        short, _, subject = line.partition(" ")
+        step = _needed_increment(subject)
+        if step > needed:
+            needed, why = step, []
+        if step == needed and step > 0:
+            why.append(f"{short} {subject}")
+    chosen = _increment(last, new)
+    if chosen < needed:
+        shown = "; ".join(why[:3]) + (
+            f"; and {len(why) - 3} more" if len(why) > 3 else ""
+        )
+        return Check(
+            FAIL,
+            f"{new} is a {KINDS[chosen]} release, but the commits since v{last} call for a {KINDS[needed]}: {shown}",
+        )
+    return Check(
+        PASS,
+        f"{KINDS[chosen]} release; the commits since v{last} call for a {KINDS[needed]}",
+    )
+
+
+def _check_branch(root: Path, new: Version) -> Check:
+    branch = f"release/v{new}"
+    if _branch_taken(branch, root=root):
+        return Check(
+            FAIL,
+            f"The branch {branch} exists already (locally or on a remote, as of your last git fetch): delete it first.",
+        )
+    return Check(PASS, f"The branch {branch} is free")
+
+
+def _check_release_files(packages: dict[str, Package], root: Path) -> Check:
+    files = [str(f.relative_to(root)) for f in _release_files(packages, root)]
+    dirty = _git("status", "--porcelain", "--", *files, root=root)
+    if dirty:
+        return Check(
+            FAIL,
+            "Release files have uncommitted changes: "
+            + ", ".join(line.split(maxsplit=1)[-1] for line in dirty.splitlines()),
+        )
+    return Check(PASS, "No uncommitted changes in the release files")
+
+
+def _check_pointer(root: Path, remote: Remote, path: str, url: str) -> Check:
+    pointer = _pointer(root, path)
+    main = remote.main_head(url)
+    if pointer != main:
+        return Check(
+            FAIL,
+            f"{path} points at {pointer[:9]}, its main is {(main or 'none')[:9]}: bump the pointer in a pull request.",
+        )
+    return Check(PASS, f"{path} points at its main ({pointer[:9]})")
+
+
+def _check_test_data_tag(root: Path, remote: Remote, url: str) -> Check:
+    pointer = _pointer(root, TEST_DATA)
+    tags = remote.tags_at(url, pointer)
+    if not tags:
+        return Check(
+            WARN,
+            f"The test-data commit {pointer[:9]} has no tag: tag the test data this release is tested with.",
+        )
+    return Check(PASS, f"The test data is tagged {', '.join(tags)}")
+
+
+def _check_demo_headers(root: Path, last: Version | None) -> Check:
+    """Every demo notebook pins the last release: canvodpy and its packages."""
+    if last is None:
+        return Check(WARN, "No earlier release tag: the demo headers are not checked.")
+    demo = root / DEMO
+    pointer = _pointer(root, DEMO)
+    if (
+        not (demo / ".git").exists()
+        or subprocess.run(
+            ["git", "cat-file", "-e", f"{pointer}^{{commit}}"],
+            cwd=demo,
+            capture_output=True,
+        ).returncode
+    ):
+        return Check(
+            FAIL,
+            f"The demo submodule lacks commit {pointer[:9]}: git submodule update --init {DEMO}",
+        )
+    pyproject = tomllib.loads(
+        _git("show", f"v{last}:canvodpy/pyproject.toml", root=root)
+    )
+    expected = {UMBRELLA: str(last)}
+    for line in pyproject["project"]["dependencies"]:
+        req = Requirement(line)
+        exact = [s.version for s in req.specifier if s.operator == "=="]
+        if req.name.startswith("canvod") and exact:
+            expected[req.name] = exact[0]
+    problems = []
+    names = _git("ls-tree", "--name-only", pointer, root=demo).splitlines()
+    notebooks = [name for name in sorted(names) if name.endswith(".py")]
+    for name in notebooks:
+        text = _git("show", f"{pointer}:{name}", root=demo)
+        if "marimo.App(" not in text:
+            continue
+        pins = _header_pins(text)
+        if not pins or UMBRELLA not in pins:
+            problems.append(f"{name} pins no canvodpy")
+            continue
+        wrong = [
+            f"{pkg}=={pin}"
+            for pkg, pin in sorted(pins.items())
+            if pin != expected.get(pkg)
+        ]
+        if wrong:
+            problems.append(f"{name} pins {', '.join(wrong)}")
+    if problems:
+        return Check(
+            FAIL,
+            f"Demo notebooks must pin the last release (canvodpy=={last} and its pins): "
+            + "; ".join(problems),
+        )
+    return Check(PASS, f"Every demo notebook pins canvodpy=={last} and its pins")
+
+
+def _check_release_notebook(root: Path, new: Version) -> list[Check]:
+    """The release notebook of a minor or major release, on HEAD and linked."""
+    path = f"release-notes/v{new}.py"
+    shown = subprocess.run(
+        ["git", "show", f"HEAD:{path}"], cwd=root, capture_output=True, text=True
+    )
+    if shown.returncode:
+        return [
+            Check(
+                FAIL,
+                f"{path} is not on HEAD: write it from release-notes/_template.py and merge it first.",
+            )
+        ]
+    checks = []
+    pins = _header_pins(shown.stdout) or {}
+    if pins.get(UMBRELLA) != str(new):
+        checks.append(
+            Check(
+                FAIL,
+                f"{path} pins canvodpy {pins.get(UMBRELLA, '(nothing)')}, not =={new}.",
+            )
+        )
+    else:
+        checks.append(Check(PASS, f"{path} pins canvodpy=={new}"))
+    for listing, needle in (
+        ("release-notes/README.md", f"v{new}.py"),
+        ("docs/whats-new.md", path),
+    ):
+        text = (root / listing).read_text() if (root / listing).exists() else ""
+        if needle in text:
+            checks.append(Check(PASS, f"{listing} links the notebook"))
+        else:
+            checks.append(
+                Check(FAIL, f"{listing} does not link the notebook ({needle}).")
+            )
+    return checks
+
+
+def _check_merged_prs(root: Path, last: Version | None, new: Version) -> Check:
+    """A reminder: the feature and fix pull requests since the last release."""
+    if last is None:
+        return Check(PASS, "No earlier release tag: no pull requests to compare")
+    notebook = root / f"release-notes/v{new}.py"
+    text = notebook.read_text() if notebook.exists() else ""
+    merges = _git(
+        "log", "--merges", "--first-parent", "--format=%s", f"v{last}..HEAD", root=root
+    )
+    missing = []
+    for subject in merges.splitlines():
+        match = MERGED_PR.match(subject)
+        if match and match["branch"].split("/")[0] in {"feat", "fix"}:
+            if f"#{match['number']}" not in text:
+                missing.append(f"#{match['number']} {match['branch']}")
+    if missing:
+        return Check(
+            WARN,
+            f"Pull requests since v{last} the notebook doesn't name; check it covers the ones users notice: "
+            + ", ".join(missing),
+        )
+    return Check(
+        PASS, f"The notebook names every feature and fix pull request since v{last}"
+    )
+
+
+def check(version: str, root: Path = ROOT, remote: Remote | None = None) -> int:
+    """Run every check, print one line each, return 1 if any failed."""
+    # The same form ``prepare`` takes: X.Y.Z, or a pre-release such as 1.2.0rc1.
+    if not RELEASE_VERSION.fullmatch(version):
+        print(f"'{version}' is not a version (expected e.g. 1.1.0, no 'v').")
+        return 2
+    new = Version(version)
+    urls = _submodule_urls(root)
+    origin = _git("remote", "get-url", "origin", root=root)
+    if remote is None:
+        repository = re.sub(r"^.*github\.com[:/]|\.git$", "", origin)
+        remote = GitHubRemote(repository)
+    packages = _packages(root)
+    last = _last_release(root)
+    checks = [
+        _check_main(root, remote, origin),
+        _check_ci(root, remote),
+        _check_version(packages, root, new),
+        _check_increment(root, last, new),
+        _check_branch(root, new),
+        _check_release_files(packages, root),
+        _check_pointer(root, remote, TEST_DATA, urls[TEST_DATA]),
+        _check_test_data_tag(root, remote, urls[TEST_DATA]),
+        _check_pointer(root, remote, DEMO, urls[DEMO]),
+        _check_demo_headers(root, last),
+    ]
+    if last is None or _increment(last, new) > 0:
+        checks += _check_release_notebook(root, new)
+        checks.append(_check_merged_prs(root, last, new))
+    else:
+        checks.append(Check(PASS, "Patch release: no release notebook needed"))
+    for result in checks:
+        print(f"{result.status} {result.text}")
+    failed = sum(result.status == FAIL for result in checks)
+    print(
+        f"\n{failed} check(s) failed."
+        if failed
+        else "\nReady for `just release` (docs/RELEASING.md)."
+    )
+    return 1 if failed else 0
+
+
+def main(argv: list[str], root: Path = ROOT, remote: Remote | None = None) -> int:
+    if argv[:1] == ["check"] and len(argv) == 2:
+        return check(argv[1], root=root, remote=remote)
     packages = _packages()
     if argv[:1] == ["status"]:
         return status(packages)
