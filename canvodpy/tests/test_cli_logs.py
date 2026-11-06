@@ -8,6 +8,8 @@ rsync or scp.
 from __future__ import annotations
 
 import json
+import sys
+from pathlib import Path
 
 import pytest
 import yaml
@@ -157,6 +159,137 @@ def test_one_run_keeps_its_events_from_the_main_process_and_the_workers(tmp_path
     ]
     with RunHistory.open(dest, read_only=True) as copy:
         assert [run.run_id for run in copy.runs()] == [RUN]
+
+
+def _rotate_before(call, rotated):
+    """*call*: on another log file next to *rotated*, a running run's log
+    handler first deletes *rotated*, as its rotation does."""
+
+    def wrapped(path, *args, **kwargs):
+        if Path(path).parent == rotated.parent and Path(path) != rotated:
+            rotated.unlink(missing_ok=True)
+        return call(path, *args, **kwargs)
+
+    return wrapped
+
+
+def test_a_log_file_that_rotates_away_during_the_copy_is_skipped(tmp_path, monkeypatch):
+    machine = tmp_path / "logs" / "machine"
+    machine.mkdir(parents=True)
+    (machine / "agent.json").write_text('{"event": "newest"}\n')
+    (machine / "agent.json.150").write_text('{"event": "oldest"}\n')
+    dest = tmp_path / "collected"
+    # The files are listed, then the handler deletes agent.json.150
+    monkeypatch.setattr(
+        Path, "open", _rotate_before(Path.open, machine / "agent.json.150")
+    )
+
+    result = _collect(_config_dir(tmp_path, tmp_path / "logs"), dest)
+
+    assert result.exit_code == 0, result.output
+    assert sorted(p.name for p in (dest / "machine").iterdir()) == ["agent.json"]
+    assert "1 log file was removed or renamed during the copy" in result.output
+
+
+def test_one_run_skips_a_log_file_that_rotates_away(tmp_path, monkeypatch):
+    log_dir = tmp_path / "logs"
+    machine = log_dir / "machine"
+    machine.mkdir(parents=True)
+    (machine / "agent.json").write_text(
+        _event(RUN, "run_started", "2026-11-06T03:00:00Z") + "\n"
+    )
+    (machine / "agent.json.150").write_text(
+        _event(RUN, "older", "2026-11-06T02:00:00Z") + "\n"
+    )
+    with RunHistory.open(log_dir) as history:
+        _start(history, RUN)
+    dest = tmp_path / "collected"
+    monkeypatch.setattr(
+        Path, "open", _rotate_before(Path.open, machine / "agent.json.150")
+    )
+
+    result = _collect(_config_dir(tmp_path, log_dir), dest, "--run-id", RUN)
+
+    assert result.exit_code == 0, result.output
+    events = [
+        json.loads(line) for line in (dest / f"{RUN}.json").read_text().splitlines()
+    ]
+    assert [e["event"] for e in events] == ["run_started"]
+
+
+def _rotate_after_first_open(machine):
+    """Path.open, but right after the first log file in *machine* is opened,
+    a running run's log handler rotates: agent.json.1 becomes
+    agent.json.2, agent.json becomes agent.json.1, and a new agent.json
+    starts."""
+    original = Path.open
+    rotated = []
+
+    def wrapped(path, *args, **kwargs):
+        handle = original(path, *args, **kwargs)
+        if Path(path).parent == machine and not rotated:
+            rotated.append(path)
+            (machine / "agent.json.1").rename(machine / "agent.json.2")
+            (machine / "agent.json").rename(machine / "agent.json.1")
+            (machine / "agent.json").write_text(
+                _event(RUN, "newest", "2026-11-06T04:00:00Z") + "\n"
+            )
+        return handle
+
+    return wrapped
+
+
+def _two_log_files(log_dir):
+    machine = log_dir / "machine"
+    machine.mkdir(parents=True)
+    (machine / "agent.json").write_text(
+        _event(RUN, "run_finished", "2026-11-06T03:09:00Z") + "\n"
+    )
+    (machine / "agent.json.1").write_text(
+        _event(RUN, "run_started", "2026-11-06T03:00:00Z") + "\n"
+    )
+    return machine
+
+
+# Windows refuses to rename a file another process holds open, so a log
+# handler can't rotate a file there while the copy reads it.
+_ROTATES_WHILE_OPEN = pytest.mark.skipif(
+    sys.platform == "win32", reason="Windows doesn't rename an open file"
+)
+
+
+@_ROTATES_WHILE_OPEN
+def test_a_log_file_renamed_during_the_copy_is_not_copied_twice(tmp_path, monkeypatch):
+    machine = _two_log_files(tmp_path / "logs")
+    dest = tmp_path / "collected"
+    monkeypatch.setattr(Path, "open", _rotate_after_first_open(machine))
+
+    result = _collect(_config_dir(tmp_path, tmp_path / "logs"), dest)
+
+    # agent.json is copied; the name agent.json.1 then holds that same file
+    assert result.exit_code == 0, result.output
+    assert sorted(p.name for p in (dest / "machine").iterdir()) == ["agent.json"]
+    assert "run_finished" in (dest / "machine" / "agent.json").read_text()
+    assert "1 log file was removed or renamed during the copy" in result.output
+
+
+@_ROTATES_WHILE_OPEN
+def test_one_run_reads_no_event_twice_when_a_log_file_is_renamed(tmp_path, monkeypatch):
+    log_dir = tmp_path / "logs"
+    machine = _two_log_files(log_dir)
+    with RunHistory.open(log_dir) as history:
+        _start(history, RUN)
+    dest = tmp_path / "collected"
+    monkeypatch.setattr(Path, "open", _rotate_after_first_open(machine))
+
+    result = _collect(_config_dir(tmp_path, log_dir), dest, "--run-id", RUN)
+
+    assert result.exit_code == 0, result.output
+    events = [
+        json.loads(line) for line in (dest / f"{RUN}.json").read_text().splitlines()
+    ]
+    assert [e["event"] for e in events] == ["run_finished"]
+    assert "1 log file was removed or renamed during the copy" in result.output
 
 
 def test_a_folder_that_is_not_empty_is_refused(tmp_path):

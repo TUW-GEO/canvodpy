@@ -384,6 +384,14 @@ overwritten: the folder you give must be new or empty. The whole log
 folder can grow to several gigabytes: `machine/agent.json` alone keeps
 150 older files of up to 100 MB.
 
+The log files themselves are copied one after another. When a run fills
+`machine/agent.json` during the copy, its older files are renamed and
+the oldest is deleted. The command notices a file that was removed or
+renamed after it listed the folder, leaves it out, so nothing is copied
+twice, and says how many it left out. Those files, or the events in
+them with `--run-id`, are then missing from the copy. For a complete
+copy, collect between runs.
+
 To copy one run only, give its run ID:
 
 ```bash
