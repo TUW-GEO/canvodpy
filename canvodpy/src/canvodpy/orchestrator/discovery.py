@@ -51,7 +51,7 @@ from dataclasses import dataclass, field
 from fnmatch import fnmatch
 from functools import lru_cache
 from pathlib import Path
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, get_args
 
 from natsort import natsorted
 
@@ -897,7 +897,7 @@ def navigation_files(
     if path is not None:
         from canvod.filemap.recipe import NamingRecipe
 
-        if "nav" not in NamingRecipe.model_fields["file_type"].annotation.__args__:
+        if "nav" not in get_args(NamingRecipe.model_fields["file_type"].annotation):
             msg = (
                 f"Receiver {receiver} has nav_recipe '{nav_recipe}', but the "
                 "installed canvod-filemap has no file type nav, so no naming "
