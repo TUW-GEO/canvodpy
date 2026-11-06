@@ -5,6 +5,7 @@ from __future__ import annotations
 from datetime import UTC, date, datetime, timedelta
 from pathlib import Path
 from types import SimpleNamespace
+from typing import get_args
 from unittest import mock
 
 import pytest
@@ -308,7 +309,7 @@ def test_nav_recipe_drives_navigation_file_discovery(
     pytest.importorskip("canvod.filemap.recipe_files")
     from canvod.filemap.recipe import NamingRecipe
 
-    if "nav" not in NamingRecipe.model_fields["file_type"].annotation.__args__:
+    if "nav" not in get_args(NamingRecipe.model_fields["file_type"].annotation):
         pytest.skip("canvod-filemap has no file type nav yet (extensions #110)")
     (tmp_path / "recipes" / "fangorn").mkdir(parents=True)
     (tmp_path / "recipes" / "fangorn" / "ros_nav.yaml").write_text(_FANGORN_NAV_RECIPE)
@@ -319,6 +320,24 @@ def test_nav_recipe_drives_navigation_file_discovery(
 
     assert [f.path.name for f in found] == ["ract001a00.25p"]
     assert found[0].canonical_name == "FANA01INK_R_20250010000_15M_00U_AA.nav"
+
+
+def test_a_nav_recipe_without_filemap_support_names_canonical_names(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """A nav_recipe stops with what to do while filemap has no type nav."""
+    pytest.importorskip("canvod.filemap.recipe_files")
+    from canvod.filemap.recipe import NamingRecipe
+
+    if "nav" in get_args(NamingRecipe.model_fields["file_type"].annotation):
+        pytest.skip("canvod-filemap has the file type nav (extensions #110)")
+    (tmp_path / "recipes" / "fangorn").mkdir(parents=True)
+    (tmp_path / "recipes" / "fangorn" / "ros_nav.yaml").write_text(_FANGORN_NAV_RECIPE)
+    monkeypatch.setenv("CANVOD_CONFIG_DIR", str(tmp_path))
+    _touch(tmp_path / "nav", "ract001a00.25p")
+
+    with pytest.raises(DiscoveryError, match="canonical names of type nav"):
+        navigation_files("fangorn", "canopy_01", tmp_path / "nav", "ros_nav", DAY)
 
 
 def test_a_recipe_url_on_another_host_is_refused(

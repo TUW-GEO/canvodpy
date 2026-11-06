@@ -51,7 +51,7 @@ from dataclasses import dataclass, field
 from fnmatch import fnmatch
 from functools import lru_cache
 from pathlib import Path
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, get_args
 
 from natsort import natsorted
 
@@ -886,8 +886,27 @@ def navigation_files(
         The receiver's ``nav_recipe`` setting.
     yyyydoy : str
         Day in ``YYYYDOY`` format.
+
+    Raises
+    ------
+    DiscoveryError
+        If ``nav_recipe`` is set but the installed canvod-filemap has no
+        file type ``nav`` (canvodpy-extensions #110).
     """
-    day = ReceiverDay(receiver, nav_directory, yyyydoy, recipe_file(site, nav_recipe))
+    path = recipe_file(site, nav_recipe)
+    if path is not None:
+        from canvod.filemap.recipe import NamingRecipe
+
+        if "nav" not in get_args(NamingRecipe.model_fields["file_type"].annotation):
+            msg = (
+                f"Receiver {receiver} has nav_recipe '{nav_recipe}', but the "
+                "installed canvod-filemap has no file type nav, so no naming "
+                "recipe can select navigation files. Remove nav_recipe and "
+                "give the navigation files canonical names of type nav, e.g. "
+                f"..._{yyyydoy}0000_01D_00U_AA.nav."
+            )
+            raise DiscoveryError(msg)
+    day = ReceiverDay(receiver, nav_directory, yyyydoy, path)
     return discover_files(day, "nav")
 
 

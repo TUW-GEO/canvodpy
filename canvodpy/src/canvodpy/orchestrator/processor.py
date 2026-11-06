@@ -2283,7 +2283,7 @@ class RinexDataProcessor:
                 f"its nav_recipe '{receiver_config.nav_recipe}' finds none"
                 if receiver_config.nav_recipe
                 else "they need canonical names of type nav, e.g. "
-                f"..._{date_str}0000_01D_00U_AA.nav, or a nav_recipe"
+                f"..._{date_str}0000_01D_00U_AA.nav"
             )
             raise MissingNavigationFilesError(
                 f"No navigation files of receiver {receiver} for {date_str} in "
