@@ -85,11 +85,12 @@ not decide the version: the maintainer does.
 
 ## 2. Versions and changelogs
 
-`scripts/release.py`, through three recipes:
+`scripts/release.py`, through four recipes:
 
 | Recipe | What it does |
 |--------|--------------|
 | `just release-status` | For each package: version, last release tag, and the commits since that tag that touched the package's folder |
+| `just release-check 1.1.0` | Read-only: whether the repository is ready for a release of canvodpy 1.1.0 (main and CI, the increment, the submodule pointers, the demo notebook headers, the release notebook); one line per check, exits 1 on a failure ([Releasing](../RELEASING.md#before)) |
 | `just release canvod-store=1.1.0 canvodpy=1.1.0` | Runs the tests, checks the choice, writes the versions, canvodpy's pins, the changelogs and `uv.lock`, commits them on `release/v1.1.0` |
 | `just tag-release` | On the merged commit on `main`: tags every package version without a tag; does not push |
 

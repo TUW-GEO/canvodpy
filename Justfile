@@ -489,6 +489,15 @@ venv-upgrade:
 release-status:
     uv run --script scripts/release.py status
 
+# Read-only: is the repository ready for `just release`? One line per check
+# (✓ pass, ⚠ warning, ✗ fail): main and CI, the version and its increment,
+# the submodule pointers, the demo notebook headers, the release notebook.
+# Exits 1 on any ✗ (docs/RELEASING.md).
+# check before releasing canvodpy 1.1.0: just release-check 1.1.0
+[group('build and release')]
+release-check VERSION:
+    uv run --script scripts/release.py check {{VERSION}}
+
 # Runs the tests, checks the choice (canvodpy always included, its
 # increment at least the largest, ranges admit the new versions), writes the
 # versions, canvodpy's pins, the changelogs, the citation files and uv.lock,
