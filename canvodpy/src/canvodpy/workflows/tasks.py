@@ -2,8 +2,9 @@
 
 Each function accepts only primitives (str, dict, list, None) and returns
 a JSON-serializable dict, so a scheduler can pass the results between
-tasks. None of them needs Airflow; canvod-airflow (canvodpy-extensions)
-is one user and wraps them as DAG tasks. They delegate to existing
+tasks. All but :func:`check_sp3_availability` run without Airflow;
+canvod-airflow (canvodpy-extensions) is one user and wraps them as DAG
+tasks. They delegate to existing
 canvodpy machinery — no pipeline rewrite.
 
 A daily run calls them in this order::
@@ -226,9 +227,10 @@ def check_day(site: str, yyyydoy: str) -> dict:
     ------
     RuntimeError
         If files are missing for any receiver (stops the run so an
-        orchestrator such as Airflow can retry later). With ``ephemeris_source: broadcast`` this includes
-        the navigation files of a receiver with RINEX files, which a run
-        needs for the satellite positions.
+        orchestrator such as Airflow can retry later). With
+        ``ephemeris_source: broadcast`` this includes the navigation files
+        of a receiver with RINEX files, which a run needs for the
+        satellite positions.
     DiscoveryError
         If the receivers' files cannot be assigned unambiguously, e.g. two
         files cover the same time. Retrying does not help; the data
@@ -237,8 +239,8 @@ def check_day(site: str, yyyydoy: str) -> dict:
     Notes
     -----
     The check is not recorded in the run history (ADR 0018): an
-    orchestrator retries it until the files arrive, and each retry would add a failed
-    run.
+    orchestrator retries it until the files arrive, and each retry would
+    add a failed run.
     """
     return _check_files(site, yyyydoy, None, "GNSS")
 
@@ -1113,8 +1115,8 @@ def process_day(site: str, yyyydoy: str) -> dict:
     RuntimeError
         If nothing was processed for the day (e.g. no files, or the
         auxiliary data could not be downloaded), or a receiver-day failed
-        (#334), so an orchestrator retries the task; the log of the run gives the
-        reason.
+        (#334), so an orchestrator retries the task; the log of the run
+        gives the reason.
     """
     from canvodpy.api import Site
 
