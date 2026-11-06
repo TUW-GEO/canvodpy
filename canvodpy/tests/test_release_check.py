@@ -511,13 +511,75 @@ def test_a_documentation_pull_request_is_not_listed(repo: Repo, capsys) -> None:
     assert "#105" not in out
 
 
-def test_a_squashed_pull_request_is_listed(repo: Repo, capsys) -> None:
+def test_a_squashed_pull_request_is_listed(repo: Repo, capsys, monkeypatch) -> None:
+    monkeypatch.setenv("GIT_COMMITTER_NAME", "GitHub")
     repo.commit("fix(readers): keep truncated records (#106)")
     _, out = repo.check("1.1.0", capsys)
     assert _line(out, "⚠", "#106 fix(readers): keep truncated records")
 
 
+def test_an_issue_number_in_a_local_commit_is_not_a_pull_request(
+    repo: Repo, capsys
+) -> None:
+    repo.commit("fix(readers): keep truncated records (#433)")
+    repo.commit("fix(readers): and the last one (#433)")
+    _, out = repo.check("1.1.0", capsys)
+    assert "#433" not in out
+
+
+def test_a_pull_request_is_listed_once(repo: Repo, capsys, monkeypatch) -> None:
+    monkeypatch.setenv("GIT_COMMITTER_NAME", "GitHub")
+    repo.commit("fix(store): one (#107)")
+    repo.commit("fix(store): one (#107)")
+    _, out = repo.check("1.1.0", capsys)
+    assert out.count("#107 fix(store): one") == 1
+
+
+def test_a_longer_number_in_the_notebook_does_not_name_a_pull_request(
+    repo: Repo, capsys
+) -> None:
+    _merge(repo, "fix/61-short", 61, "fix(store): short")
+    _write(
+        repo.root,
+        "release-notes/v1.1.0.py",
+        notebook(["canvodpy==1.1.0"]) + "# Something else (#613)\n",
+    )
+    repo.commit("docs(release-notes): name another pull request")
+    _, out = repo.check("1.1.0", capsys)
+    assert _line(out, "⚠", "#61 fix/61-short")
+
+
+@pytest.mark.parametrize(
+    "message",
+    [
+        "refactor(store): stop calling a deprecated icechunk API",
+        "perf: avoid the deprecated path",
+        "fix(cli): no BREAKING CHANGE for users",
+    ],
+)
+def test_prose_about_deprecation_or_breaking_calls_for_a_patch(
+    repo: Repo, capsys, message: str
+) -> None:
+    _release_v110(repo)
+    repo.commit(message)
+    _, out = repo.check("1.1.1", capsys)
+    assert _line(out, "✓", "the commits since v1.1.0 call for a patch")
+
+
+def test_a_release_tag_without_canvodpy_pins_fails(repo: Repo, capsys) -> None:
+    pyproject = (repo.root / "canvodpy" / "pyproject.toml").read_text()
+    (repo.root / "canvodpy" / "pyproject.toml").unlink()
+    repo.commit("chore: no umbrella")
+    _git(repo.root, "tag", "v1.0.1")
+    _write(repo.root, "canvodpy/pyproject.toml", pyproject)
+    repo.commit("chore: the umbrella again")
+    code, out = repo.check("1.1.0", capsys)
+    assert code == 1
+    assert _line(out, "✗", "v1.0.1 has no readable canvodpy/pyproject.toml")
+
+
 def test_a_pull_request_the_notebook_names_is_not_listed(repo: Repo, capsys) -> None:
+    _merge(repo, "feat/100-broadcast", 100, "feat(store): broadcast ephemeris")
     _write(
         repo.root,
         "release-notes/v1.1.0.py",

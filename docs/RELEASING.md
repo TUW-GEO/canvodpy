@@ -108,7 +108,8 @@ just release-check 1.1.0
 writes nothing. It prints one line per check: ✓ passed, ⚠ a warning to
 judge, ✗ failed. It exits 1 if any check failed. It checks:
 
-- `HEAD` is `main` on GitHub, and CI passed on it. CI runs
+- `HEAD` is `main` on GitHub, and CI passed on it: every check run on
+  `HEAD` passed or was skipped, the optional ones too. CI runs
   `just check-release-notes`, so the release notebook's format is checked
   there.
 - `just release` would accept the version: it goes up and has no tag yet,
@@ -118,15 +119,16 @@ judge, ✗ failed. It exits 1 if any check failed. It checks:
 - The increment is at least what the commits since the last release call
   for: a breaking change (`feat!:` or a `BREAKING CHANGE:` footer) a major,
   a feature or a deprecation a minor. A deprecation is a commit whose
-  subject says "deprecate"; commits of the types `docs`, `test`, `ci`,
-  `chore`, `build` and `style` change no behavior and never count as one.
+  description starts with "deprecate" (`refactor(config): deprecate ...`);
+  commits of the types `docs`, `test`, `ci`, `chore`, `build` and `style`
+  change no behavior and never count as one.
 - Both submodule pointers are their repository's `main`; ⚠ when the
   test-data commit has no tag.
 - Every demo notebook pins the last release, as above.
 - For a minor or major release: the release notebook is on `HEAD`, pins
   the new version, and is linked from `release-notes/README.md` and
   `docs/whats-new.md` on `HEAD`. ⚠ lists the pull requests since the last
-  release, merged or squashed, with a feature, fix or deprecation among
+  release, merged or squashed on GitHub, with a feature, fix or deprecation among
   their commits that the notebook doesn't name by number (`#123`):
   compare them with the notebook.
 

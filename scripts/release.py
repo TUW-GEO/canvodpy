@@ -584,7 +584,10 @@ PASS, WARN, FAIL = "✓", "⚠", "✗"
 CI_PASSED, CI_FAILED, CI_RUNNING, CI_NONE = "success", "failure", "pending", "none"
 DEMO = "demo"
 TEST_DATA = "packages/canvod-readers/tests/test_data"
-DEPRECATION = re.compile(r"\bdeprecat", re.IGNORECASE)
+#: A deprecation commit says so first: "refactor(config): deprecate ...".
+DEPRECATION = re.compile(r"^deprecate\b", re.IGNORECASE)
+#: A breaking change is marked by "!" or by this footer (conventional commits).
+BREAKING = re.compile(r"(?m)^BREAKING[ -]CHANGE:")
 #: Commit types that change no behavior: their subject never makes a deprecation.
 NO_BEHAVIOR = {"docs", "test", "ci", "chore", "build", "style"}
 #: Commit types a release notebook may have to describe.
@@ -593,6 +596,8 @@ MERGED_PR = re.compile(
     r"^Merge pull request #(?P<number>\d+) from [^/\s]+/(?P<branch>\S+)"
 )
 SQUASHED_PR = re.compile(r"\s*\(#(?P<number>\d+)\)$")
+#: Who commits a pull request squashed or rebased on GitHub.
+GITHUB_COMMITTER = "GitHub"
 #: The forms of canvodpy's release tags: X.Y.Z, or a pre-release such as 1.2.0rc1.
 RELEASE_VERSION = re.compile(r"\d+\.\d+\.\d+(?:(?:a|b|rc)\d+)?")
 HEADER = re.compile(r"(?ms)^# /// script\n(?P<body>.*?)^# ///$")
@@ -752,14 +757,17 @@ def _header_pins(text: str) -> dict[str, Version | None] | None:
 def _needed_increment(message: str) -> int:
     """The increment one commit calls for: breaking major, feature or deprecation minor.
 
-    ``message`` is the whole commit message: a ``BREAKING CHANGE:`` footer counts.
+    ``message`` is the whole commit message: a ``BREAKING CHANGE:`` footer
+    counts. A deprecation is a commit whose description starts with
+    "deprecate", as the deprecation commits are written.
     """
     subject = message.splitlines()[0] if message else ""
     match = SUBJECT.match(subject)
     kind = match["type"] if match else ""
-    if (match and match["bang"]) or "BREAKING CHANGE" in message:
+    if (match and match["bang"]) or BREAKING.search(message):
         return 2
-    if kind == "feat" or (kind not in NO_BEHAVIOR and DEPRECATION.search(subject)):
+    deprecation = bool(match and DEPRECATION.match(match["text"]))
+    if kind == "feat" or (kind not in NO_BEHAVIOR and deprecation):
         return 1
     return 0
 
@@ -877,10 +885,15 @@ def _check_test_data_tag(root: Path, remote: Remote, url: str | None) -> Check:
     return Check(PASS, f"The test data is tagged {', '.join(tags)}")
 
 
-def _expected_pins(root: Path, last: Version) -> dict[str, Version | None]:
-    """canvodpy and the package versions it pinned in release ``last``."""
-    text = _show(root, "canvodpy/pyproject.toml", f"v{last}") or ""
-    pins = _exact_pins(tomllib.loads(text)["project"]["dependencies"])
+def _expected_pins(root: Path, last: Version) -> dict[str, Version | None] | None:
+    """canvodpy and the package versions it pinned in release ``last``, or
+    None if the tag has no readable canvodpy/pyproject.toml."""
+    text = _show(root, "canvodpy/pyproject.toml", f"v{last}")
+    try:
+        dependencies = tomllib.loads(text or "")["project"]["dependencies"]
+    except tomllib.TOMLDecodeError, KeyError:
+        return None
+    pins = _exact_pins(dependencies)
     return {UMBRELLA: last, **pins}
 
 
@@ -930,7 +943,13 @@ def _check_demo_headers(root: Path, last: Version | None) -> Check:
             FAIL,
             f"The demo submodule lacks commit {pointer[:9]}: git submodule update --init {DEMO}",
         )
-    problems = _demo_header_problems(demo, pointer, _expected_pins(root, last))
+    expected = _expected_pins(root, last)
+    if expected is None:
+        return Check(
+            FAIL,
+            f"v{last} has no readable canvodpy/pyproject.toml: the demo pins can't be compared.",
+        )
+    problems = _demo_header_problems(demo, pointer, expected)
     if problems:
         return Check(
             FAIL,
@@ -981,23 +1000,28 @@ def _notable_pull_requests(root: Path, last: Version) -> list[str]:
     """``#number subject`` of the merged pull requests since ``last`` with a
     feature, fix or deprecation, merged or squashed."""
     out = _git(
-        "log", "--first-parent", "--format=%H%x00%P%x00%s", f"v{last}..HEAD", root=root
+        "log",
+        "--first-parent",
+        "--format=%H%x00%P%x00%cn%x00%s",
+        f"v{last}..HEAD",
+        root=root,
     )
     found = []
     for line in out.splitlines():
-        sha, parents, subject = line.split("\x00")
+        sha, parents, committer, subject = line.split("\x00")
         merged = MERGED_PR.match(subject)
         squashed = SQUASHED_PR.search(subject)
         if merged and len(parents.split()) == 2:
             number, label = merged["number"], merged["branch"]
             messages = [m for _, m in _messages(root, f"{sha}^1..{sha}^2")]
-        elif squashed:
+        elif squashed and committer == GITHUB_COMMITTER:
             number, label = squashed["number"], subject[: squashed.start()]
             messages = [m for _, m in _messages(root, f"{sha}^..{sha}")]
         else:
             continue
-        if any(_notable(message) for message in messages):
-            found.append(f"#{number} {label}")
+        pr = f"#{number} {label}"
+        if pr not in found and any(_notable(message) for message in messages):
+            found.append(pr)
     return found
 
 
@@ -1007,7 +1031,9 @@ def _check_merged_prs(root: Path, last: Version | None, new: Version) -> Check:
         return Check(PASS, "No earlier release tag: no pull requests to compare")
     text = _show(root, f"release-notes/v{new}.py") or ""
     missing = [
-        pr for pr in _notable_pull_requests(root, last) if pr.split()[0] not in text
+        pr
+        for pr in _notable_pull_requests(root, last)
+        if not re.search(rf"{pr.split()[0]}\b", text)
     ]
     if missing:
         return Check(
