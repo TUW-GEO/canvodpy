@@ -114,6 +114,9 @@ def _(mo):
     section shows the settings only.
 
     More: [Ephemeris sources](https://canvodpy.eu/packages/readers/ephemeris-sources/#broadcast-ephemeris-from-rinex-navigation-files).
+    Pull requests: [#581](https://github.com/TUW-GEO/canvodpy/pull/581),
+    [#584](https://github.com/TUW-GEO/canvodpy/pull/584),
+    [#585](https://github.com/TUW-GEO/canvodpy/pull/585).
     """)
     return
 
@@ -227,6 +230,8 @@ def _(mo):
     cache from v1.0.0 is computed again once.
 
     More: [Interpolation methods](https://canvodpy.eu/packages/auxiliary/interpolation/#orbits).
+    Pull requests: [#588](https://github.com/TUW-GEO/canvodpy/pull/588),
+    [#593](https://github.com/TUW-GEO/canvodpy/pull/593).
     """)
     return
 
@@ -305,6 +310,7 @@ def _(mo):
     {_rows}
 
     More: [SBF decoding](https://canvodpy.eu/packages/readers/sbf-decoding/).
+    Pull request: [#579](https://github.com/TUW-GEO/canvodpy/pull/579).
     """)
     return
 
@@ -317,8 +323,9 @@ def _(mo):
     `canvodpy store log --path` shows the history of a store without a
     settings file, for example a copy or a store someone sent you, local or
     on S3 (`s3://bucket/prefix`). `--plain` draws the commit graph without
-    colors, for a file or a CI log, and `--svg FILE` writes it as an image.
-    Here, the history of the GNSS store of the demo data:
+    colors, for a file or a CI log, and `--svg FILE` writes it as an image
+    ([#551](https://github.com/TUW-GEO/canvodpy/pull/551)). Here, the
+    history of the GNSS store of the demo data:
     """)
     return
 
@@ -391,11 +398,25 @@ def _(mo):
     - **`canvodpy config validate --start/--end`** checks the receiver data
       of those days only, as `canvodpy run` reads them. An overlay used for
       some days, for example with the recipes of an older sampling
-      interval, is checked over those days.
+      interval, is checked over those days
+      ([#603](https://github.com/TUW-GEO/canvodpy/pull/603)); an overlay
+      with settings from a link gets the recipes it names
+      ([#600](https://github.com/TUW-GEO/canvodpy/pull/600)).
+    - **Days without files:** `canvodpy config validate` names each
+      receiver's days without files in the range, or between the site's
+      first and last day with files
+      ([#613](https://github.com/TUW-GEO/canvodpy/pull/613)).
+    - **`canvodpy logs collect DEST`** copies the log folder and the run
+      history to one folder, to send on; `--run-id` takes one run only
+      ([#616](https://github.com/TUW-GEO/canvodpy/pull/616),
+      [#617](https://github.com/TUW-GEO/canvodpy/pull/617)).
     - **The run dashboard** of `canvodpy run --dashboard` says whether the
       run is still going and has a button, *Shut the dashboard down*, which
       stops the dashboard but never the run. `--dashboard-stop-at-end`
-      stops it when the run ends. Each stage's bar shows its time.
+      stops it when the run ends
+      ([#549](https://github.com/TUW-GEO/canvodpy/pull/549)). Each
+      stage's bar shows its time
+      ([#547](https://github.com/TUW-GEO/canvodpy/pull/547)).
     - **Colors that follow the terminal:** the help, the messages and the
       progress bars take the terminal's background, dark or light, and
       avoid red. `CANVODPY_TERMINAL_THEME=dark` or `light` sets it,
@@ -404,9 +425,49 @@ def _(mo):
       the start of `canvodpy`, `canvodpy --version` and `canvodpy run`, in
       an interactive terminal only. `CANVODPY_NO_BANNER=1` turns it off.
     - After `canvodpy --install-completion`, the command says how to load
-      the completion in the open terminal.
+      the completion in the open terminal. The colors, the banner,
+      `--help-all` and this hint came with
+      [#546](https://github.com/TUW-GEO/canvodpy/pull/546).
 
     More: [Command line](https://canvodpy.eu/api/cli/#in-the-terminal).
+    """)
+    return
+
+
+@app.cell
+def _(mo):
+    mo.md(r"""
+    ## Parallel runs
+
+    - The days of a unit are prepared (orbit and clock data, receiver
+      positions) in the run's worker processes, up to four days at the
+      same time. Before, threads of the main process prepared them, one
+      day at a time
+      ([#611](https://github.com/TUW-GEO/canvodpy/pull/611)).
+    - A run has one pool of worker processes for preparing the days,
+      reading the files and computing the VOD. The memory budget counts
+      each of these tasks per worker, and what a worker keeps from its
+      earlier tasks, so a run may start fewer workers than with v1.0.0
+      ([#620](https://github.com/TUW-GEO/canvodpy/pull/620),
+      [#622](https://github.com/TUW-GEO/canvodpy/pull/622)). The log says
+      which task sets the estimate (`worker_peak_task` of
+      `memory_budget`).
+
+    More: [Parallel processing](https://canvodpy.eu/guides/parallel-processing/#memory-use).
+    """)
+    return
+
+
+@app.cell
+def _(mo):
+    mo.md(r"""
+    ## Installing single packages
+
+    canvod-readers alone no longer installs polars:
+    `SatelliteCatalog.to_dataframe()` asks for it (`uv add polars`).
+    canvod-utils now installs psutil, which it needs for the CPU cores of
+    the workers ([#614](https://github.com/TUW-GEO/canvodpy/pull/614)).
+    canvodpy installs both, as before.
     """)
     return
 
@@ -433,9 +494,26 @@ def _(mo):
       Before, the first site's signals were cached, and a second site
       keeping more signals got no angles for the extra ones, without an
       error. The cache now holds the orbits once per satellite;
-      existing entries are computed again once.
-    - The clock files of JPL and IAC are read.
-    - The hint for a missing `canvod-filemap` points at PyPI.
+      existing entries are computed again once
+      ([#581](https://github.com/TUW-GEO/canvodpy/pull/581)).
+    - **Two receivers on one data folder:** with a shared aux cache, the
+      second receiver got no angles; now it does
+      ([#582](https://github.com/TUW-GEO/canvodpy/pull/582)).
+    - **A canopy receiver without files** on a day is a gap in the data,
+      reported with the days without VOD, not a failed day of its
+      reference receiver; the run's exit code no longer changes for it
+      ([#601](https://github.com/TUW-GEO/canvodpy/pull/601)).
+    - **Runs at the same time:** without a shared aux cache, the aux store
+      of a day has the site and the sampling interval in its name, so runs
+      of the same day for other sites or samplings no longer remove or
+      read it ([#590](https://github.com/TUW-GEO/canvodpy/pull/590)).
+    - **RINEX 2.11:** an epoch whose records end early or hold invalid
+      fields is left out, and the next epoch is read
+      ([#605](https://github.com/TUW-GEO/canvodpy/pull/605)).
+    - The clock files of JPL and IAC are read
+      ([#554](https://github.com/TUW-GEO/canvodpy/pull/554)).
+    - The hint for a missing `canvod-filemap` points at PyPI
+      ([#534](https://github.com/TUW-GEO/canvodpy/pull/534)).
     """)
     return
 
