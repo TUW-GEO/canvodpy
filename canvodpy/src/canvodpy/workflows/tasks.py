@@ -2,9 +2,9 @@
 
 Each function accepts only primitives (str, dict, list, None) and returns
 a JSON-serializable dict, so a scheduler can pass the results between
-tasks. All but :func:`check_sp3_availability` run without Airflow;
-canvod-airflow (canvodpy-extensions) is one user and wraps them as DAG
-tasks. They delegate to existing
+tasks. All but the deprecated :func:`check_sp3_availability` run
+without Airflow; canvod-airflow (canvodpy-extensions) is one user and
+wraps them as DAG tasks. They delegate to existing
 canvodpy machinery — no pipeline rewrite.
 
 A daily run calls them in this order::
@@ -505,12 +505,20 @@ def validate_data_dirs(site: str) -> dict:
 
 
 # ---------------------------------------------------------------------------
-# SP3/CLK sensor helper — shared by all DAGs that wait for agency products
+# SP3/CLK sensor helper — moved to canvod-airflow
 # ---------------------------------------------------------------------------
 
 
+@deprecated(
+    "`canvodpy.workflows.tasks.check_sp3_availability` is left over from "
+    "development and will be removed with the next major version. Use "
+    "`canvod.airflow.sensors.check_sp3_availability` (canvod-airflow) instead."
+)
 def check_sp3_availability(ds: str) -> object:
     """Return a ``PokeReturnValue`` for the SP3/CLK date-age sensor.
+
+    Needs Airflow, which no canvodpy package depends on. canvod-airflow
+    has its own copy, :func:`canvod.airflow.sensors.check_sp3_availability`.
 
     Uses a date-age heuristic keyed to ``processing.aux_data.product_type``:
 
@@ -519,9 +527,6 @@ def check_sp3_availability(ds: str) -> object:
 
     Raises ``AirflowSkipException`` when age > 30 days to prevent zombie runs.
     Falls back to ``"final"`` if config cannot be loaded.
-
-    Intended for use inside ``@task.sensor`` bodies so that the four identical
-    sensor copies (2 DAGs × 2 repos) share a single implementation.
 
     Parameters
     ----------

@@ -649,3 +649,42 @@ class TestProcessRinexPreprocessing:
         # 00:01 bin: last 6 epochs of a (SNR 12..17) and first 6 of b (0..5).
         assert a["SNR"].values[1, 0] == np.mean([*range(12, 18), *range(6)])
         assert b["SNR"].values[0, 0] == np.mean(range(6, 18))
+
+
+def test_check_sp3_availability_is_deprecated():
+    """The sensor gate moved to canvod-airflow; the canvodpy copy warns."""
+    import datetime
+    import sys
+    import types
+
+    from canvodpy.workflows import tasks
+
+    day = datetime.date.today() - datetime.timedelta(days=20)
+
+    class _Poke:
+        def __init__(self, is_done, xcom_value):
+            self.is_done = is_done
+            self.xcom_value = xcom_value
+
+    exceptions = types.ModuleType("airflow.exceptions")
+    exceptions.AirflowSkipException = RuntimeError
+    base = types.ModuleType("airflow.sensors.base")
+    base.PokeReturnValue = _Poke
+    fake = {
+        "airflow": types.ModuleType("airflow"),
+        "airflow.exceptions": exceptions,
+        "airflow.sensors": types.ModuleType("airflow.sensors"),
+        "airflow.sensors.base": base,
+    }
+    with (
+        patch.dict(sys.modules, fake),
+        patch.object(tasks, "load_config", side_effect=OSError),
+        pytest.warns(
+            FutureWarning,
+            match=r"Use `canvod\.airflow\.sensors\.check_sp3_availability`",
+        ),
+    ):
+        result = tasks.check_sp3_availability(str(day))
+    # Unreadable settings fall back to "final", ready 14 days after the day.
+    assert result.is_done is True
+    assert result.xcom_value["product_type"] == "final"
