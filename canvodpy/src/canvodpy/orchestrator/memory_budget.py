@@ -7,14 +7,17 @@ workers:
 - The main process holds what it holds when the run starts, plus the data
   of the days in flight: two units of days, the one going to VOD and the
   one being read (:func:`~canvodpy.orchestrator.pipeline._run_ahead`).
-- Each worker holds the Python libraries, plus its largest task: a task
-  reads the files that share an epoch chunk, one after the other, and
-  holds their data until it writes them. With ``processing.preprocessing``
-  set the chunks are counted at the aggregation interval, so the files of
-  a time bin are in one task.
+- Each worker holds the Python libraries, plus the largest of its tasks
+  (:func:`worker_peaks`). A file task reads the files that share an epoch
+  chunk, one after the other, and holds their data until it writes them.
+  With ``processing.preprocessing`` set the chunks are counted at the
+  aggregation interval, so the files of a time bin are in one task. The
+  same workers prepare the days (orbits, clocks, receiver positions) and
+  compute the VOD of a pair-day: a canopy and its reference on one day
+  (#433).
 
 Workers = min(the worker cap, (budget - main process with one day) /
-largest task). A unit then gets as many days as the rest of the budget
+largest worker task). A unit then gets as many days as the rest of the budget
 holds, at most :data:`MAX_UNIT_DAYS` (ADR 0021). A run in which not even
 one worker fits with one day stops before reading a file
 (:class:`MemoryBudgetError`). The estimates come from the factors below,
@@ -55,6 +58,21 @@ TASK_HELD_BYTES_PER_INPUT_BYTE = 1.6
 
 #: For a reader not listed above: the largest factor.
 UNKNOWN_READER_FACTOR = max(TASK_BYTES_PER_INPUT_BYTE.values())
+
+#: Memory a worker adds to prepare a day, and per byte of the day's data
+#: (:func:`main_day_bytes`): mostly the orbit and clock products. Measured
+#: as the growth of the worker during the task (#433): 0.62 GB on a day of
+#: the test data counted at 30 MB, at most 0.80 GB on the days of a 90-day
+#: run of RINEX v3 days counted at 0.35 GB.
+PREPARE_BYTES = int(0.65 * GB)
+PREPARE_BYTES_PER_DAY_BYTE = 0.5
+
+#: Memory a worker adds to compute the VOD of a pair-day, per byte of its
+#: data (:func:`main_day_bytes` of the canopy's and the reference's input
+#: files): it loads the canopy and the reference day from the store.
+#: Measured as above, on runs of one pair: 0.10 GB on the test data, at
+#: most 1.03 GB on the 90-day run.
+VOD_BYTES_PER_DAY_BYTE = 3.5
 
 #: Memory the main process holds per byte of a day's input files while the
 #: day is in flight, by reader (#452). Measured on the test data as the
@@ -105,8 +123,11 @@ class MemoryPlan:
     budget_bytes: int
     main_bytes: int
     day_bytes: int
+    pair_day_bytes: int
     task_peak_bytes: int
     largest_task: tuple[Path, ...]
+    worker_peak_bytes: int
+    worker_peak_task: str
     workers: int
     unit_days: int
     unit_limit: str
@@ -118,14 +139,19 @@ class MemoryPlan:
         ``unit_limit`` says what set the days per unit: ``"memory"``,
         ``"max_unit_days"`` (:data:`MAX_UNIT_DAYS`), ``"days_to_run"``
         (the run has no more days) or ``"days_per_batch"`` (the
-        deprecated setting).
+        deprecated setting). ``worker_peak_task`` says which task sets the
+        memory of a worker (:func:`worker_peaks`); ``task_peak_gb`` is the
+        largest file task.
         """
         return {
             "budget_gb": round(self.budget_bytes / GB, 2),
             "main_process_gb": round(self.main_bytes / GB, 2),
             "day_gb": round(self.day_bytes / GB, 2),
+            "pair_day_gb": round(self.pair_day_bytes / GB, 2),
             "task_peak_gb": round(self.task_peak_bytes / GB, 2),
             "largest_task": [p.name for p in self.largest_task],
+            "worker_peak_gb": round(self.worker_peak_bytes / GB, 2),
+            "worker_peak_task": self.worker_peak_task,
             "workers": self.workers,
             "unit_days": self.unit_days,
             "unit_limit": self.unit_limit,
@@ -161,6 +187,25 @@ def task_peak_bytes(files: Sequence[InputFile]) -> int:
     )
     held = sum(f.size for f in files) * TASK_HELD_BYTES_PER_INPUT_BYTE
     return WORKER_BASE_BYTES + int(reading + held)
+
+
+def worker_peaks(
+    task: Sequence[InputFile], *, day_bytes: int, pair_day_bytes: int
+) -> dict[str, int]:
+    """Estimated peak of a worker in each of its tasks.
+
+    ``"read"``: the file task *task* (:func:`task_peak_bytes`);
+    ``"prepare"``: preparing a day; ``"vod"``: the VOD of a pair-day.
+    *day_bytes* is the largest day (all receivers), *pair_day_bytes* the
+    largest pair-day, each :func:`main_day_bytes` of its input files.
+    """
+    return {
+        "read": task_peak_bytes(task),
+        "prepare": WORKER_BASE_BYTES
+        + PREPARE_BYTES
+        + int(day_bytes * PREPARE_BYTES_PER_DAY_BYTE),
+        "vod": WORKER_BASE_BYTES + int(pair_day_bytes * VOD_BYTES_PER_DAY_BYTE),
+    }
 
 
 def chunk_tasks(
@@ -210,11 +255,20 @@ def largest_task(tasks: Iterable[Sequence[InputFile]]) -> Sequence[InputFile]:
     return max(tasks, key=task_peak_bytes, default=[])
 
 
+#: The worker tasks of :func:`worker_peaks`, for the error message.
+_TASK_WORDS = {
+    "read": "reading {files}",
+    "prepare": "preparing the largest day",
+    "vod": "computing the VOD of the largest pair-day",
+}
+
+
 def plan_memory(
     *,
     budget_bytes: int,
     main_now_bytes: int,
     day_bytes: int,
+    pair_day_bytes: int,
     task: Sequence[InputFile],
     tasks_per_day: float,
     max_workers: int,
@@ -238,6 +292,8 @@ def plan_memory(
     day_bytes
         Memory the main process holds for the largest day (all
         receivers): :func:`main_day_bytes` of its input files.
+    pair_day_bytes
+        The same for the largest pair-day: a canopy and its reference.
     task
         The largest task (:func:`largest_task`).
     tasks_per_day
@@ -260,7 +316,9 @@ def plan_memory(
     MemoryBudgetError
         If one worker does not fit with one day per unit.
     """
-    peak = task_peak_bytes(task)
+    peaks = worker_peaks(task, day_bytes=day_bytes, pair_day_bytes=pair_day_bytes)
+    peak_task = max(peaks, key=lambda name: peaks[name])
+    peak = peaks[peak_task]
 
     def main_bytes(days: int) -> int:
         return main_now_bytes + UNITS_IN_MEMORY * days * day_bytes
@@ -272,8 +330,9 @@ def plan_memory(
             f"memory, but its budget is {budget_bytes / GB:.1f} GB "
             f"({budget_source}). The main process needs "
             f"{main_bytes(1) / GB:.1f} GB with one day per unit "
-            f"({UNITS_IN_MEMORY} days in flight), and one worker reading "
-            f"{files} needs {peak / GB:.1f} GB. Raise "
+            f"({UNITS_IN_MEMORY} days in flight), and one worker "
+            f"{_TASK_WORDS[peak_task].format(files=files)} needs "
+            f"{peak / GB:.1f} GB. Raise "
             "processing.params.max_memory_gb or free memory."
         )
         raise MemoryBudgetError(msg)
@@ -291,8 +350,11 @@ def plan_memory(
         budget_bytes=budget_bytes,
         main_bytes=main_bytes(days),
         day_bytes=day_bytes,
-        task_peak_bytes=peak,
+        pair_day_bytes=pair_day_bytes,
+        task_peak_bytes=peaks["read"],
         largest_task=tuple(f.path for f in task),
+        worker_peak_bytes=peak,
+        worker_peak_task=peak_task,
         workers=workers,
         unit_days=days,
         unit_limit=unit_limit,

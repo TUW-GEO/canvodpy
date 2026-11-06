@@ -21,7 +21,7 @@ from concurrent.futures import (
     wait,
 )
 from concurrent.futures.process import BrokenProcessPool
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from datetime import datetime
 from functools import partial
 from itertools import zip_longest
@@ -36,6 +36,7 @@ import structlog
 import xarray as xr
 from icechunk.session import ForkSession
 from loky import get_reusable_executor as _loky_reusable
+from loky.process_executor import ProcessPoolExecutor as _LokyPool
 
 from canvod.config import CanvodConfig, load_config
 from canvod.config.models import mixed_format_error, reference_store_group
@@ -144,6 +145,9 @@ T = TypeVar("T")
 #: has up to 31 days; more connections at once than this risk being refused
 #: by the download server.
 PREPARE_THREADS = 4
+
+#: Held while a thread gets or replaces a run's worker pool.
+_POOL_LOCK = threading.Lock()
 
 # A day prepared in Phase 1: its processor (without orbits and clocks: a
 # worker prepared the day), file tasks and files per receiver.
@@ -513,6 +517,9 @@ class PipelineOrchestrator:
         (:meth:`_warn_satellites_without_position`). Default None (no-op).
 
     """
+
+    #: The run's worker pool (:meth:`worker_pool`), once a thread asked for it.
+    _pool: _LokyPool | None = None
 
     @deprecate_no_effect_arguments
     @deprecated_argument(
@@ -2362,8 +2369,30 @@ class PipelineOrchestrator:
         """The run's worker pool: loky's reusable executor, sized for the run.
 
         The GNSS phase and a run's VOD phase share it; asking loky for an
-        executor with other settings would restart its workers.
+        executor with other settings would restart its workers. loky keeps
+        one executor per thread, and a run asks from several threads (the
+        main thread, the one reading the units, those preparing the days),
+        so the run keeps the first one and hands it to every thread: one
+        pool, the workers the memory budget planned (#433). A pool that
+        broke or was shut down, or that a new memory plan resized, is
+        replaced; a replaced pool that still runs lets its workers go.
         """
+        with _POOL_LOCK:
+            old = self._pool
+            if (
+                old is not None
+                and not old._flags.broken  # loky's state of the pool
+                and not old._flags.shutdown
+                and old._max_workers == self.pool_workers
+            ):
+                return old
+            self._pool = pool = self._new_pool()
+            # loky resizes the pool of the asking thread in place.
+            if old is not None and old is not pool and not old._flags.shutdown:
+                old.shutdown(wait=False)
+            return pool
+
+    def _new_pool(self) -> _LokyPool:
         resources = self._config.processing.params.resolve_resources()
         return _loky_reusable(
             max_workers=self.pool_workers,
@@ -2806,7 +2835,8 @@ class PipelineOrchestrator:
 
         See :mod:`canvodpy.orchestrator.memory_budget`. A reference receiver
         paired with several canopies is counted once per pairing: one task
-        reads its file for all pairings.
+        reads its file for all pairings. A VOD task holds one pair-day, a
+        canopy and its reference, each counted once.
 
         Raises
         ------
@@ -2823,8 +2853,16 @@ class PipelineOrchestrator:
             else None
         )
         epoch_chunk = self._config.processing.icechunk.chunk_strategies.gnss_store.epoch
+        pairs = [
+            (cfg["canopy_receiver"], cfg["reference_receiver"])
+            for cfg in (
+                a.model_dump() if hasattr(a, "model_dump") else a
+                for a in self.site.vod_analyses.values()
+            )
+        ]
         tasks: list[list[InputFile]] = []
         day_bytes = 0
+        pair_day_bytes = 0
         for _date_key, groups in filtered_dates:
             pairings: dict[tuple[str, str], int] = defaultdict(int)
             days: dict[tuple[str, str], tuple[ReceiverDay, str]] = {}
@@ -2833,23 +2871,33 @@ class PipelineOrchestrator:
                 pairings[key] += 1
                 days[key] = (day, fmt)
             this_day = 0
+            receiver_bytes: dict[str, int] = defaultdict(int)
             # discover_files reads the scans _find_files cached for this
             # run: no folder is listed again.
             for key, (day, fmt) in days.items():
                 files = [
                     InputFile(
                         path=found.path,
-                        size=_input_bytes([found.path]) * pairings[key],
+                        size=_input_bytes([found.path]),
                         reader=fmt,
                         canonical_name=found.canonical_name,
                     )
                     for found in discover_files(day, fmt)
                 ]
+                receiver_bytes[day.receiver] += main_day_bytes(files)
+                files = [replace(f, size=f.size * pairings[key]) for f in files]
                 this_day += main_day_bytes(files)
                 tasks.extend(
                     chunk_tasks(files, epoch_chunk=epoch_chunk, cadence_s=cadence_s)
                 )
             day_bytes = max(day_bytes, this_day)
+            pair_day_bytes = max(
+                [pair_day_bytes]
+                + [
+                    receiver_bytes[canopy] + receiver_bytes[reference]
+                    for canopy, reference in pairs
+                ]
+            )
 
         main_now = psutil.Process().memory_info().rss
         if self.max_memory_gb is not None:
@@ -2863,6 +2911,7 @@ class PipelineOrchestrator:
             budget_bytes=budget,
             main_now_bytes=main_now,
             day_bytes=day_bytes,
+            pair_day_bytes=pair_day_bytes,
             task=largest_task(tasks),
             tasks_per_day=len(tasks) / max(1, len(filtered_dates)),
             max_workers=max_workers,
