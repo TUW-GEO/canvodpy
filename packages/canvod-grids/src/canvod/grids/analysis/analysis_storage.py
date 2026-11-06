@@ -35,6 +35,12 @@ def AnalysisStorage(store_path: Path | str) -> AnalysisStorageType:
     canvod.store.AnalysisStorage
         Storage of the analysis results in that store.
     """
-    from canvod.store.analysis_storage import AnalysisStorage as _AnalysisStorage
+    try:
+        from canvod.store.analysis_storage import AnalysisStorage as _AnalysisStorage
+    except ImportError as e:
+        raise ImportError(
+            "canvod-store is required to store analysis results. "
+            "Install with: uv add canvod-store"
+        ) from e
 
     return _AnalysisStorage(store_path)

@@ -110,8 +110,12 @@ For example, `uv add canvod-grids` also installs `canvod-utils`:
 ## Checks
 
 - `just check-package-imports` installs each package with only its
-  declared dependencies and imports every module, so a dependency that a
-  package uses but doesn't declare fails in CI.
+  declared dependencies and imports every module, and every module that
+  one of its functions imports, so a dependency that a package uses but
+  doesn't declare fails in CI. An optional import is guarded
+  (`try`/`except ImportError` with an install hint). It then runs the
+  `## Example` code of the package's README in the same environment; an
+  example that needs input files runs its import lines only.
 - `just deps-report` prints the tables on this page, and `just
   deps-mermaid` prints the graph. Both read the `pyproject.toml` files and
   fail if a package depends on a package of a higher layer, or if a package

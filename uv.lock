@@ -557,12 +557,14 @@ name = "canvod-utils"
 version = "1.0.0"
 source = { editable = "packages/canvod-utils" }
 dependencies = [
+    { name = "psutil" },
     { name = "pydantic" },
     { name = "structlog" },
 ]
 
 [package.metadata]
 requires-dist = [
+    { name = "psutil", specifier = ">=7.2.2" },
     { name = "pydantic", specifier = ">=2.0" },
     { name = "structlog", specifier = ">=24.1.0" },
 ]

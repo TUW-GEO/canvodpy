@@ -619,9 +619,12 @@ The following checks execute automatically in sequence. If any one fails, the co
 
 CI also runs `just check-package-imports` (too slow for a hook, about two
 minutes): it installs each package with only the dependencies its own
-`pyproject.toml` declares and imports every module. It fails when a
-package imports a library it does not declare, which the shared `.venv`
-hides. Run it after you add an import of a new library to a package.
+`pyproject.toml` declares. Then it imports every module, imports every
+module that the package's functions import, and runs the example of its
+README. It fails when a package imports a library it does not declare,
+which the shared `.venv` hides, or when a README example doesn't run with
+what its Install section installs. Run it after you add an import of a
+new library to a package or change a README example.
 
 After a commit, merge or checkout, the **code graph** hook rebuilds the
 code graph in the background (`.graphify/`, log in `.graphify/build.log`).
