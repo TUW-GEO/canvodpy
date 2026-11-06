@@ -61,7 +61,7 @@
 | canvodpy/src/canvodpy/vod\_computer.py                                          |      311 |       60 |     81% |97-103, 116-123, 175, 222, 327, 501-506, 542-601, 615-630, 751-752, 919, 930-938, 1018, 1082-1083 |
 | canvodpy/src/canvodpy/workflow.py                                               |       96 |       25 |     74% |147-149, 236-238, 300-302, 359-381, 462-469 |
 | canvodpy/src/canvodpy/workflows/\_\_init\_\_.py                                 |        2 |        0 |    100% |           |
-| canvodpy/src/canvodpy/workflows/tasks.py                                        |      424 |      118 |     72% |64, 334, 390, 531-555, 610-689, 772-774, 791-792, 795-796, 812-814, 840-846, 964-966, 973-1065, 1250-1253, 1311-1312, 1376-1377 |
+| canvodpy/src/canvodpy/workflows/tasks.py                                        |      425 |      104 |     76% |64, 334, 390, 547, 615-694, 777-779, 796-797, 800-801, 817-819, 845-851, 969-971, 978-1070, 1255-1258, 1316-1317, 1381-1382 |
 | packages/canvod-auxiliary/src/canvod/auxiliary/\_\_init\_\_.py                  |       17 |        0 |    100% |           |
 | packages/canvod-auxiliary/src/canvod/auxiliary/\_internal/\_\_init\_\_.py       |        3 |        0 |    100% |           |
 | packages/canvod-auxiliary/src/canvod/auxiliary/\_internal/units.py              |        5 |        1 |     80% |        16 |
@@ -249,7 +249,7 @@
 | packages/canvod-viz/src/canvod/viz/widgets/hemisphere\_widgets.py               |       27 |        0 |    100% |           |
 | packages/canvod-vod/src/canvod/vod/\_\_init\_\_.py                              |        4 |        0 |    100% |           |
 | packages/canvod-vod/src/canvod/vod/calculator.py                                |       76 |        8 |     89% |55, 77, 121, 128-135 |
-| **TOTAL**                                                                       | **30536** | **8445** | **72%** |           |
+| **TOTAL**                                                                       | **30537** | **8431** | **72%** |           |
 
 
 ## Setup coverage badge
