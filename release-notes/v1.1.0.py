@@ -481,13 +481,15 @@ def _(mo):
       `precise` (above).
     - `processing.icechunk.zarr_async_concurrency` has no effect: it
       limited Zarr's concurrent chunk writes for only some of the store's
-      writes. Delete it from your settings.
+      writes. Delete it from your settings
+      ([#552](https://github.com/TUW-GEO/canvodpy/pull/552)).
     - The arguments `use_velocities` and `fallback_method` of `Sp3Config`
       have no effect: `Sp3Config(method=...)` picks the interpolation.
       Leave them out.
     - `canvodpy.workflows.tasks.check_sp3_availability`, the only
       function in canvodpy that needs Airflow: use
-      `canvod.airflow.sensors.check_sp3_availability` from canvod-airflow.
+      `canvod.airflow.sensors.check_sp3_availability` from canvod-airflow
+      ([#623](https://github.com/TUW-GEO/canvodpy/pull/623)).
 
     All four are removed with v2.0.0.
 
