@@ -53,6 +53,8 @@ def _plan(budget_gb: float, task: list[InputFile], **kwargs) -> object:
         "tasks_per_day": 1.0,
         "budget_source": "processing.params.max_memory_gb",
     }
+    # A run of one pair: a VOD task holds the whole day.
+    defaults["pair_day_bytes"] = kwargs.get("day_bytes", 0)
     return plan_memory(budget_bytes=int(budget_gb * GB), task=task, **defaults | kwargs)
 
 
@@ -74,28 +76,42 @@ def test_the_workers_stay_within_the_cap():
 # A worker of the run's pool also prepares days and computes VOD (#433).
 # On the test data, a day the budget counts at 30 MB: preparing it grows a
 # worker by 0.62 GB, its VOD by 0.10 GB. On a 90-day run of RINEX v3 days
-# counted at 0.35 GB: at most 0.80 and 1.03 GB.
+# counted at 0.35 GB: at most 0.80 and 1.03 GB. Both runs have one pair, so
+# a VOD task holds the whole day.
 
 
 def test_a_worker_has_room_to_prepare_a_day_of_the_test_data():
-    peaks = worker_peaks([_file("0000", MB)], day_bytes=30 * MB)
+    peaks = worker_peaks([_file("0000", MB)], day_bytes=30 * MB, pair_day_bytes=30 * MB)
     assert peaks["prepare"] - WORKER_BASE_BYTES >= int(0.62 * GB)
     assert peaks["vod"] - WORKER_BASE_BYTES >= int(0.10 * GB)
 
 
 def test_a_worker_has_room_for_a_day_of_the_90_day_run():
-    peaks = worker_peaks([_file("0000", MB)], day_bytes=int(0.35 * GB))
+    peaks = worker_peaks(
+        [_file("0000", MB)], day_bytes=int(0.35 * GB), pair_day_bytes=int(0.35 * GB)
+    )
     assert peaks["prepare"] - WORKER_BASE_BYTES >= int(0.80 * GB)
     assert peaks["vod"] - WORKER_BASE_BYTES >= int(1.03 * GB)
-    # Neither by more than a fifth.
-    assert peaks["prepare"] - WORKER_BASE_BYTES <= int(1.2 * 0.80 * GB)
-    assert peaks["vod"] - WORKER_BASE_BYTES <= int(1.2 * 1.03 * GB)
+    # Neither by more than a quarter.
+    assert peaks["prepare"] - WORKER_BASE_BYTES <= int(1.25 * 0.80 * GB)
+    assert peaks["vod"] - WORKER_BASE_BYTES <= int(1.25 * 1.03 * GB)
+
+
+def test_a_vod_task_holds_one_pair_day():
+    # Two canopies share a reference: a VOD task loads one canopy and the
+    # reference, never the third receiver of the day.
+    receiver = int(0.2 * GB)
+    task = [_file("0000", MB)]
+    three = worker_peaks(task, day_bytes=3 * receiver, pair_day_bytes=2 * receiver)
+    two = worker_peaks(task, day_bytes=2 * receiver, pair_day_bytes=2 * receiver)
+    assert three["vod"] == two["vod"]
+    assert three["prepare"] > two["prepare"]
 
 
 def test_the_workers_have_room_for_their_largest_task():
     task = [_file("0000", MB)]
     day = int(0.35 * GB)
-    worker = max(worker_peaks(task, day_bytes=day).values())
+    worker = max(worker_peaks(task, day_bytes=day, pair_day_bytes=day).values())
     assert worker > task_peak_bytes(task)
     main = int(0.5 * GB) + UNITS_IN_MEMORY * day
     # Room for three such workers, not four.
@@ -109,7 +125,7 @@ def test_the_workers_have_room_for_their_largest_task():
 def test_a_unit_gets_the_days_the_memory_left_by_the_workers_holds():
     task = [_file("0000", MB)]
     day = int(0.25 * GB)
-    peak = max(worker_peaks(task, day_bytes=day).values())
+    peak = max(worker_peaks(task, day_bytes=day, pair_day_bytes=day).values())
     # Room for the main process with three days per unit and one worker.
     budget = int(0.5 * GB) + UNITS_IN_MEMORY * 3 * day + peak
     plan = _plan(budget / GB, task, day_bytes=day, days_to_run=10, max_workers=1)
@@ -119,7 +135,7 @@ def test_a_unit_gets_the_days_the_memory_left_by_the_workers_holds():
 def test_the_workers_come_before_the_days_of_a_unit():
     task = [_file("0000", MB)]
     day = int(0.25 * GB)
-    peak = max(worker_peaks(task, day_bytes=day).values())
+    peak = max(worker_peaks(task, day_bytes=day, pair_day_bytes=day).values())
     # Room for four workers with one day, or one worker with more days.
     budget = int(0.5 * GB) + UNITS_IN_MEMORY * day + 4 * peak
     plan = _plan(budget / GB, task, day_bytes=day, days_to_run=10)
@@ -317,6 +333,8 @@ def test_a_run_logs_its_sizes_and_the_worker_peaks(rosalia_site):
     (budget,) = _log_events(log_dir, "memory_budget")
     assert budget["workers"] == 2
     assert budget["budget_gb"] == 64
+    # One pair: a VOD task holds both receivers of the day.
+    assert 0 < budget["pair_day_gb"] == budget["day_gb"]
     peaks = _log_events(log_dir, "worker_memory_peak")
     assert peaks
     assert all(p["peak_gb"] >= p["before_gb"] > 0 for p in peaks)
@@ -343,6 +361,7 @@ def test_each_run_sizes_from_the_deprecated_cap_and_records_the_sized_workers(
             budget_bytes=kwargs["budget_bytes"],
             main_bytes=0,
             day_bytes=0,
+            pair_day_bytes=0,
             task_peak_bytes=0,
             largest_task=(),
             worker_peak_bytes=0,

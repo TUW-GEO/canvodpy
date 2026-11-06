@@ -21,7 +21,7 @@ from concurrent.futures import (
     wait,
 )
 from concurrent.futures.process import BrokenProcessPool
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from datetime import datetime
 from functools import partial
 from itertools import zip_longest
@@ -2375,17 +2375,21 @@ class PipelineOrchestrator:
         so the run keeps the first one and hands it to every thread: one
         pool, the workers the memory budget planned (#433). A pool that
         broke or was shut down, or that a new memory plan resized, is
-        replaced.
+        replaced; a replaced pool that still runs lets its workers go.
         """
         with _POOL_LOCK:
-            pool = self._pool
+            old = self._pool
             if (
-                pool is None
-                or pool._flags.broken  # loky's state of the pool
-                or pool._flags.shutdown
-                or pool._max_workers != self.pool_workers
+                old is not None
+                and not old._flags.broken  # loky's state of the pool
+                and not old._flags.shutdown
+                and old._max_workers == self.pool_workers
             ):
-                self._pool = pool = self._new_pool()
+                return old
+            self._pool = pool = self._new_pool()
+            # loky resizes the pool of the asking thread in place.
+            if old is not None and old is not pool and not old._flags.shutdown:
+                old.shutdown(wait=False)
             return pool
 
     def _new_pool(self) -> _LokyPool:
@@ -2831,7 +2835,8 @@ class PipelineOrchestrator:
 
         See :mod:`canvodpy.orchestrator.memory_budget`. A reference receiver
         paired with several canopies is counted once per pairing: one task
-        reads its file for all pairings.
+        reads its file for all pairings. A VOD task holds one pair-day, a
+        canopy and its reference, each counted once.
 
         Raises
         ------
@@ -2848,8 +2853,16 @@ class PipelineOrchestrator:
             else None
         )
         epoch_chunk = self._config.processing.icechunk.chunk_strategies.gnss_store.epoch
+        pairs = [
+            (cfg["canopy_receiver"], cfg["reference_receiver"])
+            for cfg in (
+                a.model_dump() if hasattr(a, "model_dump") else a
+                for a in self.site.vod_analyses.values()
+            )
+        ]
         tasks: list[list[InputFile]] = []
         day_bytes = 0
+        pair_day_bytes = 0
         for _date_key, groups in filtered_dates:
             pairings: dict[tuple[str, str], int] = defaultdict(int)
             days: dict[tuple[str, str], tuple[ReceiverDay, str]] = {}
@@ -2858,23 +2871,33 @@ class PipelineOrchestrator:
                 pairings[key] += 1
                 days[key] = (day, fmt)
             this_day = 0
+            receiver_bytes: dict[str, int] = defaultdict(int)
             # discover_files reads the scans _find_files cached for this
             # run: no folder is listed again.
             for key, (day, fmt) in days.items():
                 files = [
                     InputFile(
                         path=found.path,
-                        size=_input_bytes([found.path]) * pairings[key],
+                        size=_input_bytes([found.path]),
                         reader=fmt,
                         canonical_name=found.canonical_name,
                     )
                     for found in discover_files(day, fmt)
                 ]
+                receiver_bytes[day.receiver] += main_day_bytes(files)
+                files = [replace(f, size=f.size * pairings[key]) for f in files]
                 this_day += main_day_bytes(files)
                 tasks.extend(
                     chunk_tasks(files, epoch_chunk=epoch_chunk, cadence_s=cadence_s)
                 )
             day_bytes = max(day_bytes, this_day)
+            pair_day_bytes = max(
+                [pair_day_bytes]
+                + [
+                    receiver_bytes[canopy] + receiver_bytes[reference]
+                    for canopy, reference in pairs
+                ]
+            )
 
         main_now = psutil.Process().memory_info().rss
         if self.max_memory_gb is not None:
@@ -2888,6 +2911,7 @@ class PipelineOrchestrator:
             budget_bytes=budget,
             main_now_bytes=main_now,
             day_bytes=day_bytes,
+            pair_day_bytes=pair_day_bytes,
             task=largest_task(tasks),
             tasks_per_day=len(tasks) / max(1, len(filtered_dates)),
             max_workers=max_workers,

@@ -190,7 +190,8 @@ holds two things:
   their data until it writes them. A reference receiver paired with
   several canopy receivers counts once for each pairing. The same
   workers prepare the days (orbit and clock data, receiver positions)
-  and compute the VOD of a day, which can need more than a file task.
+  and compute the VOD of a canopy and its reference receiver for one
+  day, which can need more than a file task.
 
 Before it reads a file, the run estimates both from the size of the
 files. The workers come first:
@@ -223,8 +224,8 @@ margin: reading a file needs about 45 times its size for RINEX v3, 100
 times for RINEX v2, 25 times for SBF and 15 times for NMEA, and a task
 holds about 1.6 times the size of its files once read. Preparing a day
 needs about 0.65 GB for the orbit and clock data plus half the day's
-data, and the VOD of a day 3.5 times the day's data, each counted as for
-the main process below. For each day in
+data, and the VOD of a canopy and its reference receiver for one day 3.5
+times the data of the two, each counted as for the main process below. For each day in
 flight, the main process holds about the size of the day's files for
 RINEX v3, 2.5 times for RINEX v2 and NMEA (small files) and a quarter
 for SBF, whose files hold much that a run doesn't keep. These were

@@ -67,3 +67,24 @@ def test_a_run_sized_again_gets_a_pool_of_the_new_size() -> None:
     assert pool is not first
     assert pool._max_workers == 2
     assert pipe.worker_pool() is pool
+
+
+def test_a_replaced_pool_lets_its_workers_go() -> None:
+    pipe = _orchestrator(workers=1)
+    first = pipe.worker_pool()
+
+    pipe._workers = 2
+    _pool_in_a_thread(pipe)
+
+    assert first._flags.shutdown
+
+
+def test_a_pool_resized_in_its_own_thread_keeps_working() -> None:
+    pipe = _orchestrator(workers=1)
+    pipe.worker_pool()
+
+    pipe._workers = 2
+    pool = pipe.worker_pool()
+
+    assert pool._max_workers == 2
+    assert pool.submit(sum, [1, 2]).result() == 3
