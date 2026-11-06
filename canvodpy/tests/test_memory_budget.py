@@ -76,25 +76,34 @@ def test_the_workers_stay_within_the_cap():
 # A worker of the run's pool also prepares days and computes VOD (#433).
 # On the test data, a day the budget counts at 30 MB: preparing it grows a
 # worker by 0.62 GB, its VOD by 0.10 GB. On a 90-day run of RINEX v3 days
-# counted at 0.35 GB: at most 0.80 and 1.03 GB. Both runs have one pair, so
-# a VOD task holds the whole day.
+# counted at 0.35 GB: at most 1.04 and 1.03 GB. Both runs have one pair, so
+# a VOD task holds the whole day. The workers are reused: between tasks a
+# worker held up to 0.33 GB on the test data and up to 0.86 GB on the
+# 90-day run, where its largest peak was 1.78 GB.
 
 
 def test_a_worker_has_room_to_prepare_a_day_of_the_test_data():
-    peaks = worker_peaks([_file("0000", MB)], day_bytes=30 * MB, pair_day_bytes=30 * MB)
+    day = 30 * MB
+    peaks = worker_peaks([_file("0000", MB)], day_bytes=day, pair_day_bytes=day)
     assert peaks["prepare"] - WORKER_BASE_BYTES >= int(0.62 * GB)
     assert peaks["vod"] - WORKER_BASE_BYTES >= int(0.10 * GB)
 
 
 def test_a_worker_has_room_for_a_day_of_the_90_day_run():
-    peaks = worker_peaks(
-        [_file("0000", MB)], day_bytes=int(0.35 * GB), pair_day_bytes=int(0.35 * GB)
-    )
-    assert peaks["prepare"] - WORKER_BASE_BYTES >= int(0.80 * GB)
+    day = int(0.35 * GB)
+    peaks = worker_peaks([_file("0000", MB)], day_bytes=day, pair_day_bytes=day)
+    assert peaks["prepare"] - WORKER_BASE_BYTES >= int(1.04 * GB)
     assert peaks["vod"] - WORKER_BASE_BYTES >= int(1.03 * GB)
     # Neither by more than a quarter.
-    assert peaks["prepare"] - WORKER_BASE_BYTES <= int(1.25 * 0.80 * GB)
+    assert peaks["prepare"] - WORKER_BASE_BYTES <= int(1.25 * 1.04 * GB)
     assert peaks["vod"] - WORKER_BASE_BYTES <= int(1.25 * 1.03 * GB)
+
+
+def test_a_reused_worker_has_room_for_its_largest_peak_of_the_90_day_run():
+    day = int(0.35 * GB)
+    peaks = worker_peaks([_file("0000", MB)], day_bytes=day, pair_day_bytes=day)
+    assert WORKER_BASE_BYTES >= int(0.86 * GB)
+    assert int(1.78 * GB) <= max(peaks.values()) <= int(1.25 * 1.78 * GB)
 
 
 def test_a_vod_task_holds_one_pair_day():

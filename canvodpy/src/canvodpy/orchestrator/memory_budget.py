@@ -34,9 +34,12 @@ from pathlib import Path
 
 GB = 1024**3
 
-#: Memory of a worker before its first task: Python and the scientific
-#: libraries (0.24 GB measured on macOS, up to 0.33 GB after tasks).
-WORKER_BASE_BYTES = int(0.35 * GB)
+#: Memory of a worker before a task: Python and the scientific libraries
+#: (0.24 GB measured on macOS before the first task), plus what earlier
+#: tasks leave behind, since the run's pool reuses its workers for reading,
+#: preparing days and VOD (#433). Measured before a task: up to 0.33 GB on
+#: the test data, up to 0.86 GB on a 90-day run of RINEX v3 days.
+WORKER_BASE_BYTES = int(0.9 * GB)
 
 #: Peak memory of a worker task per byte of its input files, by reader.
 #: Reading alone peaks at 66 (RINEX v2.11), 28 (RINEX v3.04), 15 (SBF) and
@@ -62,10 +65,10 @@ UNKNOWN_READER_FACTOR = max(TASK_BYTES_PER_INPUT_BYTE.values())
 #: Memory a worker adds to prepare a day, and per byte of the day's data
 #: (:func:`main_day_bytes`): mostly the orbit and clock products. Measured
 #: as the growth of the worker during the task (#433): 0.62 GB on a day of
-#: the test data counted at 30 MB, at most 0.80 GB on the days of a 90-day
+#: the test data counted at 30 MB, at most 1.04 GB on the days of a 90-day
 #: run of RINEX v3 days counted at 0.35 GB.
-PREPARE_BYTES = int(0.65 * GB)
-PREPARE_BYTES_PER_DAY_BYTE = 0.5
+PREPARE_BYTES = int(0.6 * GB)
+PREPARE_BYTES_PER_DAY_BYTE = 1.3
 
 #: Memory a worker adds to compute the VOD of a pair-day, per byte of its
 #: data (:func:`main_day_bytes` of the canopy's and the reference's input
