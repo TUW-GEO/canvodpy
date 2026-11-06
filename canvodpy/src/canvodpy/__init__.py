@@ -199,7 +199,7 @@ __all__ = [  # noqa: RUF022
     # Fluent workflow API
     "FluentWorkflow",
     "workflow",
-    # Functional API (notebooks & Airflow)
+    # Functional API (deprecated)
     "read_rinex",
     "read_rinex_to_file",
     "create_grid",

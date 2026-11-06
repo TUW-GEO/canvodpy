@@ -543,7 +543,7 @@ class TestComputeBulkAll:
         vc._site._site.store_vod_analyses_batch.assert_not_called()
 
 
-class TestAirflowVodTask:
+class TestWorkflowVodTask:
     def test_calculate_vod_goes_through_vod_computer(self):
         from canvodpy.workflows import tasks
 

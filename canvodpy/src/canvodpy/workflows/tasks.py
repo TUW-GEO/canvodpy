@@ -1,13 +1,16 @@
-"""Airflow-compatible task functions for GNSS daily processing pipeline.
+"""Task functions for running the daily processing from an orchestrator.
 
 Each function accepts only primitives (str, dict, list, None) and returns
-JSON-serializable dicts suitable for XCom.  They delegate to existing
+a JSON-serializable dict, so a scheduler can pass the results between
+tasks. All but :func:`check_sp3_availability` run without Airflow;
+canvod-airflow (canvodpy-extensions) is one user and wraps them as DAG
+tasks. They delegate to existing
 canvodpy machinery — no pipeline rewrite.
 
-DAG topology::
+A daily run calls them in this order::
 
-    validate_dirs → check_day (→ wait_for_sp3 with agency ephemeris)
-      → process_day → validate_ingest → calculate_vod
+    validate_data_dirs → check_day (→ wait for SP3/CLK with the precise
+      ephemeris) → process_day → validate_ingest → calculate_vod
 
 ``process_day`` and ``calculate_vod`` run the same code as ``canvodpy run``.
 """
@@ -223,10 +226,11 @@ def check_day(site: str, yyyydoy: str) -> dict:
     Raises
     ------
     RuntimeError
-        If files are missing for any receiver (stops the DAG run so Airflow
-        can retry later). With ``ephemeris_source: broadcast`` this includes
-        the navigation files of a receiver with RINEX files, which a run
-        needs for the satellite positions.
+        If files are missing for any receiver (stops the run so an
+        orchestrator such as Airflow can retry later). With
+        ``ephemeris_source: broadcast`` this includes the navigation files
+        of a receiver with RINEX files, which a run needs for the
+        satellite positions.
     DiscoveryError
         If the receivers' files cannot be assigned unambiguously, e.g. two
         files cover the same time. Retrying does not help; the data
@@ -234,9 +238,9 @@ def check_day(site: str, yyyydoy: str) -> dict:
 
     Notes
     -----
-    The check is not recorded in the run history (ADR 0018): Airflow
-    retries it until the files arrive, and each retry would add a failed
-    run.
+    The check is not recorded in the run history (ADR 0018): an
+    orchestrator retries it until the files arrive, and each retry would
+    add a failed run.
     """
     return _check_files(site, yyyydoy, None, "GNSS")
 
@@ -447,7 +451,8 @@ def validate_data_dirs(site: str) -> dict:
         "recipe", "identity", "days", "files", "unrecognized",
         "warnings"}}}``. ``days`` is the number of days with files;
         ``unrecognized`` counts files that are never processed. A recipe
-        URL is given by its file name, since Airflow keeps the result.
+        URL is given by its file name, since an orchestrator such as
+        Airflow keeps the result.
 
     Raises
     ------
@@ -1087,8 +1092,8 @@ def process_day(site: str, yyyydoy: str) -> dict:
     Runs ``Site(site).pipeline().run()`` without VOD, the same code as
     ``canvodpy run``: file discovery, auxiliary data, reader, receiver
     position, satellite geometry, ``processing.preprocessing`` and the
-    store write with its log book. Nothing is read back; the DAG computes
-    VOD in its own task (:func:`calculate_vod`). Each receiver is read with
+    store write with its log book. Nothing is read back; VOD is computed
+    in its own task (:func:`calculate_vod`). Each receiver is read with
     the ``reader_format`` of its site configuration. The run is recorded in
     the run history like one of ``canvodpy run``.
 
@@ -1110,8 +1115,8 @@ def process_day(site: str, yyyydoy: str) -> dict:
     RuntimeError
         If nothing was processed for the day (e.g. no files, or the
         auxiliary data could not be downloaded), or a receiver-day failed
-        (#334), so Airflow retries the task; the log of the run gives the
-        reason.
+        (#334), so an orchestrator retries the task; the log of the run
+        gives the reason.
     """
     from canvodpy.api import Site
 

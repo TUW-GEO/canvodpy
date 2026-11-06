@@ -1,4 +1,4 @@
-"""Tests for Airflow task functions (canvodpy.workflows.tasks).
+"""Tests for the task functions for orchestrators (canvodpy.workflows.tasks).
 
 Tests use temporary directories and mock data to avoid filesystem
 dependencies. Task functions are plain Python — no Airflow required.
@@ -63,7 +63,7 @@ def _site_config(tmp_path) -> MagicMock:
 
 
 class TestResolveDate:
-    """Test YYYYDOY / Airflow ds parsing."""
+    """Test YYYYDOY / ISO date (Airflow ``ds``) parsing."""
 
     def test_yyyydoy_format(self):
         d = _resolve_date("2025001")
@@ -71,7 +71,7 @@ class TestResolveDate:
         assert d.doy == 1
         assert d.yydoy == "25001"
 
-    def test_airflow_ds_format(self):
+    def test_iso_date_format(self):
         d = _resolve_date("2025-01-01")
         assert d.year == 2025
         assert d.doy == 1
@@ -554,7 +554,7 @@ class TestProcessDay:
 
 
 class TestProcessRinexPreprocessing:
-    """Airflow aggregates the whole day before writing, like ``canvodpy run``."""
+    """The task aggregates the whole day before writing, like ``canvodpy run``."""
 
     @staticmethod
     def _file(start: str, file_hash: str) -> xr.Dataset:

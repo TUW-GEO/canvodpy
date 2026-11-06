@@ -1,8 +1,8 @@
 """A run whose receiver-days fail says so (#334).
 
 ``canvodpy run`` exits with code 3 when a receiver-day failed,
-``Site.pipeline()`` lists the failed receiver-days, and the Airflow task
-``process_day`` raises, so the scheduler retries it.
+``Site.pipeline()`` lists the failed receiver-days, and the task function
+``process_day`` raises, so an orchestrator such as Airflow retries it.
 """
 
 from __future__ import annotations
