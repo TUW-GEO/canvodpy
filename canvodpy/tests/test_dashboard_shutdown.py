@@ -124,3 +124,23 @@ def test_stop_at_end_needs_the_dashboard():
 
     assert result.exit_code == 1
     assert "--dashboard-stop-at-end needs --dashboard" in result.output
+
+
+class TestDashboardLog:
+    def test_the_log_is_written_and_our_handle_closed(self, tmp_path, monkeypatch):
+        """The dashboard writes to its log; ``canvodpy run`` keeps no handle open."""
+        real_popen = subprocess.Popen
+        handles = []
+
+        def popen(args, **kwargs):
+            handles.append(kwargs["stdout"])
+            return real_popen([sys.executable, "-c", "print('dashboard up')"], **kwargs)
+
+        monkeypatch.setattr(run_module.subprocess, "Popen", popen)
+
+        process = run_module._start_dashboard(tmp_path, "127.0.0.1", 1)
+        process.wait(timeout=30)
+
+        assert handles[0].closed
+        log = tmp_path / "machine" / "dashboard.log"
+        assert log.read_text().strip() == "dashboard up"
