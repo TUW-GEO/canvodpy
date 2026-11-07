@@ -194,14 +194,6 @@ def diagnose_processing(
                 counter += 1
                 garbage_collect += 1
 
-                # Rechunking logic commented out (as in original)
-                # if days_since_rechunk >= 2:
-                #     print(f"\n{'='*80}")
-                #     print("🔄 RECHUNKING STORE (every 2 days)")
-                #     print(f"{'='*80}\n")
-                #     # Rechunking logic would go here
-                #     days_since_rechunk = 0
-
             # Garbage collection every 5 days
             if garbage_collect % 5 == 0:
                 print("\n💤 Pausing for 60s before garbage collection...")
@@ -210,11 +202,6 @@ def diagnose_processing(
                 gc.collect()
                 print("✓ Garbage collection done")
 
-        # Optional: Stop after N days for diagnostics
-        # if counter == 30:
-        #     print(f"\n🛑 Reached 30 days of processing, stopping for diagnostics.")
-        #     break
-
     print(f"\n{'=' * 80}")
     print(f"End time: {datetime.now()}")
     print(f"{'=' * 80}\n")
@@ -222,7 +209,7 @@ def diagnose_processing(
 
 if __name__ == "__main__":
     # Process everything
-    diagnose_processing()  # tart_from="20250806")
+    diagnose_processing()
 
     # Start from a specific date
     # diagnose_processing(start_from="2024183")  # July 1, 2024
