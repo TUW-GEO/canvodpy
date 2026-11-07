@@ -24,6 +24,14 @@ file included, runs everything. A gap in the list costs time, never a
 skipped test. The changed files are counted against the merge base, so
 merging `main` into a branch adds none.
 
+**A pull request runs the S3 tests only when it changes store code.**
+The S3 tests start an S3 emulator and test the stores on S3: the store
+packages, the store commands of the command line, and the S3 tests
+themselves turn them on, and so do the lock file, the workflows, and the
+script that classifies the changes. This is a list of code paths, not a
+fail-safe list: code outside it that breaks the stores on S3 is caught
+on `main`.
+
 **Every push to `main` and every run started by hand runs everything.**
 A pull request classified wrongly is caught on `main` at the latest.
 

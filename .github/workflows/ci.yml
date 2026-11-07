@@ -4,7 +4,8 @@ name: CI
 # (ADR 0024, #632). A pull request that changes only docs skips the
 # expensive jobs (scripts/ci_changes.py says which files are docs); any
 # other pull request, every push to main and every run started by hand
-# runs everything. `ci-ok` passes when every job passed or was skipped
+# runs everything, except that a pull request runs the S3 tests only when
+# it changes store code. `ci-ok` passes when every job passed or was skipped
 # on purpose, and fails otherwise.
 
 on:
@@ -30,6 +31,7 @@ jobs:
         outputs:
             # Not a pull request: the classification is skipped, full run.
             full: ${{ github.event_name != 'pull_request' || steps.classify.outputs.full }}
+            s3: ${{ github.event_name != 'pull_request' || steps.classify.outputs.s3 }}
         steps:
             - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
               if: github.event_name == 'pull_request'
@@ -50,15 +52,33 @@ jobs:
         with:
             docs_only: ${{ needs.changes.outputs.full == 'false' }}
 
+    docs-quality:
+        uses: ./.github/workflows/docs_quality.yml
+        permissions:
+            contents: read
+            issues: write # declared by the weekly link check; unused here
+        with:
+            offline_links: true
+
     # Only an explicit 'false' skips anything: an empty output runs everything.
     platform-tests:
         needs: [changes]
         if: needs.changes.outputs.full != 'false'
         uses: ./.github/workflows/test_platforms.yml
+        permissions:
+            contents: write # the coverage comment keeps its data on a branch
+            pull-requests: write # the coverage comment
+        with:
+            coverage: true
+
+    s3:
+        needs: [changes]
+        if: needs.changes.outputs.s3 != 'false'
+        uses: ./.github/workflows/test_s3.yml
 
     ci-ok:
         if: always()
-        needs: [changes, code-quality, platform-tests]
+        needs: [changes, code-quality, docs-quality, platform-tests, s3]
         runs-on: ubuntu-latest
         steps:
             - name: Fail when a job failed or was cancelled

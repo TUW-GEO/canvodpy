@@ -59,13 +59,41 @@ def test_full_ci_unless_every_file_is_docs(paths, full):
     assert script.classify(paths).full is full
 
 
+@pytest.mark.parametrize(
+    ("paths", "full", "s3"),
+    [
+        (["packages/canvod-store/src/canvod/store/store.py"], True, True),
+        (
+            ["packages/canvod-store-metadata/src/canvod/store_metadata/io.py"],
+            True,
+            True,
+        ),
+        (["canvodpy/src/canvodpy/cli/store.py"], True, True),
+        (["canvodpy/src/canvodpy/cli/config.py"], True, True),
+        (["canvodpy/tests/test_s3_maintenance_cli.py"], True, True),
+        (["canvodpy/tests/test_config_from_store_s3.py"], True, True),
+        (["uv.lock"], True, True),
+        ([".github/workflows/test_s3.yml"], True, True),
+        (["scripts/ci_changes.py"], True, True),
+        (["packages/canvod-store/AGENTS.md"], False, False),
+        (["docs/guides/configuration.md"], False, False),
+        (["packages/canvod-readers/src/canvod/readers/base.py"], True, False),
+        (["canvodpy/src/canvodpy/cli/run.py"], True, False),
+        ([], True, True),
+    ],
+)
+def test_s3_tests_only_for_store_changes(paths, full, s3):
+    changes = script.classify(paths)
+    assert (changes.full, changes.s3) == (full, s3)
+
+
 def test_outputs_for_github(tmp_path):
     output = tmp_path / "output"
     summary = tmp_path / "summary"
     script.write_outputs(
         script.classify(["docs/index.md", "Justfile"]), output, summary
     )
-    assert output.read_text() == "full=true\n"
+    assert output.read_text() == "full=true\ns3=false\n"
     assert "Justfile" in summary.read_text()
 
 

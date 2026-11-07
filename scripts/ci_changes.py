@@ -4,7 +4,9 @@ A pull request whose changed files are all docs skips the expensive jobs
 (the platform tests, the type check, the package build, and the
 package-import check). Any other file, this script and the workflows
 included, runs everything, so a file nobody classified never skips a
-test. An empty list runs everything too. ADR 0024 records the decision.
+test. An empty list runs everything too. The S3 tests run only for a
+change to store code, its tests, the lock file, the workflows, or this
+script. ADR 0024 records the decision.
 
 The changed files are those between the pull request head and its merge
 base with the target branch, so commits merged in from ``main`` don't
@@ -15,8 +17,8 @@ Usage (the ``changes`` job of ``.github/workflows/ci.yml``)::
 
     python3 scripts/ci_changes.py BASE_SHA HEAD_SHA
 
-It writes ``full=true`` or ``full=false`` to ``$GITHUB_OUTPUT`` and the
-files that need the full run to ``$GITHUB_STEP_SUMMARY``.
+It writes ``full`` and ``s3`` (``true`` or ``false``) to ``$GITHUB_OUTPUT``
+and the files that need the full run to ``$GITHUB_STEP_SUMMARY``.
 """
 
 from __future__ import annotations
@@ -34,6 +36,21 @@ DOCS_FOLDERS = ("docs/", "release-notes/", "overrides/", ".vale/")
 #: Single files that are docs: the docs site and the Vale configuration.
 DOCS_FILES = ("zensical.toml", ".vale.ini")
 
+#: Paths whose change runs the S3 tests: the store packages, the store
+#: commands of the command line (``config.py`` makes settings from a
+#: store), the S3 tests, the lock file, the workflows, and this script.
+S3_PATHS = (
+    "packages/canvod-store/",
+    "packages/canvod-store-metadata/",
+    "canvodpy/src/canvodpy/cli/store.py",
+    "canvodpy/src/canvodpy/cli/config.py",
+    "canvodpy/tests/test_s3_",
+    "canvodpy/tests/test_config_from_store_s3.py",
+    "uv.lock",
+    ".github/",
+    "scripts/ci_changes.py",
+)
+
 
 @dataclass(frozen=True)
 class Changes:
@@ -41,6 +58,8 @@ class Changes:
 
     #: Run every job; False only when every changed file is docs.
     full: bool
+    #: Run the S3 tests; only for a full run that changes an S3 path.
+    s3: bool
     #: The changed files that are not docs, the reason for a full run.
     not_docs: tuple[str, ...]
 
@@ -53,7 +72,10 @@ def is_docs(path: str) -> bool:
 def classify(paths: list[str]) -> Changes:
     """The CI a pull request needs; no changed files means the full run."""
     not_docs = tuple(path for path in paths if not is_docs(path))
-    return Changes(full=bool(not_docs) or not paths, not_docs=not_docs)
+    s3 = any(path.startswith(S3_PATHS) for path in not_docs)
+    return Changes(
+        full=bool(not_docs) or not paths, s3=s3 or not paths, not_docs=not_docs
+    )
 
 
 def changed_files(base: str, head: str, cwd: Path | None = None) -> list[str]:
@@ -75,12 +97,14 @@ def changed_files(base: str, head: str, cwd: Path | None = None) -> list[str]:
 def write_outputs(changes: Changes, output: Path, summary: Path) -> None:
     """Hand the result to the other jobs, and say why on the run page."""
     with output.open("a") as file:
-        file.write(f"full={'true' if changes.full else 'false'}\n")
+        file.write(f"full={str(changes.full).lower()}\n")
+        file.write(f"s3={str(changes.s3).lower()}\n")
     if not changes.full:
         text = "Docs-only pull request: the platform tests, type check, package build, and package-import check are skipped.\n"
     elif changes.not_docs:
         listed = "\n".join(f"- `{path}`" for path in changes.not_docs)
-        text = f"Full CI: these changed files are not docs.\n\n{listed}\n"
+        s3 = "run" if changes.s3 else "skipped: no store code changed"
+        text = f"Full CI: these changed files are not docs.\n\n{listed}\n\nS3 tests: {s3}.\n"
     else:
         text = "Full CI: no changed files found.\n"
     with summary.open("a") as file:

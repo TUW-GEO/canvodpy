@@ -171,10 +171,12 @@ the agent docs check and the package build without workspace sources
 changed docs pages and the link check of the built site
 (`.github/workflows/docs_quality.yml`), and the tests on Linux, macOS and
 Windows (`.github/workflows/test_platforms.yml`). The CI workflow
-(`.github/workflows/ci.yml`, ADR 0024) calls the code quality and platform
-test workflows and sums them up in one check, `ci-ok`; a pull request that
-changes only docs (`scripts/ci_changes.py`) skips ty, the package build,
-the package-import check, and the platform tests. When `uv.lock` or a
+(`.github/workflows/ci.yml`, ADR 0024) calls the code quality, docs
+quality, platform test, and S3 workflows and sums them up in one check,
+`ci-ok`; its Ubuntu platform job also reports the test coverage. A pull
+request that changes only docs (`scripts/ci_changes.py`) skips ty, the
+package build, the package-import check, and the platform tests; one that
+changes no store code skips the S3 tests. When `uv.lock` or a
 `pyproject.toml` changes, CI checks the locked dependencies against known
 vulnerabilities (`just audit`; `.github/workflows/dependency_audit.yml`);
 `.github/workflows/publish_pypi.yml` runs the same check before every
