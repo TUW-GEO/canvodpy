@@ -32,7 +32,7 @@ from typing import Any
 from canvod.config.models.aux_data import PRECISE_ONLY_SETTINGS
 from canvod.config.models.processing_params import RENAMED_EPHEMERIS_SOURCES
 
-from .location import StoreLocation
+from .location import StoreLocation, store_command
 
 #: Version of the stored form; a reader refuses a newer one.
 CONTENT_SETTINGS_FORMAT = 1
@@ -427,8 +427,6 @@ def gnss_content_hash_from(repository: Mapping[str, Any] | None) -> str:
         If the GNSS store has no content settings (created before they
         existed): the hash cannot be known, and a VOD store cannot record it.
     """
-    from .io import store_command
-
     if repository is None or not repository.get(CONTENT_SETTINGS_FIELD):
         site = (repository or {}).get("spatial", {}).get("site", {}).get("name", "SITE")
         msg = (
@@ -461,8 +459,6 @@ def check_gnss_hash(
     ContentSettingsError
         If the hashes differ (both hashes and the two stores are named).
     """
-    from .io import store_command
-
     stored_hash = vod_repository.get(CONTENT_SETTINGS_FIELD, {}).get(GNSS_CONTENT_HASH)
     current_hash = gnss_repository.get(CONTENT_SETTINGS_FIELD, {}).get("hash")
     if not current_hash:

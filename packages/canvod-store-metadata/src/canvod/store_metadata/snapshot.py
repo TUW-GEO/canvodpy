@@ -30,8 +30,13 @@ from zarr_cm import license as zarr_license
 from zarr_cm import proj as zarr_proj
 from zarr_cm import stac as zarr_stac
 
+from .collectors import (
+    collect_config_snapshot,
+    collect_environment,
+    collect_processing_provenance,
+    records_machine,
+)
 from .content import replay_content_changes
-from .io import _set_field
 from .location import SITE_MIGRATE_COMMAND, StoreLocation, store_location
 from .schema import (
     _METADATA_KEY,
@@ -41,6 +46,7 @@ from .schema import (
     ConfigSnapshot,
     RepositoryMetadata,
     StoreMetadata,
+    _set_field,
     validate_existing,
 )
 from .summary import _array, summarize_root
@@ -321,13 +327,6 @@ def commit_metadata(
     ``config`` is the settings object (or an already taken
     :class:`ConfigSnapshot`).
     """
-    from .collectors import (
-        collect_config_snapshot,
-        collect_environment,
-        collect_processing_provenance,
-        records_machine,
-    )
-
     identity = repository["identity"]
     processing = collect_processing_provenance(
         identity["store_type"],
