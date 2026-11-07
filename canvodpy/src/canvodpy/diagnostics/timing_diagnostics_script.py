@@ -208,14 +208,6 @@ def diagnose_processing(
 
 
 if __name__ == "__main__":
-    # Process everything
+    # Times every day of the site. To time part of it, pass start_from and
+    # end_at, each a day as a YYYYDOY string.
     diagnose_processing()
-
-    # Start from a specific date
-    # diagnose_processing(start_from="2024183")  # July 1, 2024
-
-    # Process a specific range
-    # diagnose_processing(start_from="2025278", end_at="2025280")
-
-    # Process specific test range (Oct 26, 2025)
-    # diagnose_processing(start_from="2025299", end_at="2025300")
