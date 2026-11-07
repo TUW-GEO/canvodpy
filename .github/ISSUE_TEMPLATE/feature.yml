@@ -1,0 +1,28 @@
+name: Feature request
+description: A new feature, or a change to how canvodpy works
+labels: [enhancement, needs-triage]
+body:
+    - type: markdown
+      attributes:
+          value: |
+              Use the words of the [glossary](https://github.com/TUW-GEO/canvodpy/blob/main/GLOSSARY.md)
+              where you can. Keep the scope narrow: one feature per request.
+    - type: textarea
+      id: problem
+      attributes:
+          label: Problem
+          description: What you want to do and can't, or what is hard today.
+      validations:
+          required: true
+    - type: textarea
+      id: proposal
+      attributes:
+          label: Proposed behavior
+          description: What canvodpy should do. A command, a setting or a code example helps.
+      validations:
+          required: true
+    - type: textarea
+      id: alternatives
+      attributes:
+          label: Alternatives
+          description: Workarounds you use now, or other ways to solve it.

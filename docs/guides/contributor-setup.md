@@ -590,7 +590,9 @@ Push to your team branch or feature branch (see [Working in teams](#12b-working-
 1. Go to your fork on GitHub. You'll see a banner suggesting to open a pull request.
 2. Click **Compare & pull request**.
 3. Set the **base** branch to your team branch (or the develop branch, depending on your workflow).
-4. Add a title and description, then click **Create pull request**.
+4. Add a title, and fill in the description that the pull request template
+   gives: a summary, the evidence that the change works, the merge danger,
+   and the checklist. Then click **Create pull request**.
 
 ---
 

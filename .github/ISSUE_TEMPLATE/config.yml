@@ -1,0 +1,11 @@
+blank_issues_enabled: false
+contact_links:
+    - name: Questions and ideas
+      url: https://github.com/TUW-GEO/canvodpy/discussions
+      about: Ask a question or share an idea in canVODpy's Discussions.
+    - name: Documentation
+      url: https://canvodpy.eu
+      about: Guides, the settings reference and the API.
+    - name: Security vulnerability
+      url: https://github.com/TUW-GEO/canvodpy/security/advisories/new
+      about: Report it privately, not as a public issue.
