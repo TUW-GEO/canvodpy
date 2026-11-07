@@ -47,4 +47,4 @@ A pull request classified wrongly is caught on `main` at the latest.
 - A test (`canvodpy/tests/test_ci_workflow.py`) fails when a job of the
   CI workflow is missing from `ci-ok`, so `ci-ok` can't silently stop
   protecting `main`.
-- A branch without a pull request runs no CI.
+- A branch without a pull request runs no CI: open a pull request to get it.
