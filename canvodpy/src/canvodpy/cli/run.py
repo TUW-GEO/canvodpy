@@ -115,24 +115,27 @@ def _start_dashboard(log_dir: Path, host: str, port: int) -> subprocess.Popen:
     machine_dir.mkdir(parents=True, exist_ok=True)
     dash_log = machine_dir / "dashboard.log"
 
-    process = subprocess.Popen(
-        [
-            sys.executable,
-            "-m",
-            "marimo",
-            "run",
-            "--no-sandbox",
-            str(_NOTEBOOK_PATH),
-            "--host",
-            host,
-            "--port",
-            str(port),
-            "--headless",
-        ],
-        env=env,
-        stdout=open(dash_log, "w"),
-        stderr=subprocess.STDOUT,
-    )
+    # The subprocess gets its own copy of the file handle; ours is closed
+    # as soon as it has started.
+    with dash_log.open("w") as log:
+        process = subprocess.Popen(
+            [
+                sys.executable,
+                "-m",
+                "marimo",
+                "run",
+                "--no-sandbox",
+                str(_NOTEBOOK_PATH),
+                "--host",
+                host,
+                "--port",
+                str(port),
+                "--headless",
+            ],
+            env=env,
+            stdout=log,
+            stderr=subprocess.STDOUT,
+        )
     print(f"Dashboard: http://{host}:{port}  (output: {dash_log})")
     return process
 

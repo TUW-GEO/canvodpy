@@ -15,6 +15,7 @@ from pathlib import Path, PurePosixPath
 from typing import TYPE_CHECKING
 
 import icechunk
+from canvod.config.store_names import STORE_TYPE_KINDS
 
 if TYPE_CHECKING:
     from canvod.config.models.compression import IcechunkConfig
@@ -24,6 +25,13 @@ MIGRATE_COMMAND = "canvodpy store migrate-metadata"
 #: The command that moves all stores of a site to the current form: the
 #: folder, the metadata and the layout (#456).
 SITE_MIGRATE_COMMAND = "canvodpy store migrate"
+
+
+def store_command(command: str, site_name: str, store_type: str) -> str:
+    """A ``canvodpy store`` command line for one site's store."""
+    kind = STORE_TYPE_KINDS.get(store_type, store_type)
+    return f"canvodpy store {command} {site_name} --store {kind}"
+
 
 #: The environment variable that puts the bucket in the path of S3
 #: requests (``endpoint/bucket/key``) instead of the host name
