@@ -154,7 +154,7 @@ Actions, **CI**, which sums up its checks in one check, `ci-ok`. A pull
 request that changes only docs skips the type check, the package build,
 the package-import check and the platform tests; one that changes no
 store code skips the S3 tests
-([ADR 0024](docs/adr/0024-ci-runs-what-a-change-needs.md)). CI runs:
+(ADR 0024, `docs/adr/0024-ci-runs-what-a-change-needs.md`). CI runs:
 
 - **Python Code Quality:** checks that `uv.lock` is up to date and runs ruff
   (lint and format) and ty (types). It also builds and imports every package
