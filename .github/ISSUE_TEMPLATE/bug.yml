@@ -39,10 +39,27 @@ body:
       id: doctor
       attributes:
           label: Output of `canvodpy doctor`
-          description: Versions of canvodpy, its packages, Python and uv. Replace paths with placeholders.
+          description: |
+              Versions of canvodpy, canvod-config, Python and uv, and where
+              the settings come from. Replace paths and settings URLs with
+              placeholders.
           render: text
       validations:
           required: true
+    - type: textarea
+      id: packages
+      attributes:
+          label: Installed canvod packages
+          description: |
+              The canvod lines of `uv pip list` (or `pip list`). This matters
+              most when you installed single packages rather than canvodpy.
+          render: text
+    - type: input
+      id: receiver
+      attributes:
+          label: Receiver and file format
+          description: If the problem is with reading data.
+          placeholder: e.g. Septentrio mosaic-X5, SBF; RINEX 3.04 from a u-blox
     - type: input
       id: os
       attributes:
