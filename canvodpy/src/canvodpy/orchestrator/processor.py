@@ -80,9 +80,9 @@ from canvod.store.prepare import (
 )
 from canvod.store.store import StoredOverlapError, _with_run_id
 from canvod.store.time_encoding import with_time_units
-from canvod.store_metadata.io import commit_lock, commit_with_rebase, store_command
+from canvod.store_metadata.io import commit_lock, commit_with_rebase
 from canvod.store_metadata.layout import LayoutError, is_day_block_group
-from canvod.store_metadata.location import store_exists
+from canvod.store_metadata.location import store_command, store_exists
 from canvod.utils.logging import (
     get_run_id,
     record_stage_timing,
