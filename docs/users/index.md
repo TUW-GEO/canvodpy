@@ -119,7 +119,7 @@ You need:
     For a run you want to repeat later, install fixed versions:
 
     ```bash
-    uv tool install canvodpy==1.0.0 --with canvod-filemap==1.0.0
+    uv tool install canvodpy==1.1.0 --with canvod-filemap==1.0.0
     ```
 
     canVODpy pins only its own packages exactly. The versions of the other
