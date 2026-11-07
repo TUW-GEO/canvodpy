@@ -48,11 +48,12 @@ jobs:
         needs: [changes]
         uses: ./.github/workflows/code_quality.yml
         with:
-            docs_only: ${{ needs.changes.outputs.full != 'true' }}
+            docs_only: ${{ needs.changes.outputs.full == 'false' }}
 
+    # Only an explicit 'false' skips anything: an empty output runs everything.
     platform-tests:
         needs: [changes]
-        if: needs.changes.outputs.full == 'true'
+        if: needs.changes.outputs.full != 'false'
         uses: ./.github/workflows/test_platforms.yml
 
     ci-ok:

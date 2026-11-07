@@ -6,6 +6,7 @@ in the docs-only list costs time, never a skipped test.
 """
 
 import importlib.util
+import subprocess
 import sys
 from pathlib import Path
 
@@ -66,3 +67,27 @@ def test_outputs_for_github(tmp_path):
     )
     assert output.read_text() == "full=true\n"
     assert "Justfile" in summary.read_text()
+
+
+def test_a_moved_file_counts_with_its_old_path(tmp_path):
+    """Moving code into the docs folder removes code: the full run."""
+
+    def git(*args):
+        subprocess.run(
+            ["git", "-C", str(tmp_path), *args], check=True, capture_output=True
+        )
+
+    git("init", "-q", "-b", "main")
+    git("config", "user.email", "test@example.org")
+    git("config", "user.name", "test")
+    (tmp_path / "scripts").mkdir()
+    (tmp_path / "scripts" / "gen.py").write_text("print('the same content')\n" * 20)
+    git("add", ".")
+    git("commit", "-q", "-m", "base")
+    (tmp_path / "docs").mkdir()
+    git("mv", "scripts/gen.py", "docs/gen.py")
+    git("commit", "-q", "-m", "move")
+
+    paths = script.changed_files("HEAD~1", "HEAD", cwd=tmp_path)
+    assert sorted(paths) == ["docs/gen.py", "scripts/gen.py"]
+    assert script.classify(paths).full is True

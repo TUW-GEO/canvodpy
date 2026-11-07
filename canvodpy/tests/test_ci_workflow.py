@@ -13,8 +13,9 @@ import yaml
 ROOT = Path(__file__).resolve().parents[2]
 WORKFLOWS = ROOT / ".github" / "workflows"
 
-#: The condition of a job that a docs-only pull request skips.
-FULL = "needs.changes.outputs.full == 'true'"
+#: The condition of a job that a docs-only pull request skips: only an
+#: explicit 'false' skips it, an empty output runs it.
+FULL = "needs.changes.outputs.full != 'false'"
 
 
 def _load(name: str) -> dict:
@@ -69,7 +70,7 @@ def test_code_quality_skips_its_expensive_jobs_on_docs_only():
     job = JOBS["code-quality"]
     assert "changes" in _needs(job)
     assert job["uses"] == "./.github/workflows/code_quality.yml"
-    assert job["with"]["docs_only"] == "${{ needs.changes.outputs.full != 'true' }}"
+    assert job["with"]["docs_only"] == "${{ needs.changes.outputs.full == 'false' }}"
 
     called = _load("code_quality.yml")
     assert "workflow_call" in called["on"]

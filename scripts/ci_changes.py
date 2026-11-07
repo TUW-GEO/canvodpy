@@ -56,10 +56,15 @@ def classify(paths: list[str]) -> Changes:
     return Changes(full=bool(not_docs) or not paths, not_docs=not_docs)
 
 
-def changed_files(base: str, head: str) -> list[str]:
-    """The files that differ between ``head`` and its merge base with ``base``."""
+def changed_files(base: str, head: str, cwd: Path | None = None) -> list[str]:
+    """The files that differ between ``head`` and its merge base with ``base``.
+
+    A moved file counts with both paths (``--no-renames``): code moved into
+    the docs folder is code removed.
+    """
     result = subprocess.run(
-        ["git", "diff", "--name-only", f"{base}...{head}"],
+        ["git", "diff", "--name-only", "--no-renames", f"{base}...{head}"],
+        cwd=cwd,
         check=True,
         capture_output=True,
         text=True,
