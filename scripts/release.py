@@ -878,9 +878,10 @@ def _check_test_data_tag(root: Path, remote: Remote, url: str | None) -> Check:
     tags = remote.tags_at(url, pointer)
     if not tags:
         return Check(
-            WARN,
-            f"The test-data commit {pointer[:9]} has no tag: tag the test data "
-            "this release is tested with.",
+            FAIL,
+            f"The test-data commit {pointer[:9]} has no tag: release the test "
+            "data first (tag it in canvodpy-test-data and make a GitHub release; "
+            "RELEASING.md, Test data).",
         )
     return Check(PASS, f"The test data is tagged {', '.join(tags)}")
 

@@ -229,11 +229,11 @@ def test_a_test_data_pointer_behind_its_main_fails(repo: Repo, capsys) -> None:
     assert _line(out, "✗", f"{TEST_DATA_PATH} points at")
 
 
-def test_untagged_test_data_is_a_warning_only(repo: Repo, capsys) -> None:
+def test_untagged_test_data_fails(repo: Repo, capsys) -> None:
     repo.remote.tags.clear()
     code, out = repo.check("1.1.0", capsys)
-    assert code == 0, out
-    assert _line(out, "⚠", "has no tag")
+    assert code == 1, out
+    assert _line(out, "✗", "has no tag")
 
 
 def _demo_commit(repo: Repo, files: dict[str, str]) -> None:
