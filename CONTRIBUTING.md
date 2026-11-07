@@ -7,8 +7,9 @@ contribution workflow. A step-by-step setup for a new machine is in the
 
 ## Ways to contribute
 
-- **Report bugs** at https://github.com/TUW-GEO/canvodpy/issues. Include your
-  operating system, Python version, and the steps to reproduce.
+- **Report bugs** at https://github.com/TUW-GEO/canvodpy/issues with the
+  bug report form. It asks for the steps to reproduce, the error output, and
+  the output of `canvodpy doctor`.
 - **Fix bugs:** issues labeled "bug" and "help wanted" are open for pull
   requests. Comment on the issue first so nobody duplicates work.
 - **Implement features:** issues labeled "enhancement" and "help wanted" are
@@ -16,8 +17,8 @@ contribution workflow. A step-by-step setup for a new machine is in the
 - **Improve documentation:** docs, docstrings, or external articles. See the
   [development guide](https://canvodpy.eu/guides/DEVELOPMENT/).
 - **Submit feedback:** file feature proposals at
-  https://github.com/TUW-GEO/canvodpy/issues. Keep the scope narrow and
-  explain the intended behavior.
+  https://github.com/TUW-GEO/canvodpy/issues with the feature request form.
+  Keep the scope narrow and explain the intended behavior.
 
 ## Required tools
 
@@ -174,6 +175,10 @@ Every push and pull request runs these checks on GitHub Actions:
   locally to fix it.
 
 ## Pull request guidelines
+
+A new pull request starts from the template in
+`.github/pull_request_template.md`: summary, evidence, merge danger, and a
+checklist of the points below.
 
 1. `just test && just check` pass with no errors.
 2. The change follows `CODING_STANDARDS.md` (rules and per-change

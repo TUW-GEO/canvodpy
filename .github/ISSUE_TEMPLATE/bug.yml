@@ -1,0 +1,52 @@
+name: Bug report
+description: canvodpy fails, or gives a result that looks wrong
+labels: [bug, needs-triage]
+body:
+    - type: markdown
+      attributes:
+          value: |
+              Thanks for reporting. Security problems go to a
+              [private report](https://github.com/TUW-GEO/canvodpy/security/advisories/new),
+              not here.
+
+              **Before you paste output:** remove passwords, keys and tokens,
+              and replace host names, user names and private paths
+              (`/home/<user>/...`) with placeholders. This issue is public.
+    - type: textarea
+      id: what
+      attributes:
+          label: What happened
+          description: What you did, what you expected, and what happened instead.
+      validations:
+          required: true
+    - type: textarea
+      id: reproduce
+      attributes:
+          label: Steps to reproduce
+          description: |
+              The command or code, as short as possible. If it needs data,
+              say whether it happens with `canvodpy.demo_data()`.
+          render: shell
+      validations:
+          required: true
+    - type: textarea
+      id: output
+      attributes:
+          label: Error output
+          description: The full error message or traceback.
+          render: text
+    - type: textarea
+      id: doctor
+      attributes:
+          label: Output of `canvodpy doctor`
+          description: Versions of canvodpy, its packages, Python and uv. Replace paths with placeholders.
+          render: text
+      validations:
+          required: true
+    - type: input
+      id: os
+      attributes:
+          label: Operating system
+          placeholder: e.g. Ubuntu 24.04, macOS 26, Windows 11
+      validations:
+          required: true
