@@ -192,20 +192,20 @@
 | packages/canvod-store-metadata/src/canvod/store\_metadata/amend.py              |       97 |       10 |     90% |71-72, 135-136, 145-149, 172-173, 261-266 |
 | packages/canvod-store-metadata/src/canvod/store\_metadata/catalog.py            |      319 |       26 |     92% |164, 338-343, 370-371, 395-396, 401-404, 623-625, 673-674, 739-741, 754-755, 778 |
 | packages/canvod-store-metadata/src/canvod/store\_metadata/collectors.py         |      193 |       12 |     94% |86-87, 120-122, 195-196, 277, 403-404, 571-572 |
-| packages/canvod-store-metadata/src/canvod/store\_metadata/content.py            |      234 |       10 |     96% |165, 179-180, 245-246, 402, 406, 661, 673-678 |
+| packages/canvod-store-metadata/src/canvod/store\_metadata/content.py            |      232 |       10 |     96% |165, 179-180, 245-246, 402, 406, 657, 669-674 |
 | packages/canvod-store-metadata/src/canvod/store\_metadata/icechunk\_logs.py     |       10 |        0 |    100% |           |
 | packages/canvod-store-metadata/src/canvod/store\_metadata/identity.py           |       50 |        0 |    100% |           |
 | packages/canvod-store-metadata/src/canvod/store\_metadata/inventory.py          |      116 |        4 |     97% |238, 299, 301, 303 |
-| packages/canvod-store-metadata/src/canvod/store\_metadata/io.py                 |      425 |       25 |     94% |104-105, 383, 489-492, 561-563, 619-626, 660, 766, 831-840, 978-985 |
+| packages/canvod-store-metadata/src/canvod/store\_metadata/io.py                 |      407 |       25 |     94% |123-124, 400, 505-508, 570-572, 628-635, 667, 754, 819-828, 960-967 |
 | packages/canvod-store-metadata/src/canvod/store\_metadata/layout.py             |        9 |        0 |    100% |           |
-| packages/canvod-store-metadata/src/canvod/store\_metadata/location.py           |      174 |        3 |     98% |98, 287, 424 |
+| packages/canvod-store-metadata/src/canvod/store\_metadata/location.py           |      178 |        3 |     98% |106, 295, 432 |
 | packages/canvod-store-metadata/src/canvod/store\_metadata/log\_book.py          |       67 |        4 |     94% |41-42, 119, 121 |
 | packages/canvod-store-metadata/src/canvod/store\_metadata/machine.py            |       45 |        0 |    100% |           |
 | packages/canvod-store-metadata/src/canvod/store\_metadata/migration.py          |      441 |       40 |     91% |272, 285-286, 328, 361, 407, 458-459, 562, 565-566, 591, 595-596, 600-602, 636, 640, 651-652, 655, 738-742, 745-746, 752-757, 770-771, 864, 893, 1029-1030, 1033-1037, 1132-1133, 1139-1143 |
-| packages/canvod-store-metadata/src/canvod/store\_metadata/schema.py             |      417 |        0 |    100% |           |
+| packages/canvod-store-metadata/src/canvod/store\_metadata/schema.py             |      427 |        0 |    100% |           |
 | packages/canvod-store-metadata/src/canvod/store\_metadata/settings\_file.py     |       72 |        2 |     97% |   72, 155 |
 | packages/canvod-store-metadata/src/canvod/store\_metadata/show.py               |      309 |       53 |     83% |44-45, 56, 120, 147, 149, 173, 254-258, 260-264, 288, 358-360, 363-365, 368, 373-374, 394-408, 469-470, 472-473, 493-494, 526-528, 558-565 |
-| packages/canvod-store-metadata/src/canvod/store\_metadata/snapshot.py           |      165 |        7 |     96% |113, 249, 269-270, 370, 449, 452 |
+| packages/canvod-store-metadata/src/canvod/store\_metadata/snapshot.py           |      164 |        7 |     96% |119, 255, 275-276, 369, 448, 451 |
 | packages/canvod-store-metadata/src/canvod/store\_metadata/summary.py            |      308 |       13 |     96% |81-82, 256-260, 262-266, 273-274, 357-361, 387-391, 434 |
 | packages/canvod-store-metadata/src/canvod/store\_metadata/summary\_state.py     |      323 |       27 |     92% |75, 119, 122, 158-162, 177-181, 188-192, 194, 224-226, 228, 292, 295-297, 359, 364-365, 375, 426-428, 450, 485 |
 | packages/canvod-store-metadata/src/canvod/store\_metadata/testing.py            |       35 |        0 |    100% |           |
@@ -249,7 +249,7 @@
 | packages/canvod-viz/src/canvod/viz/widgets/hemisphere\_widgets.py               |       27 |        0 |    100% |           |
 | packages/canvod-vod/src/canvod/vod/\_\_init\_\_.py                              |        4 |        0 |    100% |           |
 | packages/canvod-vod/src/canvod/vod/calculator.py                                |       76 |        8 |     89% |55, 77, 121, 128-135 |
-| **TOTAL**                                                                       | **30486** | **8364** | **73%** |           |
+| **TOTAL**                                                                       | **30479** | **8364** | **73%** |           |
 
 
 ## Setup coverage badge
