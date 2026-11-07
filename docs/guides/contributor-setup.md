@@ -736,10 +736,10 @@ Every push to a branch and every pull request triggers automated checks on GitHu
 
 | Workflow               | Trigger                    | What it does                                                                                                                           |
 | ---------------------- | -------------------------- | -------------------------------------------------------------------------------------------------------------------------------------- |
-| **Code Quality**       | Every push and PR, weekly  | Checks lockfile consistency, runs ruff linting, checks formatting, runs type checking with ty, checks the agent instruction files       |
+| **Code Quality**       | Push to `main`, every pull request, weekly | Checks lockfile consistency, runs ruff linting, checks formatting, runs type checking with ty, checks the agent instruction files       |
 | **Test with Coverage** | Push to `main`, all pull requests, weekly | Runs `uv run pytest` (coverage is on by default in `pyproject.toml`), uploads results to Coveralls, posts a coverage summary comment on the PR |
-| **Platform Tests**     | Every push and PR, weekly  | Runs the test suite on Linux, macOS, and Windows with Python 3.14                                                                       |
-| **S3 Tests**           | Every push and PR          | Runs the tests of stores on S3 against an S3 emulator (RustFS) on Linux; elsewhere these tests are skipped                              |
+| **Platform Tests**     | Push to `main`, every pull request, weekly | Runs the test suite on Linux, macOS, and Windows with Python 3.14                                                                       |
+| **S3 Tests**           | Push to `main`, every pull request | Runs the tests of stores on S3 against an S3 emulator (RustFS) on Linux; elsewhere these tests are skipped                              |
 | **Docs Quality**       | Push to `main`, every pull request, weekly, or started by hand | Checks the language of the docs pages a pull request changes with Vale, and the links of the built site with lychee: links between our pages on every push and pull request, external links too in the weekly run, which opens an issue when one fails |
 | **Deploy Docs**        | A published release, or started by hand | Builds and deploys the documentation site                                                                                |
 
