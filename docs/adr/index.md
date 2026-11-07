@@ -43,3 +43,4 @@ that names the decision replacing it.
 | [0022](0022-credentials-from-the-environment.md) | canvodpy stores no secrets; credentials come from the environment (proposed) |
 | [0023](0023-broadcast-ephemeris-through-the-precise-path.md) | The broadcast ephemeris comes from the canopy receiver and goes through the same interpolation as the precise ephemeris (proposed) |
 | [0024](0024-ci-runs-what-a-change-needs.md) | CI runs what a change needs: one summary check gates `main`, and only a docs-only pull request skips the expensive jobs (proposed) |
+| [0025](0025-temporal-aggregation-averages-snr-in-db.md) | Temporal aggregation averages SNR in dB |
