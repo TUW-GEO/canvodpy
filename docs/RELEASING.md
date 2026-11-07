@@ -96,7 +96,7 @@ Each item is a pull request of its own, merged before the release commit.
     - The draft release links it when it is in the tagged commit.
 - [ ] **What's new.** [What's new](whats-new.md) describes the release
       and links the release notebook.
-- [ ] **Banner** (minor and major releases). The banner on every docs page
+- [ ] **Banner** (minor and major releases, not pre-releases). The banner on every docs page
       (`overrides/main.html`, block `announce`) names the release and links
       What's new.
 - [ ] **Upgrade guide** (major releases), linked as described under
@@ -143,10 +143,13 @@ judge, ✗ failed. It exits 1 if any check failed. It checks:
 - Every demo notebook pins the last release, as above.
 - For a minor or major release: the release notebook is on `HEAD`, pins
   the new version, and is linked from `release-notes/README.md` and
-  `docs/whats-new.md` on `HEAD`; the docs banner names the release. ⚠ lists the pull requests since the last
-  release, merged or squashed on GitHub, with a feature, fix or deprecation among
-  their commits that the notebook doesn't name by number (`#123`):
-  compare them with the notebook.
+  `docs/whats-new.md` on `HEAD`.
+- For a minor or major release that is not a pre-release: the docs banner
+  names the release.
+- ⚠ lists the pull requests since the last release, merged or squashed on
+  GitHub, with a feature, fix or deprecation among their commits that the
+  notebook doesn't name by number (`#123`): compare them with the
+  notebook.
 
 It doesn't judge whether the release notebook and What's new describe
 every change users notice; that stays your call.

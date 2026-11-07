@@ -1071,6 +1071,8 @@ ANNOUNCE = re.compile(r"(?s)\{% block announce %\}(?P<text>.*?)\{% endblock %\}"
 
 def _check_banner(root: Path, new: Version) -> Check:
     """The docs banner of a minor or major release names it."""
+    if new.is_prerelease:
+        return Check(PASS, f"Pre-release: the docs banner ({BANNER}) is not checked")
     match = ANNOUNCE.search(_show(root, BANNER) or "")
     if match is None:
         return Check(PASS, f"{BANNER} has no banner")

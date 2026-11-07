@@ -361,6 +361,11 @@ def test_a_banner_of_a_longer_version_fails(repo: Repo, capsys) -> None:
     assert _line(out, "✗", "doesn't name v1.1.0")
 
 
+def test_a_pre_release_leaves_the_banner_alone(repo: Repo, capsys) -> None:
+    _, out = repo.check("1.1.0rc1", capsys)
+    assert _line(out, "✓", "Pre-release: the docs banner")
+
+
 def test_a_patch_release_leaves_the_banner_alone(repo: Repo, capsys) -> None:
     _write(repo.root, "overrides/main.html", banner("v1.0.0"))
     repo.commit("fix(store): a fix")
