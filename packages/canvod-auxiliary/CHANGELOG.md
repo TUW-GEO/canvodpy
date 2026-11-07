@@ -1,6 +1,50 @@
 # Changelog
 
 <!-- insertion marker -->
+## canvod-auxiliary-v1.1.0 (2026-11-07)
+
+### Feat
+
+- **auxiliary**: keep the Hermite orbit interpolation as sp3_interpolation: hermite (df576f1c6)
+- **canvodpy**: cache the broadcast orbits in the shared aux cache (#573) (97dc86155)
+- **auxiliary**: broadcast SBAS orbits from RINEX navigation files (9ade2ec55)
+- **auxiliary**: broadcast orbits of GLONASS from RINEX navigation files (#569) (4cfd7f523)
+- **auxiliary**: broadcast orbits of Galileo, BeiDou and QZSS from RINEX navigation files (68f242a44)
+- **auxiliary**: GPS broadcast orbits through the Hermite path (19b72b949)
+- **cli**: banner and colours that follow the terminal (78880e7cc)
+
+### Fix
+
+- **auxiliary**: interpolate orbits with a polynomial of degree 10 (#563) (bcb6b808b)
+- **canvodpy**: cache the orbits once per satellite in the shared aux cache (#573) (6960d1996)
+- **canvodpy**: review of the broadcast ephemeris of RINEX files (84dd8b9cf)
+- **auxiliary**: read JPL and IAC clock files, from_file reads its product (ccc35aed3)
+
+### Perf
+
+- **auxiliary**: parse each CLK epoch once and fill the array at once (#433) (ac4d3394f)
+- **auxiliary**: interpolate each distinct orbit and clock column once (#433) (acf0cbbf0)
+
+### Refactor
+
+- rename _preprocess_aux_data_with_hermite, remove stray test_mwe.py (0dc4254c8)
+- **config**: deprecate ephemeris source final, use precise (e98cc5541)
+
+### Other
+
+- **auxiliary**: a strategy's result carries no per-column coordinates (#433) (e12e89d04)
+- **auxiliary**: cite DO-229D for the SBAS time-out (1992e82d7)
+- **auxiliary**: name DO-229C Table A-25 for the SBAS validity, rewrap nav docstrings (3ef19003b)
+- **auxiliary**: stop the equator test from rejecting its own examples (6f6660ac2)
+- **auxiliary**: fit interval wording; rewrap the broadcast docs paragraph (0496676e2)
+- broadcast ephemeris from RINEX navigation files (ea71a785f)
+- **auxiliary**: clearer failures of the network tests (ec1d0baa0)
+- **auxiliary**: network tests of the registry products, downloads and a downloading run (d974ff04c)
+- end the authors line with the licence (bbc0dd886)
+- name the authors without a copyright claim (709349710)
+- restore the Apache placeholder in the LICENSE appendix (dcf035fd7)
+- drop the copyright line and symbol (9035910a7)
+
 ## canvod-auxiliary-v1.0.0 (2026-10-24)
 
 ### Feat

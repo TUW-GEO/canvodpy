@@ -1,6 +1,40 @@
 # Changelog
 
 <!-- insertion marker -->
+## canvod-readers-v1.1.0 (2026-11-07)
+
+### Feat
+
+- **auxiliary**: broadcast SBAS orbits from RINEX navigation files (9ade2ec55)
+- **auxiliary**: broadcast orbits of GLONASS from RINEX navigation files (#569) (4cfd7f523)
+- **auxiliary**: broadcast orbits of Galileo, BeiDou and QZSS from RINEX navigation files (68f242a44)
+- **readers**: read GPS records of RINEX 3.04/3.05 navigation files (e70d05ef1)
+
+### Fix
+
+- **readers**: go on at the next epoch header after a malformed field (9377d0f63)
+- **readers**: drop a RINEX 2.11 epoch cut at the end of the file (5286f1429)
+- **readers**: drop RINEX 2.11 epochs whose records end early (d0890ff37)
+- **readers**: name SBF SBAS satellites the RINEX way (53eee0001)
+- **readers**: name an empty file list in read_rinex_nav; docs name plugin formats (4b3fe6638)
+- **canvodpy**: review of the broadcast ephemeris of RINEX files (84dd8b9cf)
+
+### Other
+
+- **test-data**: point at the test data v0.3.0 (480b46ae6)
+- **submodules**: demo and test data at their main for v1.1.0 (1078a9f14)
+- **packages**: count only ImportError and TYPE_CHECKING as optional imports (#129) (2f26a5a9a)
+- **packages**: check imports inside functions and the README examples (#129) (f03024858)
+- **test-data**: aux cache rebuilt with the orbit interpolation of v1.1.0 (#563) (b39df0148)
+- **readers**: name satellites with svid_to_sv in the SBF example (136f092ba)
+- **auxiliary**: name DO-229C Table A-25 for the SBAS validity, rewrap nav docstrings (3ef19003b)
+- broadcast ephemeris from RINEX navigation files (ea71a785f)
+- **test-data**: point the test data at the Zenodo community change (53150b0d2)
+- end the authors line with the licence (bbc0dd886)
+- name the authors without a copyright claim (709349710)
+- restore the Apache placeholder in the LICENSE appendix (dcf035fd7)
+- drop the copyright line and symbol (9035910a7)
+
 ## canvod-readers-v1.0.0 (2026-10-24)
 
 ### Feat

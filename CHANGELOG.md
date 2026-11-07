@@ -6,6 +6,126 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
 <!-- insertion marker -->
+## v1.1.0 (2026-11-07)
+
+### Feat
+
+- **release**: just release-check and one release checklist for all repositories (#619) (201206f65)
+- **cli**: canvodpy logs collect copies the log folder (#131) (363f7fc8b)
+- **config**: count missing days over the site's days (#125) (fdbc3c73e)
+- **config**: config validate lists the days without files (#125) (95bc5081d)
+- **cli**: config validate --start/--end checks those days only (#540) (de32bda9a)
+- **auxiliary**: keep the Hermite orbit interpolation as sp3_interpolation: hermite (df576f1c6)
+- **canvodpy**: check_day waits for the navigation files of a broadcast run (4675e6ae6)
+- **config**: nav_recipe for navigation files with their own names (7ce490bdb)
+- **canvodpy**: cache the broadcast orbits in the shared aux cache (#573) (97dc86155)
+- **canvodpy**: say when a shared-position reference's nav_directory is not read (d27e60866)
+- **canvodpy**: shared-position references use the canopy's navigation files (5e495140b)
+- **canvodpy**: name satellites observed without a position (#571) (a8c71c9bc)
+- **auxiliary**: broadcast orbits of GLONASS from RINEX navigation files (#569) (4cfd7f523)
+- **auxiliary**: broadcast orbits of Galileo, BeiDou and QZSS from RINEX navigation files (68f242a44)
+- **canvodpy**: broadcast runs of RINEX files take the receiver's navigation files (b2988409c)
+- **preflight**: name navigation files with type nav and sampling 00U (98c140a76)
+- **cli**: store log opens a store by path, writes SVG, prints plain (5abc0121c)
+- **cli**: banner and colours that follow the terminal (78880e7cc)
+- **cli**: say how to load the completion after --install-completion (83674d74a)
+- **cli**: --help-all lists every command with its options (95f1e5901)
+- **cli**: shut the run dashboard down with a button or --dashboard-stop-at-end (bcea4fd5d)
+
+### Fix
+
+- **discovery**: read the filemap file types with get_args (#110) (147a3f57f)
+- **orchestrator**: a worker's estimate counts what its earlier tasks leave behind (#433) (f646c3ec4)
+- **release**: release-check matches PR numbers exactly and reads deprecations and breaking changes from their marks (#619) (3ad1826cd)
+- **orchestrator**: a VOD task is sized by its pair-day; a replaced pool lets its workers go (#433) (c6b452460)
+- **orchestrator**: a new memory plan replaces the run's pool with one of its size (#433) (149231ab9)
+- **orchestrator**: the memory budget counts preparing a day and its VOD per worker (#433) (87298385f)
+- **orchestrator**: one worker pool per run, whichever thread asks (#433) (a5fe6ab3d)
+- **cli**: logs collect keeps the mode bits of a log file (#131) (7e5f110ac)
+- **cli**: logs collect leaves out a log file renamed during the copy (#131) (952ab697c)
+- **cli**: logs collect skips a log file that rotates away (#131) (0fd62080c)
+- **orchestrator**: review of preparing days in the pool (#433) (ff781fd1b)
+- **cli**: list files never processed when a range has no files (#540) (5498d9085)
+- **pipeline**: log a skipped reference copy of a canopy in no VOD analysis (8841d0bde)
+- **pipeline**: a canopy receiver without files is a data gap, not a failed day (#538) (86e387f10)
+- **config**: fetch the recipes an overlay names with settings from a link (#539) (073d0eb4a)
+- **orchestrator**: log a failed sampling detection of the aux store (#576) (f69d47462)
+- **orchestrator**: name the agency aux store per site and sampling interval (#576) (f6b0f8132)
+- **config**: check the broadcast ephemeris per site, not for the whole settings file (7ec890b89)
+- **cli**: --ephemeris-source help names the RINEX navigation files (9833b9005)
+- **auxiliary**: interpolate orbits with a polynomial of degree 10 (#563) (bcb6b808b)
+- **orchestrator**: read the shared aux cache group in the SCS recompute (e6134aae7)
+- **canvodpy**: cache the orbits once per satellite in the shared aux cache (#573) (6960d1996)
+- **canvodpy**: keep all signals in the shared SP3 aux cache entry (879b534f7)
+- **canvodpy**: review of the broadcast ephemeris of RINEX files (84dd8b9cf)
+- **cli**: store log refuses --store with --path; test it on S3 (c36ea4355)
+- **cli**: banner tests run on Windows and with forced colour (ae863d05e)
+- **cli**: no red or green in the shutdown, and a run marker that can't break the cell (1b366eab2)
+- **cli**: show the author line in the banner (5a53bf390)
+- **dashboard**: show each stage's time next to its bar (12e3b69a5)
+- **discovery**: point the missing canvod-filemap hint at PyPI (98aba868c)
+- **release**: tell the canvodpy tag by its version, not its first letter (385de40ca)
+- **release**: push the canvodpy tag on its own (22ac7df43)
+
+### Perf
+
+- **orchestrator**: prepare each day in the worker pool (#433) (b5461e103)
+
+### Refactor
+
+- **workflows**: deprecate check_sp3_availability (#529) (6c95e67cf)
+- **release**: release-check shares just release's refusals and reads HEAD only (#619) (46c3c60a7)
+- drop an unused return value in the processor (73f07a150)
+- rename _preprocess_aux_data_with_hermite, remove stray test_mwe.py (0dc4254c8)
+- **config**: one map of renamed ephemeris sources, used everywhere (9134210d3)
+- **config**: deprecate ephemeris source final, use precise (e98cc5541)
+- **store**: deprecate _to_icechunk_throttled, use _to_icechunk (33a9d2040)
+
+### Other
+
+- **release**: the test data gets a release of its own when its main moved (3f7b7abc0)
+- **discovery**: navigation files need canonical names until filemap reads them (#110) (4718b732a)
+- **orchestrator**: the worker estimates come from the test data and a 90-day run (#433) (190586fe9)
+- **orchestrator**: the run-units fake pool carries loky's pool state (#433) (f212dc8e8)
+- **cli**: skip the rename tests of logs collect on Windows (#131) (894f32abc)
+- **packages**: count only ImportError and TYPE_CHECKING as optional imports (#129) (2f26a5a9a)
+- **workflows**: name check_sp3_availability as the one Airflow task (#529) (6c010602e)
+- **workflows**: describe the task functions without Airflow (#529) (1b9d747b4)
+- **packages**: check imports inside functions and the README examples (#129) (f03024858)
+- **orchestrator**: import the pipeline module once (#433) (fcf062d37)
+- **orchestrator**: a processor built without __init__ prepares days (#433) (8d0e73c2d)
+- keep the README install to canvodpy, add the PowerShell record (#541) (f2126e9b3)
+- install the command line with uv tool install (#541) (fa9d07a60)
+- name the preprocess_with_hermite_aux path in a processor comment (7fcf86378)
+- **functional**: reflow the pickle warning (#520) (fe84d9aa0)
+- **functional**: a pickle can run any code in the file (#520) (133c13e93)
+- **functional**: the grid file of the deprecated *_to_file functions is a pickle (#520) (59517e9bc)
+- **reference**: pin the reference stores with sp3_interpolation (HF cdaa2018) (aa0c87dc8)
+- **reference**: pin the demo aux archive and reference stores of #563 (dff5e6776)
+- **orchestrator**: use the FAN/INK persona in the SCS recompute test (78438038d)
+- **preflight**: use the FAN/INK persona for navigation file names (294571f24)
+- **orchestrator**: correct stale worker-cap and run-dates docstrings (#562) (d401cbcd6)
+- **auxiliary**: network tests of the registry products, downloads and a downloading run (d974ff04c)
+- **cli**: banner tests use the same terminal on every runner (ea3c72624)
+- end the authors line with the licence (bbc0dd886)
+- name the authors without a copyright claim (709349710)
+- restore the Apache placeholder in the LICENSE appendix (dcf035fd7)
+- drop the copyright line and symbol (9035910a7)
+
+### Packages
+
+- canvod-auxiliary ==1.1.0 (new)
+- canvod-config ==1.1.0 (new)
+- canvod-grids ==1.0.0
+- canvod-ops ==1.0.0
+- canvod-preflight ==1.1.0 (new)
+- canvod-readers ==1.1.0 (new)
+- canvod-store ==1.1.0 (new)
+- canvod-store-metadata ==1.1.0 (new)
+- canvod-utils ==1.0.0
+- canvod-viz ==1.0.0
+- canvod-vod ==1.0.0
+
 ## v1.0.0 (2026-10-24)
 
 ### BREAKING CHANGES
