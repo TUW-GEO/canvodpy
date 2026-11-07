@@ -25,7 +25,7 @@ body:
           label: Steps to reproduce
           description: |
               The command or code, as short as possible. If it needs data,
-              say whether it happens with `canvodpy.demo_data()`.
+              say whether it happens with the demo data (`canvodpy.demo_data`).
           render: shell
       validations:
           required: true
