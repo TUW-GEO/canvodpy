@@ -7,6 +7,13 @@ on:
     schedule:
         - cron: '0 6 * * 1' # Weekly on Monday at 06:00 UTC: links go stale without a change here
     workflow_dispatch: # the full link check, started by hand
+    workflow_call: # from ci.yml
+        inputs:
+            # ci.yml checks the links between our pages only, even when it
+            # runs by hand: an outside server must not fail `ci-ok`.
+            offline_links:
+                type: boolean
+                default: false
 
 permissions: read-all
 
@@ -63,7 +70,7 @@ jobs:
             contents: read
             issues: write
         env:
-            FULL: ${{ github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' }}
+            FULL: ${{ !inputs.offline_links && (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch') }}
         steps:
             - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
             - uses: ./.github/actions/setup

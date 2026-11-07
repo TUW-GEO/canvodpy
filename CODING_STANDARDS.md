@@ -82,8 +82,10 @@ and only maintainers can create, move or delete release tags (`v*`).
    ADR in `docs/adr/`; a new term gets a `GLOSSARY.md` entry. Every docs
    page the pull request changes passes Vale (`just docs-lint-changed`),
    and the built site passes the link check (`just docs-links`); CI runs
-   both (`.github/workflows/docs_quality.yml`), the link check of pull
-   requests on links between our pages only, external links weekly.
+   both on every pull request, docs-only included
+   (`.github/workflows/docs_quality.yml`, called by
+   `.github/workflows/ci.yml`), the link check of pull requests on links
+   between our pages only, external links weekly.
    Where a page shows the same step for the command line and for Python
    in tabs, the `Command line` tab comes first, so readers see it by
    default, and the `Python` tab second.

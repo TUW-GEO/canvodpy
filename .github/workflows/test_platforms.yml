@@ -7,6 +7,12 @@ on:
     schedule:
         - cron: '0 6 * * 1'  # Weekly on Monday at 06:00 UTC
     workflow_call: # from ci.yml
+        inputs:
+            # The Ubuntu job measures the coverage, uploads it to Coveralls
+            # and writes the coverage comment on the pull request.
+            coverage:
+                type: boolean
+                default: false
 
 permissions: read-all
 
@@ -17,6 +23,9 @@ jobs:
     build:
         name: Tests • ${{ matrix.name }}
         runs-on: ${{ matrix.os }}
+        permissions:
+            contents: write # the coverage comment keeps its data on a branch
+            pull-requests: write # the coverage comment
         strategy:
             fail-fast: false
             matrix:
@@ -62,7 +71,22 @@ jobs:
             - name: Install the Project (Windows, no healpy)
               if: matrix.os == 'windows-latest'
               run: uv sync --locked --dev --group filemap
+            - name: Run Tests with Coverage
+              if: inputs.coverage && matrix.os == 'ubuntu-latest'
+              run: uv run pytest
+            - name: Upload to Coveralls
+              if: inputs.coverage && matrix.os == 'ubuntu-latest'
+              uses: coverallsapp/github-action@8d6379e14d29928660c4ba802d8e85393440b329 # v2.3.8
+              with:
+                  file: coverage.lcov
+            - name: Coverage comment
+              if: inputs.coverage && matrix.os == 'ubuntu-latest'
+              uses: py-cov-action/python-coverage-comment-action@2136b292bfcd2a9925b36a46960fcb6f7be8e7fe # v3
+              with:
+                  GITHUB_TOKEN: ${{ github.token }}
+                  VERBOSE: false
             - name: Run Tests
+              if: ${{ !(inputs.coverage && matrix.os == 'ubuntu-latest') }}
               run: |
                   uv run pytest canvodpy/tests/ --verbose --color=yes
                   uv run pytest packages/canvod-auxiliary/tests/ --verbose --color=yes
