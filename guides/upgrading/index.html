@@ -595,7 +595,7 @@
   <span class="md-ellipsis">
     
   
-  What's new in v1.0.0
+  What's new
 
     
   </span>
@@ -792,6 +792,17 @@
         
       </ul>
     </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#new-in-v110" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        New in v1.1.0
+      </span>
+    </span>
+  </a>
   
 </li>
       
@@ -4302,6 +4313,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#new-in-v110" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        New in v1.1.0
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#new-in-v100" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
@@ -4733,6 +4755,10 @@ The rest of the documentation leaves them out.</p>
 <td>nothing (no effect); it limited <abbr title="Chunked, compressed N-dimensional array storage format — cloud-native alternative to HDF5/NetCDF">Zarr</abbr>'s concurrent chunk writes for only some of the store's writes</td>
 </tr>
 <tr>
+<td><code>processing.params.ephemeris_source: final</code>, <code>canvodpy run --ephemeris-source final</code> (since v1.1.0)</td>
+<td><code>precise</code>, the same source under its new name (<a href="../../adr/0023-broadcast-ephemeris-through-the-precise-path/">ADR 0023</a>); stores created with <code>final</code> accept runs with <code>precise</code>, and <code>canvodpy config init --from-store</code> writes <code>precise</code>. A shared aux cache from v1.0.0 is computed again once, since its key holds the name. The Airflow task <code>process_day</code> reports <code>"ephemeris_source": "precise"</code> instead of <code>"agency"</code></td>
+</tr>
+<tr>
 <td><code>processing.params.days_per_batch</code>, <code>canvodpy run --days-per-batch</code>, argument <code>days_per_batch</code> of <code>Site.pipeline()</code> and <code>Pipeline</code></td>
 <td>nothing; the run sizes its units of days from <code>max_memory_gb</code>. Until v2.0.0 the value only caps the days per unit</td>
 </tr>
@@ -4831,6 +4857,10 @@ The rest of the documentation leaves them out.</p>
 <td><code>ProductSpec.sampling_rate</code>, <code>ProductSpec.duration</code>, <code>AuxFile.generate_filename_based_on_type()</code></td>
 <td><code>ProductSpec.sp3_samplings</code> (every product file covers one day), <code>AuxFile.candidate_filenames</code></td>
 </tr>
+<tr>
+<td>Arguments <code>use_velocities</code> and <code>fallback_method</code> of <code>Sp3Config</code> (since v1.1.0)</td>
+<td><code>Sp3Config(method=...)</code>: the arguments have no effect; <code>method</code> picks <code>lagrange</code> or <code>hermite</code></td>
+</tr>
 </tbody>
 </table>
 <details class="note">
@@ -4879,6 +4909,31 @@ The rest of the documentation leaves them out.</p>
 </table>
 </details>
 <hr />
+<h2 id="new-in-v110">New in v1.1.0<a class="headerlink" href="#new-in-v110" title="Permanent link">&para;</a></h2>
+<ul>
+<li><strong>Broadcast ephemeris from <abbr title="Receiver Independent Exchange Format — standard ASCII format for GNSS observations, defined by IGS (Navipedia: RINEX)">RINEX</abbr> navigation files</strong>: with
+  <code>ephemeris_source: broadcast</code>, receivers with <abbr title="Receiver Independent Exchange Format — standard ASCII format for GNSS observations, defined by IGS (Navipedia: RINEX)">RINEX</abbr> files take the
+  satellite positions from their own navigation files. Set the new
+  receiver setting <code>nav_directory</code> to the folder of those files on each
+  receiver with <abbr title="Receiver Independent Exchange Format — standard ASCII format for GNSS observations, defined by IGS (Navipedia: RINEX)">RINEX</abbr> files (in shared-position mode, only the canopy
+  receivers). The navigation files need canonical names
+  (<a href="../../packages/readers/ephemeris-sources/#broadcast-ephemeris-from-rinex-navigation-files">Ephemeris sources</a>).
+  Nothing changes for <abbr title="Septentrio Binary Format — proprietary binary telemetry from Septentrio receivers; embeds satellite geometry">SBF</abbr> files or for the precise ephemeris.</li>
+<li><strong>Orbit interpolation</strong>: the new setting
+  <code>processing.aux_data.sp3_interpolation</code> picks the method. The default,
+  <code>lagrange</code>, is new: a polynomial of degree 10 through the 11 nearest
+  orbit epochs, as RTKLIB does. <code>hermite</code> keeps the cubic Hermite spline
+  of v1.0.0 and gives its angles exactly
+  (<a href="../../packages/auxiliary/interpolation/#orbits">Interpolation methods</a>).
+  The two differ in <code>theta</code>, <code>phi</code> and <code>r</code> between the orbit epochs, so a
+  store takes one of them only.
+  <strong>A store created with v1.0.0 counts as <code>hermite</code>, and refuses runs
+  with the new default.</strong> To continue writing to it, set
+  <code>sp3_interpolation: hermite</code>; to use <code>lagrange</code>, write to a new store.
+  The log book records the method of every file (column
+  <code>orbit_interpolation</code>). A shared aux cache from v1.0.0 is computed
+  again once.</li>
+</ul>
 <h2 id="new-in-v100">New in v1.0.0<a class="headerlink" href="#new-in-v100" title="Permanent link">&para;</a></h2>
 <ul>
 <li><strong>Stores on S3, experimental</strong>: runs write <abbr title="Global Navigation Satellite System — umbrella term for GPS, Galileo, GLONASS, BeiDou, etc. (Navipedia: GNSS)">GNSS</abbr> and <abbr title="Vegetation Optical Depth — dimensionless measure of microwave attenuation through vegetation canopy (τ = −ln(T)·cos θ)">VOD</abbr> stores to
@@ -4971,7 +5026,7 @@ The rest of the documentation leaves them out.</p>
       <nav class="md-footer__inner md-grid" aria-label="Footer" >
         
           
-          <a href="../../whats-new/" class="md-footer__link md-footer__link--prev" aria-label="Previous: What&#x27;s new in v1.0.0">
+          <a href="../../whats-new/" class="md-footer__link md-footer__link--prev" aria-label="Previous: What&#x27;s new">
             <div class="md-footer__button md-icon">
               
               <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-arrow-left" viewBox="0 0 24 24"><path d="m12 19-7-7 7-7M19 12H5"/></svg>
@@ -4981,7 +5036,7 @@ The rest of the documentation leaves them out.</p>
                 Previous
               </span>
               <div class="md-ellipsis">
-                What's new in v1.0.0
+                What's new
               </div>
             </div>
           </a>

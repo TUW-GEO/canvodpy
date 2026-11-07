@@ -590,7 +590,7 @@
   <span class="md-ellipsis">
     
   
-  What's new in v1.0.0
+  What's new
 
     
   </span>
@@ -4349,9 +4349,19 @@ uv<span class="w"> </span>publish<span class="w">               </span><span cla
 </code></pre></div>
 <p><code>uv sync</code> resolves <code>uv.lock</code> and creates or updates the shared workspace
 <code>.venv</code> at the repo root; all 12 packages share a single environment.</p>
+<p><code>uv lock</code> takes only package files that have been on <abbr title="Python Package Index — public Python package repository">PyPI</abbr> for at least
+a week (<code>exclude-newer = "1 week"</code> in <code>[tool.uv]</code>), so a broken or
+malicious release is usually withdrawn before it reaches <code>uv.lock</code>. A
+minimum version you raise by hand in a <code>pyproject.toml</code> must be a
+release at least a week old, or <code>uv lock</code> fails. The packages of
+canvodpy-extensions (canvod-adapters, canvod-airflow, canvod-filemap)
+are exempt: a new release can be locked right away. The names are
+listed in <code>pyproject.toml</code> and in <code>.github/dependabot.yml</code>;
+<code>just check-wait-exemptions</code> (also weekly in <abbr title="Continuous Integration — automated build and test on every commit">CI</abbr>) fails when either list
+differs from the packages canvodpy-extensions releases.</p>
 <p>The scripts under <code>scripts/</code> that need no canvodpy package
 (<code>release.py</code>, <code>analyze_dependencies.py</code>, <code>check_agent_docs.py</code>,
-<code>check_package_imports.py</code>) declare their Python version and
+<code>check_package_imports.py</code>, <code>check_wait_exemptions.py</code>) declare their Python version and
 dependencies in a <code># /// script</code> block at the top (inline script
 metadata, PEP 723). <code>uv run --script scripts/release.py</code> runs such a
 script in its own small environment, without the workspace; the <code>just</code>

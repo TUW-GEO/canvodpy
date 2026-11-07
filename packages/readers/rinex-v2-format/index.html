@@ -595,7 +595,7 @@
   <span class="md-ellipsis">
     
   
-  What's new in v1.0.0
+  What's new
 
     
   </span>
@@ -1726,6 +1726,17 @@
     <span class="md-ellipsis">
       <span class="md-typeset">
         Satellites
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#records-that-end-early" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Records that end early
       </span>
     </span>
   </a>
@@ -4170,6 +4181,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#records-that-end-early" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Records that end early
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#loss-of-lock-and-signal-strength-indicators" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
@@ -4527,6 +4549,10 @@ could not resolve the code, and identical where it could (<code>G05|L1|C</code>)
 <hr />
 <h2 id="satellites">Satellites<a class="headerlink" href="#satellites" title="Permanent link">&para;</a></h2>
 <p><abbr title="Receiver Independent Exchange Format — standard ASCII format for GNSS observations, defined by IGS (Navipedia: RINEX)">RINEX</abbr> 2 satellite numbers <code>snn</code> follow the same convention as <abbr title="Receiver Independent Exchange Format — standard ASCII format for GNSS observations, defined by IGS (Navipedia: RINEX)">RINEX</abbr> 3: for <abbr title="Satellite-Based Augmentation System — geostationary broadcasts providing integrity and corrections (Navipedia: SBAS)">SBAS</abbr>, <span class="arithmatex">\(nn = \text{PRN} - 100\)</span> (<abbr title="Pseudo-Random Noise — unique code identifying a satellite signal slot (e.g. G01, E02). PRN ≠ SVN; PRNs can be reassigned. (Navipedia: GNSS signal)">PRN</abbr> 120 <span class="arithmatex">\(\rightarrow\)</span> <code>S20</code>). <abbr title="Satellite-Based Augmentation System — geostationary broadcasts providing integrity and corrections (Navipedia: SBAS)">SBAS</abbr> satellites <code>S01</code>–<code>S99</code> are recognized.</p>
+<hr />
+<h2 id="records-that-end-early">Records that end early<a class="headerlink" href="#records-that-end-early" title="Permanent link">&para;</a></h2>
+<p>An epoch record has <code>ceil(n / 5)</code> lines per satellite, for <code>n</code> observation types (<abbr title="Receiver Independent Exchange Format — standard ASCII format for GNSS observations, defined by IGS (Navipedia: RINEX)">RINEX</abbr> 2.11 Table A2, five observations per line). If the next epoch header (Table A2: date, time, flag, satellite count) appears before all lines of a satellite are read, the record ends early. The reader drops that epoch, logs <code>rinex_epochs_rejected</code> with the line numbers of the dropped epoch headers, and continues at the next header, so the following epoch is kept when it is complete.</p>
+<p>The same holds when the file ends inside the last epoch, for example after a power loss: that epoch is dropped and logged. Each observation field must be blank or have the Table A2 form (F14.3, then LLI and SSI, each blank or a digit), so a line cut inside a value drops its epoch rather than read as a shorter number.</p>
 <hr />
 <h2 id="loss-of-lock-and-signal-strength-indicators">Loss of lock and signal strength indicators<a class="headerlink" href="#loss-of-lock-and-signal-strength-indicators" title="Permanent link">&para;</a></h2>
 <p>The <code>LLI</code> variable has the <a href="../rinex-format/#loss-of-lock-and-signal-strength-indicators"><abbr title="Receiver Independent Exchange Format — standard ASCII format for GNSS observations, defined by IGS (Navipedia: RINEX)">RINEX</abbr> 3.04 meaning</a> for every input format. The <abbr title="Receiver Independent Exchange Format — standard ASCII format for GNSS observations, defined by IGS (Navipedia: RINEX)">RINEX</abbr> 2.11 bits (Table A2) differ, so the reader translates them:</p>

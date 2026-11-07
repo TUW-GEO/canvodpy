@@ -595,7 +595,7 @@
   <span class="md-ellipsis">
     
   
-  What's new in v1.0.0
+  What's new
 
     
   </span>
@@ -4589,8 +4589,17 @@ site name; reading it raises an error that names
 <code>_FillValue</code> and the <abbr title="Chunked, compressed N-dimensional array storage format — cloud-native alternative to HDF5/NetCDF">Zarr</abbr> <code>fill_value</code>: -1 for the integer flags (for
 example <code>rise_set</code> and <code>pvt_mode</code>), NaN for floating-point values.</p>
 <p>The log book (<code>metadata/table</code>) records each stored file: its hash, start,
-end, filename, the dataset attributes, and the preprocessing record (see
-<a href="../../ops/overview/#the-preprocessing-record">Preprocessing during a run</a>).
+end, filename, the dataset attributes, the preprocessing record (see
+<a href="../../ops/overview/#the-preprocessing-record">Preprocessing during a run</a>),
+and the satellites observed without a position, with their epochs
+(<code>satellites_without_position</code>, see
+<a href="../../../guides/diagnostics/#satellites-without-a-position">Satellites without a position</a>),
+and how the orbits were interpolated onto the file's epochs
+(<code>orbit_interpolation</code>, JSON, for example
+<code>{"method": "lagrange", "points": 11}</code> or <code>{"method": "hermite"}</code>; empty
+in rows written before v1.1.0, which used the Hermite spline, and for
+angles the receiver computed, from <abbr title="Septentrio Binary Format — proprietary binary telemetry from Septentrio receivers; embeds satellite geometry">SBF</abbr> files; see
+<a href="../../auxiliary/interpolation/#orbits">Interpolation methods</a>).
 In a group made of day blocks, it also records how many epochs of the file
 were stored (<code>epochs</code>). Every other value in it is text, JSON, or a time.</p>
 <p>The log book only grows: rows are appended, never changed. A run reads
@@ -4879,6 +4888,13 @@ A new or changed setting shows under
 <code>canvod:repository_metadata.content_settings</code>, by name and in its hash:
 it changes what the store records about how it was built, so it counts
 as a difference.</p>
+<p>Attributes are compared exactly, except the receiver positions
+(<code>APPROX POSITION X/Y/Z</code> and <code>position_ecef_m</code>). They match within
+5e-5 m, half the resolution of the <abbr title="Receiver Independent Exchange Format — standard ASCII format for GNSS observations, defined by IGS (Navipedia: RINEX)">RINEX</abbr> header field APPROX POSITION
+XYZ, format 3F14.4 = 0.0001 m (<abbr title="Receiver Independent Exchange Format — standard ASCII format for GNSS observations, defined by IGS (Navipedia: RINEX)">RINEX</abbr> 3.04, Table A2; <abbr title="Receiver Independent Exchange Format — standard ASCII format for GNSS observations, defined by IGS (Navipedia: RINEX)">RINEX</abbr> 2.11,
+Table A1). A position computed from NMEA latitude, longitude and height
+differs in the last bits between platforms. The table is
+<code>ATTRIBUTE_TOLERANCES</code> in the same module.</p>
 <p>The log books (<code>metadata/table</code>) are not compared. They record how a
 run wrote each file (write times, snapshot ids, run ids, paths); what
 the files hold is compared through the groups, and which files were

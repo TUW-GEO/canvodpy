@@ -590,7 +590,7 @@
   <span class="md-ellipsis">
     
   
-  What's new in v1.0.0
+  What's new
 
     
   </span>
@@ -3332,6 +3332,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#which-version-a-change-goes-into" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Which version a change goes into
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#requirements-between-packages" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
@@ -4195,6 +4206,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#which-version-a-change-goes-into" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Which version a change goes into
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#requirements-between-packages" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
@@ -4511,6 +4533,38 @@ version:</p>
 <li>canvodpy takes at least the largest increment of the packages, and the
    same stage.</li>
 </ol>
+<hr />
+<h2 id="which-version-a-change-goes-into">Which version a change goes into<a class="headerlink" href="#which-version-a-change-goes-into" title="Permanent link">&para;</a></h2>
+<p>Docs, upgrade notes and deprecation messages name the version that brings
+a change, such as "since v1.1.0" or "New in v1.1.0." That version follows from the
+kind of change:</p>
+<table>
+<thead>
+<tr>
+<th>Change</th>
+<th>Goes into</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Bug fix only</td>
+<td>the next patch version</td>
+</tr>
+<tr>
+<td>A new setting, a new feature, or a deprecation</td>
+<td>the next minor version</td>
+</tr>
+<tr>
+<td>Removal of deprecated code, or a change to the store format</td>
+<td>the next major version</td>
+</tr>
+</tbody>
+</table>
+<p>The next versions are the
+<a href="https://github.com/TUW-GEO/canvodpy/milestones">milestones</a> of the
+repository (for example v1.1.0 and v2.0.0); name the milestone the change
+belongs to. If it is unclear which one, ask the maintainers instead of
+guessing.</p>
 <hr />
 <h2 id="requirements-between-packages">Requirements between packages<a class="headerlink" href="#requirements-between-packages" title="Permanent link">&para;</a></h2>
 <ul>

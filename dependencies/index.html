@@ -590,7 +590,7 @@
   <span class="md-ellipsis">
     
   
-  What's new in v1.0.0
+  What's new
 
     
   </span>
@@ -4488,8 +4488,12 @@ For example, <code>uv add canvod-grids</code> also installs <code>canvod-utils</
 <h2 id="checks">Checks<a class="headerlink" href="#checks" title="Permanent link">&para;</a></h2>
 <ul>
 <li><code>just check-package-imports</code> installs each package with only its
-  declared dependencies and imports every module, so a dependency that a
-  package uses but doesn't declare fails in <abbr title="Continuous Integration — automated build and test on every commit">CI</abbr>.</li>
+  declared dependencies and imports every module, and every module that
+  one of its functions imports, so a dependency that a package uses but
+  doesn't declare fails in <abbr title="Continuous Integration — automated build and test on every commit">CI</abbr>. An optional import is guarded
+  (<code>try</code>/<code>except ImportError</code> with an install hint). It then runs the
+  <code>## Example</code> code of the package's README in the same environment; an
+  example that needs input files runs its import lines only.</li>
 <li><code>just deps-report</code> prints the tables on this page, and <code>just
   deps-mermaid</code> prints the graph. Both read the <code>pyproject.toml</code> files and
   fail if a package depends on a package of a higher layer, or if a package

@@ -595,7 +595,7 @@
   <span class="md-ellipsis">
     
   
-  What's new in v1.0.0
+  What's new
 
     
   </span>
@@ -4326,6 +4326,32 @@ new terminal, and you can run the command from any folder, without
 <code>uv run</code>:</p>
 <div class="highlight"><pre><span></span><code>canvodpy<span class="w"> </span>--help
 </code></pre></div>
+<p>If your receivers' files don't have canVOD names, install the
+extension for naming recipes with it
+(see <a href="#file-names">File names</a> below):</p>
+<div class="highlight"><pre><span></span><code>uv<span class="w"> </span>tool<span class="w"> </span>install<span class="w"> </span>canvodpy<span class="w"> </span>--with<span class="w"> </span>canvod-filemap
+</code></pre></div>
+<p>For a run you want to repeat later, install fixed versions:</p>
+<div class="highlight"><pre><span></span><code>uv<span class="w"> </span>tool<span class="w"> </span>install<span class="w"> </span><span class="nv">canvodpy</span><span class="o">==</span><span class="m">1</span>.0.0<span class="w"> </span>--with<span class="w"> </span>canvod-filemap<span class="o">==</span><span class="m">1</span>.0.0
+</code></pre></div>
+<p>canVODpy pins only its own packages exactly. The versions of the other
+packages (pandas, netCDF4, ...) depend on the day of the install, and
+the Python version can differ between installs. To
+record them, list the tool's environment and its Python:</p>
+<div class="tabbed-set tabbed-alternate" data-tabs="2:2"><input checked="checked" id="__tabbed_2_1" name="__tabbed_2" type="radio" /><input id="__tabbed_2_2" name="__tabbed_2" type="radio" /><div class="tabbed-labels"><label for="__tabbed_2_1">macOS / Linux</label><label for="__tabbed_2_2">Windows (PowerShell)</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code>uv<span class="w"> </span>pip<span class="w"> </span>freeze<span class="w"> </span>--python<span class="w"> </span><span class="s2">"</span><span class="k">$(</span>uv<span class="w"> </span>tool<span class="w"> </span>dir<span class="k">)</span><span class="s2">/canvodpy/bin/python"</span>
+<span class="s2">"</span><span class="k">$(</span>uv<span class="w"> </span>tool<span class="w"> </span>dir<span class="k">)</span><span class="s2">/canvodpy/bin/python"</span><span class="w"> </span>--version
+</code></pre></div>
+</div>
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><span class="n">uv</span> <span class="n">pip</span> <span class="n">freeze</span> <span class="p">-</span><span class="n">-python</span> <span class="s2">"</span><span class="p">$(</span><span class="n">uv</span> <span class="n">tool</span> <span class="n">dir</span><span class="p">)</span><span class="s2">\canvodpy\Scripts\python.exe"</span>
+<span class="p">&amp;</span> <span class="s2">"</span><span class="p">$(</span><span class="n">uv</span> <span class="n">tool</span> <span class="n">dir</span><span class="p">)</span><span class="s2">\canvodpy\Scripts\python.exe"</span> <span class="p">-</span><span class="n">-version</span>
+</code></pre></div>
+</div>
+</div>
+</div>
 <p>To update or remove the tool, run <code>uv tool upgrade canvodpy</code> or
 <code>uv tool uninstall canvodpy</code>.</p>
 </div>
@@ -4475,7 +4501,7 @@ decompress them first. The canopy receiver and the reference receiver
 must record the same file format.</p>
 <h3 id="ephemeris-products">Ephemeris products<a class="headerlink" href="#ephemeris-products" title="Permanent link">&para;</a></h3>
 <p>To compute where each satellite was, canVODpy downloads precise
-satellite orbits (<abbr title="Standard Product 3 — precise satellite orbit (position ± ~2 cm) file format, produced by IGS analysis centres (Navipedia: SP3)">SP3</abbr> files) and clocks (<abbr title="Clock — precise satellite and station clock correction file (30 s intervals), companion to SP3 orbits">CLK</abbr> files) from the European Space Agency (ESA). This needs
+satellite orbits (<abbr title="Standard Product 3 — precise satellite orbit file format, produced by IGS analysis centres (Navipedia: SP3)">SP3</abbr> files) and clocks (<abbr title="Clock — precise satellite and station clock correction file (30 s intervals), companion to SP3 orbits">CLK</abbr> files) from the European Space Agency (ESA). This needs
 no account and no setup. To add the NASA Crustal Dynamics Data Information System (<abbr title="Crustal Dynamics Data Information System — NASA archive for GNSS orbits, clocks, and observation data">CDDIS</abbr>) as a
 fallback,
 see <a href="../guides/configuration/#ephemeris-data-sources">Ephemeris data sources</a>.</p>
@@ -4485,14 +4511,14 @@ see <a href="../guides/configuration/#ephemeris-data-sources">Ephemeris data sou
 <div class="highlight"><pre><span></span><code>canvodpy<span class="w"> </span>config<span class="w"> </span>validate<span class="w"> </span>--site<span class="w"> </span>ExampleSite
 </code></pre></div>
 <p>The check finds the files of each receiver exactly as a run does. It
-lists the days and files a run would process, the files it would skip,
-and the problems that would stop the run, for example two files that
-cover the same time.</p>
+lists the days and files a run would process, the days in between
+without files, the files it would skip, and the problems that would stop
+the run, for example two files that cover the same time.</p>
 <hr />
 <h2 id="5-process-one-day">5. Process one day<a class="headerlink" href="#5-process-one-day" title="Permanent link">&para;</a></h2>
 <p>canVODpy names a day by its year and day of year, as <code>YYYYDDD</code>. For
 example, <code>2025001</code> is January 1, 2025 and <code>2025032</code> is February 1, 2025.</p>
-<div class="tabbed-set tabbed-alternate" data-tabs="2:2"><input checked="checked" id="__tabbed_2_1" name="__tabbed_2" type="radio" /><input id="__tabbed_2_2" name="__tabbed_2" type="radio" /><div class="tabbed-labels"><label for="__tabbed_2_1">Command line</label><label for="__tabbed_2_2">Python</label></div>
+<div class="tabbed-set tabbed-alternate" data-tabs="3:2"><input checked="checked" id="__tabbed_3_1" name="__tabbed_3" type="radio" /><input id="__tabbed_3_2" name="__tabbed_3" type="radio" /><div class="tabbed-labels"><label for="__tabbed_3_1">Command line</label><label for="__tabbed_3_2">Python</label></div>
 <div class="tabbed-content">
 <div class="tabbed-block">
 <div class="highlight"><pre><span></span><code>canvodpy<span class="w"> </span>run<span class="w"> </span>--site<span class="w"> </span>ExampleSite<span class="w"> </span>--start<span class="w"> </span><span class="m">2025001</span><span class="w"> </span>--end<span class="w"> </span><span class="m">2025001</span>
@@ -4534,7 +4560,7 @@ one dataset per receiver, read back from the store.</p>
 </div>
 <hr />
 <h2 id="6-process-a-period">6. Process a period<a class="headerlink" href="#6-process-a-period" title="Permanent link">&para;</a></h2>
-<div class="tabbed-set tabbed-alternate" data-tabs="3:2"><input checked="checked" id="__tabbed_3_1" name="__tabbed_3" type="radio" /><input id="__tabbed_3_2" name="__tabbed_3" type="radio" /><div class="tabbed-labels"><label for="__tabbed_3_1">Command line</label><label for="__tabbed_3_2">Python</label></div>
+<div class="tabbed-set tabbed-alternate" data-tabs="4:2"><input checked="checked" id="__tabbed_4_1" name="__tabbed_4" type="radio" /><input id="__tabbed_4_2" name="__tabbed_4" type="radio" /><div class="tabbed-labels"><label for="__tabbed_4_1">Command line</label><label for="__tabbed_4_2">Python</label></div>
 <div class="tabbed-content">
 <div class="tabbed-block">
 <div class="highlight"><pre><span></span><code>canvodpy<span class="w"> </span>run<span class="w"> </span>--site<span class="w"> </span>ExampleSite<span class="w"> </span>--start<span class="w"> </span><span class="m">2025001</span><span class="w"> </span>--end<span class="w"> </span><span class="m">2025031</span>
@@ -4680,13 +4706,13 @@ canvodpy<span class="w"> </span>store<span class="w"> </span>log<span class="w">
         
         
           
-          <a href="../whats-new/" class="md-footer__link md-footer__link--next" aria-label="Next: What&#x27;s new in v1.0.0">
+          <a href="../whats-new/" class="md-footer__link md-footer__link--next" aria-label="Next: What&#x27;s new">
             <div class="md-footer__title">
               <span class="md-footer__direction">
                 Next
               </span>
               <div class="md-ellipsis">
-                What's new in v1.0.0
+                What's new
               </div>
             </div>
             <div class="md-footer__button md-icon">

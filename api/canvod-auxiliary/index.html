@@ -590,7 +590,7 @@
   <span class="md-ellipsis">
     
   
-  What's new in v1.0.0
+  What's new
 
     
   </span>
@@ -4302,6 +4302,28 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#canvod.auxiliary.preprocessing.sid_to_sv" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        sid_to_sv
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#canvod.auxiliary.preprocessing.aux_for_sids" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        aux_for_sids
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#interpolation" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
@@ -4437,6 +4459,23 @@
       </span>
     </span>
   </a>
+  
+    <nav class="md-nav" aria-label="Sp3Config">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#canvod.auxiliary.interpolation.Sp3Config.to_dict" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        to_dict
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
   
 </li>
       
@@ -6060,6 +6099,28 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#canvod.auxiliary.preprocessing.sid_to_sv" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        sid_to_sv
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#canvod.auxiliary.preprocessing.aux_for_sids" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        aux_for_sids
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#interpolation" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
@@ -6195,6 +6256,23 @@
       </span>
     </span>
   </a>
+  
+    <nav class="md-nav" aria-label="Sp3Config">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#canvod.auxiliary.interpolation.Sp3Config.to_dict" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        to_dict
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
   
 </li>
       
@@ -7101,7 +7179,7 @@
 
 
 <h1 id="canvodauxiliary-api-reference"><code>canvod.auxiliary</code> API reference<a class="headerlink" href="#canvodauxiliary-api-reference" title="Permanent link">&para;</a></h1>
-<p><abbr title="Standard Product 3 — precise satellite orbit (position ± ~2 cm) file format, produced by IGS analysis centres (Navipedia: SP3)">SP3</abbr> ephemeris and <abbr title="Clock — precise satellite and station clock correction file (30 s intervals), companion to SP3 orbits">CLK</abbr> clock correction processing, interpolation, coordinate
+<p><abbr title="Standard Product 3 — precise satellite orbit file format, produced by IGS analysis centres (Navipedia: SP3)">SP3</abbr> ephemeris and <abbr title="Clock — precise satellite and station clock correction file (30 s intervals), companion to SP3 orbits">CLK</abbr> clock correction processing, interpolation, coordinate
 transformations, and the <abbr title="Global Navigation Satellite System — umbrella term for GPS, Galileo, GLONASS, BeiDou, etc. (Navipedia: GNSS)">GNSS</abbr> product registry.</p>
 <h2 id="package">Package<a class="headerlink" href="#package" title="Permanent link">&para;</a></h2>
 
@@ -7114,7 +7192,7 @@ transformations, and the <abbr title="Global Navigation Satellite System — umb
     <div class="doc doc-contents first">
 
         <p>canvod-aux: Auxiliary data augmentation for <abbr title="Global Navigation Satellite System — umbrella term for GPS, Galileo, GLONASS, BeiDou, etc. (Navipedia: GNSS)">GNSS</abbr> <abbr title="Vegetation Optical Depth — dimensionless measure of microwave attenuation through vegetation canopy (τ = −ln(T)·cos θ)">VOD</abbr> analysis</p>
-<p>Handles downloading, parsing, and interpolating <abbr title="Standard Product 3 — precise satellite orbit (position ± ~2 cm) file format, produced by IGS analysis centres (Navipedia: SP3)">SP3</abbr> ephemerides and
+<p>Handles downloading, parsing, and interpolating <abbr title="Standard Product 3 — precise satellite orbit file format, produced by IGS analysis centres (Navipedia: SP3)">SP3</abbr> ephemerides and
 clock corrections for <abbr title="Global Navigation Satellite System — umbrella term for GPS, Galileo, GLONASS, BeiDou, etc. (Navipedia: GNSS)">GNSS</abbr> satellite data processing.</p>
 <!-- Glossary: hover any abbreviation to see its definition -->
 
@@ -7165,7 +7243,7 @@ clock corrections for <abbr title="Global Navigation Satellite System — umbrel
 
 
 
-        <p>Handler for <abbr title="Standard Product 3 — precise satellite orbit (position ± ~2 cm) file format, produced by IGS analysis centres (Navipedia: SP3)">SP3</abbr> orbit files with multi-product support.</p>
+        <p>Handler for <abbr title="Standard Product 3 — precise satellite orbit file format, produced by IGS analysis centres (Navipedia: SP3)">SP3</abbr> orbit files with multi-product support.</p>
 <p>Now supports all <abbr title="International GNSS Service — global network of 500+ stations providing orbits, clocks, and reference frame products (Navipedia: IGS)">IGS</abbr> analysis centers via product registry:
 COD, GFZ, ESA, JPL, <abbr title="International GNSS Service — global network of 500+ stations providing orbits, clocks, and reference frame products (Navipedia: IGS)">IGS</abbr>, WHU, GRG, SHA</p>
 <!-- Glossary: hover any abbreviation to see its definition -->
@@ -7470,7 +7548,7 @@ COD, GFZ, ESA, JPL, <abbr title="International GNSS Service — global network o
 
     <div class="doc doc-contents ">
 
-        <p>Get appropriate interpolation strategy for <abbr title="Standard Product 3 — precise satellite orbit (position ± ~2 cm) file format, produced by IGS analysis centres (Navipedia: SP3)">SP3</abbr> files.</p>
+        <p>Get appropriate interpolation strategy for <abbr title="Standard Product 3 — precise satellite orbit file format, produced by IGS analysis centres (Navipedia: SP3)">SP3</abbr> files.</p>
 <!-- Glossary: hover any abbreviation to see its definition -->
 
 <!-- GNSS fundamentals — see Navipedia (navipedia.net) for detailed articles -->
@@ -7500,9 +7578,9 @@ COD, GFZ, ESA, JPL, <abbr title="International GNSS Service — global network o
 
     <div class="doc doc-contents ">
 
-        <p><abbr title="Standard Product 3 — precise satellite orbit (position ± ~2 cm) file format, produced by IGS analysis centres (Navipedia: SP3)">SP3</abbr> file names, one per sampling the product has been published with.</p>
-<p>Pattern: {PREFIX}<em SAMPLING="SAMPLING">{YYYYDOY}0000_01D</em>_ORB.<abbr title="Standard Product 3 — precise satellite orbit (position ± ~2 cm) file format, produced by IGS analysis centres (Navipedia: SP3)">SP3</abbr></p>
-<p>Example: COD0MGXFIN_20240150000_01D_05M_ORB.<abbr title="Standard Product 3 — precise satellite orbit (position ± ~2 cm) file format, produced by IGS analysis centres (Navipedia: SP3)">SP3</abbr></p>
+        <p><abbr title="Standard Product 3 — precise satellite orbit file format, produced by IGS analysis centres (Navipedia: SP3)">SP3</abbr> file names, one per sampling the product has been published with.</p>
+<p>Pattern: {PREFIX}<em SAMPLING="SAMPLING">{YYYYDOY}0000_01D</em>_ORB.<abbr title="Standard Product 3 — precise satellite orbit file format, produced by IGS analysis centres (Navipedia: SP3)">SP3</abbr></p>
+<p>Example: COD0MGXFIN_20240150000_01D_05M_ORB.<abbr title="Standard Product 3 — precise satellite orbit file format, produced by IGS analysis centres (Navipedia: SP3)">SP3</abbr></p>
 <!-- Glossary: hover any abbreviation to see its definition -->
 
 <!-- GNSS fundamentals — see Navipedia (navipedia.net) for detailed articles -->
@@ -7532,7 +7610,7 @@ COD, GFZ, ESA, JPL, <abbr title="International GNSS Service — global network o
 
     <div class="doc doc-contents ">
 
-        <p>Download one <abbr title="Standard Product 3 — precise satellite orbit (position ± ~2 cm) file format, produced by IGS analysis centres (Navipedia: SP3)">SP3</abbr> file, trying all servers from the product registry.</p>
+        <p>Download one <abbr title="Standard Product 3 — precise satellite orbit file format, produced by IGS analysis centres (Navipedia: SP3)">SP3</abbr> file, trying all servers from the product registry.</p>
 <p>Servers are tried in priority order from products.toml. Auth-required
 servers are skipped when no credentials are configured. Warnings are
 printed when falling back to alternate servers.</p>
@@ -7665,7 +7743,7 @@ printed when falling back to alternate servers.</p>
 
     <div class="doc doc-contents ">
 
-        <p>Read and validate <abbr title="Standard Product 3 — precise satellite orbit (position ± ~2 cm) file format, produced by IGS analysis centres (Navipedia: SP3)">SP3</abbr> file.</p>
+        <p>Read and validate <abbr title="Standard Product 3 — precise satellite orbit file format, produced by IGS analysis centres (Navipedia: SP3)">SP3</abbr> file.</p>
 <!-- Glossary: hover any abbreviation to see its definition -->
 
 <!-- GNSS fundamentals — see Navipedia (navipedia.net) for detailed articles -->
@@ -8540,7 +8618,7 @@ The clock bias is in seconds (<abbr title="Receiver Independent Exchange Format 
 
 
 
-        <p>Abstract base class for <abbr title="Global Navigation Satellite System — umbrella term for GPS, Galileo, GLONASS, BeiDou, etc. (Navipedia: GNSS)">GNSS</abbr> auxiliary files (<abbr title="Standard Product 3 — precise satellite orbit (position ± ~2 cm) file format, produced by IGS analysis centres (Navipedia: SP3)">SP3</abbr>, <abbr title="Clock — precise satellite and station clock correction file (30 s intervals), companion to SP3 orbits">CLK</abbr>, IONEX, etc.).</p>
+        <p>Abstract base class for <abbr title="Global Navigation Satellite System — umbrella term for GPS, Galileo, GLONASS, BeiDou, etc. (Navipedia: GNSS)">GNSS</abbr> auxiliary files (<abbr title="Standard Product 3 — precise satellite orbit file format, produced by IGS analysis centres (Navipedia: SP3)">SP3</abbr>, <abbr title="Clock — precise satellite and station clock correction file (30 s intervals), companion to SP3 orbits">CLK</abbr>, IONEX, etc.).</p>
 <p>This class provides two ways to create instances:
 1. from_datetime_date(): Create from a datetime.date object and metadata
 2. from_file(): Create directly from an existing file path</p>
@@ -11454,8 +11532,9 @@ class docstring).</p>
         <p>Auxiliary-data preprocessing pipelines.</p>
 <p>Composes the <abbr title="Signal Identifier — canVODpy format: SV|Band|Code (e.g. G01|L1|C). Uniquely identifies one observable per epoch.">SID</abbr>-space primitives from :mod:<code>canvod.readers.preprocessing</code>
 (sv-&gt;sid conversion, global <abbr title="Signal Identifier — canVODpy format: SV|Band|Code (e.g. G01|L1|C). Uniquely identifies one observable per epoch.">SID</abbr> padding, dtype/encoding normalization) into
-the two pipelines specific to auxiliary (<abbr title="Standard Product 3 — precise satellite orbit (position ± ~2 cm) file format, produced by IGS analysis centres (Navipedia: SP3)">SP3</abbr>/<abbr title="Clock — precise satellite and station clock correction file (30 s intervals), companion to SP3 orbits">CLK</abbr>) data: preparing a dataset
-for <abbr title="Version-controlled cloud-native tensor storage engine — git-like snapshots over Zarr v3 chunks">Icechunk</abbr> storage, and preparing one for interpolation.</p>
+the two pipelines specific to auxiliary (<abbr title="Standard Product 3 — precise satellite orbit file format, produced by IGS analysis centres (Navipedia: SP3)">SP3</abbr>/<abbr title="Clock — precise satellite and station clock correction file (30 s intervals), companion to SP3 orbits">CLK</abbr>) data: preparing a dataset
+for <abbr title="Version-controlled cloud-native tensor storage engine — git-like snapshots over Zarr v3 chunks">Icechunk</abbr> storage, and preparing one for interpolation. The shared aux
+cache keeps them once per satellite (:func:<code>sid_to_sv</code>, :func:<code>aux_for_sids</code>).</p>
 <p>The primitives themselves live in <code>canvod-readers</code> because they only
 depend on <abbr title="Global Navigation Satellite System — umbrella term for GPS, Galileo, GLONASS, BeiDou, etc. (Navipedia: GNSS)">GNSS</abbr> signal/constellation definitions (<code>canvod.readers.gnss_specs</code>),
 not on anything ephemeris- or interpolation-specific -- keeping them here
@@ -11899,7 +11978,7 @@ sv → sid (sufficient for interpolation).</p>
 <!-- Signal bands -->
 <!-- Software tools --></summary>
   <p>This must be called BEFORE interpolation. The workflow is:
-1. Load raw <abbr title="Standard Product 3 — precise satellite orbit (position ± ~2 cm) file format, produced by IGS analysis centres (Navipedia: SP3)">SP3</abbr>/<abbr title="Clock — precise satellite and station clock correction file (30 s intervals), companion to SP3 orbits">CLK</abbr> data (sv dimension)
+1. Load raw <abbr title="Standard Product 3 — precise satellite orbit file format, produced by IGS analysis centres (Navipedia: SP3)">SP3</abbr>/<abbr title="Clock — precise satellite and station clock correction file (30 s intervals), companion to SP3 orbits">CLK</abbr> data (sv dimension)
 2. Convert sv → sid (this function)
 3. Interpolate to target epochs
 4. Match with <abbr title="Receiver Independent Exchange Format — standard ASCII format for GNSS observations, defined by IGS (Navipedia: RINEX)">RINEX</abbr> data (sid dimension)</p>
@@ -11941,6 +12020,294 @@ Use <code>full_preprocessing=True</code> when preparing data for <abbr title="Ve
 <span class="gp">&gt;&gt;&gt; </span><span class="c1"># Now interpolate</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">sp3_interp</span> <span class="o">=</span> <span class="n">interpolator</span><span class="o">.</span><span class="n">interpolate</span><span class="p">(</span><span class="n">sp3_preprocessed</span><span class="p">,</span> <span class="n">target_epochs</span><span class="p">)</span>
 </code></pre></div>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h2 id="canvod.auxiliary.preprocessing.sid_to_sv" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">sid_to_sv</span><span class="p">(</span><span class="n">aux_ds</span><span class="p">)</span></code>
+
+<a href="#canvod.auxiliary.preprocessing.sid_to_sv" class="headerlink" title="Permanent link">&para;</a></h2>
+
+
+    <div class="doc doc-contents ">
+
+        <p>One value per satellite of a dataset on the <code>sid</code> dimension.</p>
+<p>The inverse of :func:<code>map_aux_sv_to_sid</code>: orbits and clocks are values
+of a satellite, which that function copies to each of its signals.
+Interpolating them per satellite instead of per signal saves the
+copies' work (#573).</p>
+<!-- Glossary: hover any abbreviation to see its definition -->
+
+<!-- GNSS fundamentals — see Navipedia (navipedia.net) for detailed articles -->
+<!-- Satellite identifiers -->
+<!-- Observation data -->
+<!-- VOD and transmissometry -->
+<!-- Ephemerides and orbits -->
+<!-- Data standards -->
+<!-- Infrastructure -->
+<!-- Coordinate systems -->
+<!-- Signal bands -->
+<!-- Software tools -->
+
+
+<p><span class="doc-section-title">Parameters:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Default</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                <code>aux_ds</code>
+            </td>
+            <td>
+                  <code><span title="xarray.Dataset">Dataset</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Dataset with a <code>sid</code> dimension whose signals of one satellite
+hold the same values.</p>
+<!-- Glossary: hover any abbreviation to see its definition -->
+
+<!-- GNSS fundamentals — see Navipedia (navipedia.net) for detailed articles -->
+<!-- Satellite identifiers -->
+<!-- Observation data -->
+<!-- VOD and transmissometry -->
+<!-- Ephemerides and orbits -->
+<!-- Data standards -->
+<!-- Infrastructure -->
+<!-- Coordinate systems -->
+<!-- Signal bands -->
+<!-- Software tools -->
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+    <p><span class="doc-section-title">Returns:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                  <code><span title="xarray.Dataset">Dataset</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Dataset with an <code>sv</code> dimension instead of <code>sid</code>; the signal
+coordinates (band, code, frequencies) are dropped.</p>
+<!-- Glossary: hover any abbreviation to see its definition -->
+
+<!-- GNSS fundamentals — see Navipedia (navipedia.net) for detailed articles -->
+<!-- Satellite identifiers -->
+<!-- Observation data -->
+<!-- VOD and transmissometry -->
+<!-- Ephemerides and orbits -->
+<!-- Data standards -->
+<!-- Infrastructure -->
+<!-- Coordinate systems -->
+<!-- Signal bands -->
+<!-- Software tools -->
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+<p><span class="doc-section-title">Raises:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                  <code><span title="ValueError">ValueError</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>If two signals of a satellite hold different values.</p>
+<!-- Glossary: hover any abbreviation to see its definition -->
+
+<!-- GNSS fundamentals — see Navipedia (navipedia.net) for detailed articles -->
+<!-- Satellite identifiers -->
+<!-- Observation data -->
+<!-- VOD and transmissometry -->
+<!-- Ephemerides and orbits -->
+<!-- Data standards -->
+<!-- Infrastructure -->
+<!-- Coordinate systems -->
+<!-- Signal bands -->
+<!-- Software tools -->
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h2 id="canvod.auxiliary.preprocessing.aux_for_sids" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">aux_for_sids</span><span class="p">(</span><span class="n">aux_ds</span><span class="p">,</span> <span class="n">sids</span><span class="p">)</span></code>
+
+<a href="#canvod.auxiliary.preprocessing.aux_for_sids" class="headerlink" title="Permanent link">&para;</a></h2>
+
+
+    <div class="doc doc-contents ">
+
+        <p>The auxiliary values of the signals <code>sids</code>.</p>
+<!-- Glossary: hover any abbreviation to see its definition -->
+
+<!-- GNSS fundamentals — see Navipedia (navipedia.net) for detailed articles -->
+<!-- Satellite identifiers -->
+<!-- Observation data -->
+<!-- VOD and transmissometry -->
+<!-- Ephemerides and orbits -->
+<!-- Data standards -->
+<!-- Infrastructure -->
+<!-- Coordinate systems -->
+<!-- Signal bands -->
+<!-- Software tools -->
+
+
+<p><span class="doc-section-title">Parameters:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Default</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                <code>aux_ds</code>
+            </td>
+            <td>
+                  <code><span title="xarray.Dataset">Dataset</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Auxiliary data on the <code>sid</code> dimension, or once per satellite
+(<code>sv</code> dimension, see :func:<code>sid_to_sv</code>) with the signals they
+hold in the coordinate <code>sid</code>.</p>
+<!-- Glossary: hover any abbreviation to see its definition -->
+
+<!-- GNSS fundamentals — see Navipedia (navipedia.net) for detailed articles -->
+<!-- Satellite identifiers -->
+<!-- Observation data -->
+<!-- VOD and transmissometry -->
+<!-- Ephemerides and orbits -->
+<!-- Data standards -->
+<!-- Infrastructure -->
+<!-- Coordinate systems -->
+<!-- Signal bands -->
+<!-- Software tools -->
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>sids</code>
+            </td>
+            <td>
+                  <code><span title="list">list</span>[<span title="str">str</span>]</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Signals to select; each must be in <code>aux_ds["sid"]</code>.</p>
+<!-- Glossary: hover any abbreviation to see its definition -->
+
+<!-- GNSS fundamentals — see Navipedia (navipedia.net) for detailed articles -->
+<!-- Satellite identifiers -->
+<!-- Observation data -->
+<!-- VOD and transmissometry -->
+<!-- Ephemerides and orbits -->
+<!-- Data standards -->
+<!-- Infrastructure -->
+<!-- Coordinate systems -->
+<!-- Signal bands -->
+<!-- Software tools -->
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+    <p><span class="doc-section-title">Returns:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                  <code><span title="xarray.Dataset">Dataset</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>The values on the <code>sid</code> dimension, in the order of <code>sids</code>; a
+satellite's values are copied to each of its signals.</p>
+<!-- Glossary: hover any abbreviation to see its definition -->
+
+<!-- GNSS fundamentals — see Navipedia (navipedia.net) for detailed articles -->
+<!-- Satellite identifiers -->
+<!-- Observation data -->
+<!-- VOD and transmissometry -->
+<!-- Ephemerides and orbits -->
+<!-- Data standards -->
+<!-- Infrastructure -->
+<!-- Coordinate systems -->
+<!-- Signal bands -->
+<!-- Software tools -->
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
 
 
     </div>
@@ -12585,7 +12952,7 @@ uses <code>ABC</code> to define required interpolation hooks.</p>
 
 
 
-        <p>Configuration for <abbr title="Standard Product 3 — precise satellite orbit (position ± ~2 cm) file format, produced by IGS analysis centres (Navipedia: SP3)">SP3</abbr> ephemeris interpolation.</p>
+        <p>Configuration for <abbr title="Standard Product 3 — precise satellite orbit file format, produced by IGS analysis centres (Navipedia: SP3)">SP3</abbr> ephemeris interpolation.</p>
 <!-- Glossary: hover any abbreviation to see its definition -->
 
 <!-- GNSS fundamentals — see Navipedia (navipedia.net) for detailed articles -->
@@ -12600,24 +12967,31 @@ uses <code>ABC</code> to define required interpolation hooks.</p>
 <!-- Software tools -->
 
 
-<p><span class="doc-section-title">Attributes:</span></p>
+<p><span class="doc-section-title">Parameters:</span></p>
     <table>
       <thead>
         <tr>
           <th>Name</th>
           <th>Type</th>
           <th>Description</th>
+          <th>Default</th>
         </tr>
       </thead>
       <tbody>
           <tr class="doc-section-item">
-            <td><code><span title="canvod.auxiliary.interpolation.Sp3Config.use_velocities">use_velocities</span></code></td>
             <td>
-                  <code>bool, default True</code>
+                <code>method</code>
+            </td>
+            <td>
+                  <code><span title="str">str</span></code>
             </td>
             <td>
               <div class="doc-md-description">
-                <p>Use Hermite splines with satellite velocities if available.</p>
+                <p><code>"lagrange"</code>: the polynomial of degree 10 through the 11 nearest
+epochs (:data:<code>ORBIT_INTERPOLATION_POINTS</code>). <code>"hermite"</code>: the
+cubic Hermite spline through the positions and the velocities
+(<code>Vx</code>, <code>Vy</code>, <code>Vz</code>), as canvodpy interpolated before v1.1.0.
+See :data:<code>SP3_INTERPOLATION_METHODS</code>.</p>
 <!-- Glossary: hover any abbreviation to see its definition -->
 
 <!-- GNSS fundamentals — see Navipedia (navipedia.net) for detailed articles -->
@@ -12632,15 +13006,30 @@ uses <code>ABC</code> to define required interpolation hooks.</p>
 <!-- Software tools -->
               </div>
             </td>
-          </tr>
-          <tr class="doc-section-item">
-            <td><code><span title="canvod.auxiliary.interpolation.Sp3Config.fallback_method">fallback_method</span></code></td>
             <td>
-                  <code>str, default &#39;linear&#39;</code>
+                  <code>&#39;lagrange&#39;</code>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+<p><span class="doc-section-title">Raises:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                  <code><span title="pydantic.ValidationError">ValidationError</span></code>
             </td>
             <td>
               <div class="doc-md-description">
-                <p>Interpolation method when velocities are unavailable.</p>
+                <p>For another method (a <code>ValueError</code>).</p>
 <!-- Glossary: hover any abbreviation to see its definition -->
 
 <!-- GNSS fundamentals — see Navipedia (navipedia.net) for detailed articles -->
@@ -12680,6 +13069,36 @@ uses <code>ABC</code> to define required interpolation hooks.</p>
 
 
 
+<div class="doc doc-object doc-function">
+
+
+<h3 id="canvod.auxiliary.interpolation.Sp3Config.to_dict" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">to_dict</span><span class="p">()</span></code>
+
+<a href="#canvod.auxiliary.interpolation.Sp3Config.to_dict" class="headerlink" title="Permanent link">&para;</a></h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Convert config to dictionary for attrs storage.</p>
+<!-- Glossary: hover any abbreviation to see its definition -->
+
+<!-- GNSS fundamentals — see Navipedia (navipedia.net) for detailed articles -->
+<!-- Satellite identifiers -->
+<!-- Observation data -->
+<!-- VOD and transmissometry -->
+<!-- Ephemerides and orbits -->
+<!-- Data standards -->
+<!-- Infrastructure -->
+<!-- Coordinate systems -->
+<!-- Signal bands -->
+<!-- Software tools -->
+
+
+    </div>
+
+</div>
+
 
 
   </div>
@@ -12705,9 +13124,15 @@ uses <code>ABC</code> to define required interpolation hooks.</p>
 
 
 
-        <p>Hermite cubic spline interpolation for <abbr title="Standard Product 3 — precise satellite orbit (position ± ~2 cm) file format, produced by IGS analysis centres (Navipedia: SP3)">SP3</abbr> ephemeris data.</p>
-<p>Uses satellite velocities (Vx, Vy, Vz) for higher accuracy.
-Falls back to linear interpolation if velocities unavailable.</p>
+        <p>Interpolation of <abbr title="Standard Product 3 — precise satellite orbit file format, produced by IGS analysis centres (Navipedia: SP3)">SP3</abbr> ephemeris data.</p>
+<p>With <code>method="lagrange"</code> (the default), each position is interpolated
+with the Lagrange polynomial of degree 10 through the 11 nearest epochs
+of the satellite (:data:<code>ORBIT_INTERPOLATION_POINTS</code>), as RTKLIB
+interpolates precise ephemerides (RTKLIB 2.4.2 p13, src/preceph.c,
+<code>pephpos</code>). With <code>method="hermite"</code>, each coordinate is interpolated
+with the cubic Hermite spline through the positions and the velocities
+of the input, as canvodpy did before v1.1.0. Either way the velocities
+(<code>Vx</code>, <code>Vy</code>, <code>Vz</code>) are the derivative of the interpolant.</p>
 <!-- Glossary: hover any abbreviation to see its definition -->
 
 <!-- GNSS fundamentals — see Navipedia (navipedia.net) for detailed articles -->
@@ -12725,8 +13150,7 @@ Falls back to linear interpolation if velocities unavailable.</p>
 <p><span class="doc-section-title">Examples:</span></p>
     <div class="highlight"><pre><span></span><code><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span><span class="w"> </span><span class="nn">canvod.auxiliary.interpolation</span><span class="w"> </span><span class="kn">import</span> <span class="n">Sp3InterpolationStrategy</span><span class="p">,</span> <span class="n">Sp3Config</span>
 <span class="gp">&gt;&gt;&gt;</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">config</span> <span class="o">=</span> <span class="n">Sp3Config</span><span class="p">(</span><span class="n">use_velocities</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">fallback_method</span><span class="o">=</span><span class="s1">'linear'</span><span class="p">)</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">interpolator</span> <span class="o">=</span> <span class="n">Sp3InterpolationStrategy</span><span class="p">(</span><span class="n">config</span><span class="o">=</span><span class="n">config</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">interpolator</span> <span class="o">=</span> <span class="n">Sp3InterpolationStrategy</span><span class="p">(</span><span class="n">config</span><span class="o">=</span><span class="n">Sp3Config</span><span class="p">())</span>
 <span class="gp">&gt;&gt;&gt;</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="c1"># Interpolate to RINEX epochs</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">sp3_interp</span> <span class="o">=</span> <span class="n">interpolator</span><span class="o">.</span><span class="n">interpolate</span><span class="p">(</span><span class="n">sp3_data</span><span class="p">,</span> <span class="n">rinex_epochs</span><span class="p">)</span>
@@ -12764,7 +13188,7 @@ Falls back to linear interpolation if velocities unavailable.</p>
 
     <div class="doc doc-contents ">
 
-        <p>Interpolate <abbr title="Standard Product 3 — precise satellite orbit (position ± ~2 cm) file format, produced by IGS analysis centres (Navipedia: SP3)">SP3</abbr> ephemeris to target epochs.</p>
+        <p>Interpolate <abbr title="Standard Product 3 — precise satellite orbit file format, produced by IGS analysis centres (Navipedia: SP3)">SP3</abbr> ephemeris to target epochs.</p>
 <!-- Glossary: hover any abbreviation to see its definition -->
 
 <!-- GNSS fundamentals — see Navipedia (navipedia.net) for detailed articles -->
@@ -12968,7 +13392,7 @@ resolved to the nanosecond.</p>
 
 
 <h2 id="canvod.auxiliary.interpolation.interpolate_aux_day" class="doc doc-heading">
-            <code class="highlight language-python"><span class="n">interpolate_aux_day</span><span class="p">(</span><span class="n">ephem_ds</span><span class="p">,</span> <span class="n">clock_ds</span><span class="p">,</span> <span class="n">target_epochs</span><span class="p">)</span></code>
+            <code class="highlight language-python"><span class="n">interpolate_aux_day</span><span class="p">(</span><span class="n">ephem_ds</span><span class="p">,</span> <span class="n">clock_ds</span><span class="p">,</span> <span class="n">target_epochs</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">sp3_interpolation</span><span class="o">=</span><span class="s1">'lagrange'</span><span class="p">)</span></code>
 
 <a href="#canvod.auxiliary.interpolation.interpolate_aux_day" class="headerlink" title="Permanent link">&para;</a></h2>
 
@@ -12976,8 +13400,9 @@ resolved to the nanosecond.</p>
     <div class="doc doc-contents ">
 
         <p>Interpolate one day of orbits (and clocks) onto <code>target_epochs</code>.</p>
-<p>Orbits: cubic Hermite spline with the satellite velocities
-(:class:<code>Sp3InterpolationStrategy</code>). Clocks: piecewise linear between
+<p>Orbits: the method <code>sp3_interpolation</code> of
+:class:<code>Sp3InterpolationStrategy</code>, by default the polynomial of degree
+10 through the 11 nearest epochs. Clocks: piecewise linear between
 clock jumps (:class:<code>ClockInterpolationStrategy</code>). Each part records its
 interpolator in <code>attrs["interpolator_config"]</code>.</p>
 <!-- Glossary: hover any abbreviation to see its definition -->
@@ -13087,6 +13512,35 @@ interpolator in <code>attrs["interpolator_config"]</code>.</p>
             </td>
             <td>
                 <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>sp3_interpolation</code>
+            </td>
+            <td>
+                  <code><span title="str">str</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p><code>"lagrange"</code> or <code>"hermite"</code>
+(<code>processing.aux_data.sp3_interpolation</code>), see :class:<code>Sp3Config</code>.</p>
+<!-- Glossary: hover any abbreviation to see its definition -->
+
+<!-- GNSS fundamentals — see Navipedia (navipedia.net) for detailed articles -->
+<!-- Satellite identifiers -->
+<!-- Observation data -->
+<!-- VOD and transmissometry -->
+<!-- Ephemerides and orbits -->
+<!-- Data standards -->
+<!-- Infrastructure -->
+<!-- Coordinate systems -->
+<!-- Signal bands -->
+<!-- Software tools -->
+              </div>
+            </td>
+            <td>
+                  <code>&#39;lagrange&#39;</code>
             </td>
           </tr>
       </tbody>
@@ -13400,7 +13854,7 @@ not change the result.</p>
 
     </div>
 
-</div><h2 id="ephemeris-sp3">Ephemeris (<abbr title="Standard Product 3 — precise satellite orbit (position ± ~2 cm) file format, produced by IGS analysis centres (Navipedia: SP3)">SP3</abbr>)<a class="headerlink" href="#ephemeris-sp3" title="Permanent link">&para;</a></h2>
+</div><h2 id="ephemeris-sp3">Ephemeris (<abbr title="Standard Product 3 — precise satellite orbit file format, produced by IGS analysis centres (Navipedia: SP3)">SP3</abbr>)<a class="headerlink" href="#ephemeris-sp3" title="Permanent link">&para;</a></h2>
 
 
 <div class="doc doc-object doc-module">
@@ -13412,7 +13866,7 @@ not change the result.</p>
 
         <p>Ephemeris (satellite orbit) data handling.</p>
 <p>This module provides tools for reading, parsing, and validating satellite
-ephemeris data from <abbr title="Standard Product 3 — precise satellite orbit (position ± ~2 cm) file format, produced by IGS analysis centres (Navipedia: SP3)">SP3</abbr> format files, as well as the EphemerisProvider ABC
+ephemeris data from <abbr title="Standard Product 3 — precise satellite orbit file format, produced by IGS analysis centres (Navipedia: SP3)">SP3</abbr> format files, as well as the EphemerisProvider ABC
 for augmenting <abbr title="Global Navigation Satellite System — umbrella term for GPS, Galileo, GLONASS, BeiDou, etc. (Navipedia: GNSS)">GNSS</abbr> datasets with angular coordinates.</p>
 <!-- Glossary: hover any abbreviation to see its definition -->
 
@@ -13461,8 +13915,8 @@ for augmenting <abbr title="Global Navigation Satellite System — umbrella term
 
 
 
-        <p>Parser for <abbr title="Standard Product 3 — precise satellite orbit (position ± ~2 cm) file format, produced by IGS analysis centres (Navipedia: SP3)">SP3</abbr> (Standard Product #3) orbit files.</p>
-<p>Handles parsing of <abbr title="Standard Product 3 — precise satellite orbit (position ± ~2 cm) file format, produced by IGS analysis centres (Navipedia: SP3)">SP3</abbr> format files containing precise satellite orbit data.
+        <p>Parser for <abbr title="Standard Product 3 — precise satellite orbit file format, produced by IGS analysis centres (Navipedia: SP3)">SP3</abbr> (Standard Product #3) orbit files.</p>
+<p>Handles parsing of <abbr title="Standard Product 3 — precise satellite orbit file format, produced by IGS analysis centres (Navipedia: SP3)">SP3</abbr> format files containing precise satellite orbit data.
 Implements optimized single-pass reading for performance.</p>
 <!-- Glossary: hover any abbreviation to see its definition -->
 
@@ -13498,7 +13952,7 @@ Implements optimized single-pass reading for performance.</p>
             </td>
             <td>
               <div class="doc-md-description">
-                <p>Path to <abbr title="Standard Product 3 — precise satellite orbit (position ± ~2 cm) file format, produced by IGS analysis centres (Navipedia: SP3)">SP3</abbr> file.</p>
+                <p>Path to <abbr title="Standard Product 3 — precise satellite orbit file format, produced by IGS analysis centres (Navipedia: SP3)">SP3</abbr> file.</p>
 <!-- Glossary: hover any abbreviation to see its definition -->
 
 <!-- GNSS fundamentals — see Navipedia (navipedia.net) for detailed articles -->
@@ -13580,7 +14034,7 @@ Implements optimized single-pass reading for performance.</p>
 
     <div class="doc doc-contents ">
 
-        <p>Initialize <abbr title="Standard Product 3 — precise satellite orbit (position ± ~2 cm) file format, produced by IGS analysis centres (Navipedia: SP3)">SP3</abbr> parser.</p>
+        <p>Initialize <abbr title="Standard Product 3 — precise satellite orbit file format, produced by IGS analysis centres (Navipedia: SP3)">SP3</abbr> parser.</p>
 <!-- Glossary: hover any abbreviation to see its definition -->
 
 <!-- GNSS fundamentals — see Navipedia (navipedia.net) for detailed articles -->
@@ -13610,7 +14064,7 @@ Implements optimized single-pass reading for performance.</p>
 
     <div class="doc doc-contents ">
 
-        <p>Parse <abbr title="Standard Product 3 — precise satellite orbit (position ± ~2 cm) file format, produced by IGS analysis centres (Navipedia: SP3)">SP3</abbr> file to <abbr title="Labelled multi-dimensional arrays for Python — extends NumPy with named dims, coords, and attrs">xarray</abbr> Dataset.</p>
+        <p>Parse <abbr title="Standard Product 3 — precise satellite orbit file format, produced by IGS analysis centres (Navipedia: SP3)">SP3</abbr> file to <abbr title="Labelled multi-dimensional arrays for Python — extends NumPy with named dims, coords, and attrs">xarray</abbr> Dataset.</p>
 <!-- Glossary: hover any abbreviation to see its definition -->
 
 <!-- GNSS fundamentals — see Navipedia (navipedia.net) for detailed articles -->
@@ -13746,9 +14200,9 @@ Implements optimized single-pass reading for performance.</p>
 
 
 
-        <p><abbr title="Standard Product 3 — precise satellite orbit (position ± ~2 cm) file format, produced by IGS analysis centres (Navipedia: SP3)">SP3</abbr>/<abbr title="Clock — precise satellite and station clock correction file (30 s intervals), companion to SP3 orbits">CLK</abbr>-based ephemeris from analysis centers.</p>
+        <p><abbr title="Standard Product 3 — precise satellite orbit file format, produced by IGS analysis centres (Navipedia: SP3)">SP3</abbr>/<abbr title="Clock — precise satellite and station clock correction file (30 s intervals), companion to SP3 orbits">CLK</abbr>-based ephemeris from analysis centers.</p>
 <p>Downloads final or rapid products from COD, ESA, <abbr title="International GNSS Service — global network of 500+ stations providing orbits, clocks, and reference frame products (Navipedia: IGS)">IGS</abbr> etc.,
-interpolates via Hermite cubic splines, and computes theta/phi
+interpolates the orbits (<code>sp3_interpolation</code>), and computes theta/phi
 via <abbr title="Earth-Centered Earth-Fixed — Cartesian (X,Y,Z) coordinate frame co-rotating with Earth (Navipedia: Reference Frames in GNSS)">ECEF</abbr>→spherical coordinate transformation.</p>
 <!-- Glossary: hover any abbreviation to see its definition -->
 
@@ -13944,6 +14398,35 @@ If None, uses <code>config.processing.aux_data.fetch_clock</code>.</p>
                   <code>None</code>
             </td>
           </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>sp3_interpolation</code>
+            </td>
+            <td>
+                  <code><span title="str">str</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p><code>"lagrange"</code> or <code>"hermite"</code>, see
+:class:<code>~canvod.auxiliary.interpolation.Sp3Config</code>.</p>
+<!-- Glossary: hover any abbreviation to see its definition -->
+
+<!-- GNSS fundamentals — see Navipedia (navipedia.net) for detailed articles -->
+<!-- Satellite identifiers -->
+<!-- Observation data -->
+<!-- VOD and transmissometry -->
+<!-- Ephemerides and orbits -->
+<!-- Data standards -->
+<!-- Infrastructure -->
+<!-- Coordinate systems -->
+<!-- Signal bands -->
+<!-- Software tools -->
+              </div>
+            </td>
+            <td>
+                  <code>&#39;lagrange&#39;</code>
+            </td>
+          </tr>
       </tbody>
     </table>
 
@@ -13979,7 +14462,7 @@ If None, uses <code>config.processing.aux_data.fetch_clock</code>.</p>
 
     <div class="doc doc-contents ">
 
-        <p>Download and read the <abbr title="Standard Product 3 — precise satellite orbit (position ± ~2 cm) file format, produced by IGS analysis centres (Navipedia: SP3)">SP3</abbr> (and <abbr title="Clock — precise satellite and station clock correction file (30 s intervals), companion to SP3 orbits">CLK</abbr>) products of one day.</p>
+        <p>Download and read the <abbr title="Standard Product 3 — precise satellite orbit file format, produced by IGS analysis centres (Navipedia: SP3)">SP3</abbr> (and <abbr title="Clock — precise satellite and station clock correction file (30 s intervals), companion to SP3 orbits">CLK</abbr>) products of one day.</p>
 <p>The products are interpolated later, in :meth:<code>augment_dataset</code>,
 onto the day's epoch grid at the sampling interval of the dataset
 being augmented, the same grid <code>canvodpy run</code> uses (see
@@ -14121,7 +14604,7 @@ day is written once per sampling interval to
 
     <div class="doc doc-contents ">
 
-        <p>Add theta/phi to dataset using preprocessed <abbr title="Standard Product 3 — precise satellite orbit (position ± ~2 cm) file format, produced by IGS analysis centres (Navipedia: SP3)">SP3</abbr>/<abbr title="Clock — precise satellite and station clock correction file (30 s intervals), companion to SP3 orbits">CLK</abbr> data.</p>
+        <p>Add theta/phi to dataset using preprocessed <abbr title="Standard Product 3 — precise satellite orbit file format, produced by IGS analysis centres (Navipedia: SP3)">SP3</abbr>/<abbr title="Clock — precise satellite and station clock correction file (30 s intervals), companion to SP3 orbits">CLK</abbr> data.</p>
 <!-- Glossary: hover any abbreviation to see its definition -->
 
 <!-- GNSS fundamentals — see Navipedia (navipedia.net) for detailed articles -->
@@ -15052,7 +15535,7 @@ observation.</p>
 
 
 
-        <p>Handler for <abbr title="Standard Product 3 — precise satellite orbit (position ± ~2 cm) file format, produced by IGS analysis centres (Navipedia: SP3)">SP3</abbr> orbit files with multi-product support.</p>
+        <p>Handler for <abbr title="Standard Product 3 — precise satellite orbit file format, produced by IGS analysis centres (Navipedia: SP3)">SP3</abbr> orbit files with multi-product support.</p>
 <p>Now supports all <abbr title="International GNSS Service — global network of 500+ stations providing orbits, clocks, and reference frame products (Navipedia: IGS)">IGS</abbr> analysis centers via product registry:
 COD, GFZ, ESA, JPL, <abbr title="International GNSS Service — global network of 500+ stations providing orbits, clocks, and reference frame products (Navipedia: IGS)">IGS</abbr>, WHU, GRG, SHA</p>
 <!-- Glossary: hover any abbreviation to see its definition -->
@@ -15357,7 +15840,7 @@ COD, GFZ, ESA, JPL, <abbr title="International GNSS Service — global network o
 
     <div class="doc doc-contents ">
 
-        <p>Get appropriate interpolation strategy for <abbr title="Standard Product 3 — precise satellite orbit (position ± ~2 cm) file format, produced by IGS analysis centres (Navipedia: SP3)">SP3</abbr> files.</p>
+        <p>Get appropriate interpolation strategy for <abbr title="Standard Product 3 — precise satellite orbit file format, produced by IGS analysis centres (Navipedia: SP3)">SP3</abbr> files.</p>
 <!-- Glossary: hover any abbreviation to see its definition -->
 
 <!-- GNSS fundamentals — see Navipedia (navipedia.net) for detailed articles -->
@@ -15387,9 +15870,9 @@ COD, GFZ, ESA, JPL, <abbr title="International GNSS Service — global network o
 
     <div class="doc doc-contents ">
 
-        <p><abbr title="Standard Product 3 — precise satellite orbit (position ± ~2 cm) file format, produced by IGS analysis centres (Navipedia: SP3)">SP3</abbr> file names, one per sampling the product has been published with.</p>
-<p>Pattern: {PREFIX}<em SAMPLING="SAMPLING">{YYYYDOY}0000_01D</em>_ORB.<abbr title="Standard Product 3 — precise satellite orbit (position ± ~2 cm) file format, produced by IGS analysis centres (Navipedia: SP3)">SP3</abbr></p>
-<p>Example: COD0MGXFIN_20240150000_01D_05M_ORB.<abbr title="Standard Product 3 — precise satellite orbit (position ± ~2 cm) file format, produced by IGS analysis centres (Navipedia: SP3)">SP3</abbr></p>
+        <p><abbr title="Standard Product 3 — precise satellite orbit file format, produced by IGS analysis centres (Navipedia: SP3)">SP3</abbr> file names, one per sampling the product has been published with.</p>
+<p>Pattern: {PREFIX}<em SAMPLING="SAMPLING">{YYYYDOY}0000_01D</em>_ORB.<abbr title="Standard Product 3 — precise satellite orbit file format, produced by IGS analysis centres (Navipedia: SP3)">SP3</abbr></p>
+<p>Example: COD0MGXFIN_20240150000_01D_05M_ORB.<abbr title="Standard Product 3 — precise satellite orbit file format, produced by IGS analysis centres (Navipedia: SP3)">SP3</abbr></p>
 <!-- Glossary: hover any abbreviation to see its definition -->
 
 <!-- GNSS fundamentals — see Navipedia (navipedia.net) for detailed articles -->
@@ -15419,7 +15902,7 @@ COD, GFZ, ESA, JPL, <abbr title="International GNSS Service — global network o
 
     <div class="doc doc-contents ">
 
-        <p>Download one <abbr title="Standard Product 3 — precise satellite orbit (position ± ~2 cm) file format, produced by IGS analysis centres (Navipedia: SP3)">SP3</abbr> file, trying all servers from the product registry.</p>
+        <p>Download one <abbr title="Standard Product 3 — precise satellite orbit file format, produced by IGS analysis centres (Navipedia: SP3)">SP3</abbr> file, trying all servers from the product registry.</p>
 <p>Servers are tried in priority order from products.toml. Auth-required
 servers are skipped when no credentials are configured. Warnings are
 printed when falling back to alternate servers.</p>
@@ -15552,7 +16035,7 @@ printed when falling back to alternate servers.</p>
 
     <div class="doc doc-contents ">
 
-        <p>Read and validate <abbr title="Standard Product 3 — precise satellite orbit (position ± ~2 cm) file format, produced by IGS analysis centres (Navipedia: SP3)">SP3</abbr> file.</p>
+        <p>Read and validate <abbr title="Standard Product 3 — precise satellite orbit file format, produced by IGS analysis centres (Navipedia: SP3)">SP3</abbr> file.</p>
 <!-- Glossary: hover any abbreviation to see its definition -->
 
 <!-- GNSS fundamentals — see Navipedia (navipedia.net) for detailed articles -->
@@ -15830,8 +16313,8 @@ joined by :meth:<code>join_days</code> may come with different samplings).</p>
 
 
 
-        <p>Validator for <abbr title="Standard Product 3 — precise satellite orbit (position ± ~2 cm) file format, produced by IGS analysis centres (Navipedia: SP3)">SP3</abbr> orbit files.</p>
-<p>Performs format and data quality checks on parsed <abbr title="Standard Product 3 — precise satellite orbit (position ± ~2 cm) file format, produced by IGS analysis centres (Navipedia: SP3)">SP3</abbr> datasets.</p>
+        <p>Validator for <abbr title="Standard Product 3 — precise satellite orbit file format, produced by IGS analysis centres (Navipedia: SP3)">SP3</abbr> orbit files.</p>
+<p>Performs format and data quality checks on parsed <abbr title="Standard Product 3 — precise satellite orbit file format, produced by IGS analysis centres (Navipedia: SP3)">SP3</abbr> datasets.</p>
 <!-- Glossary: hover any abbreviation to see its definition -->
 
 <!-- GNSS fundamentals — see Navipedia (navipedia.net) for detailed articles -->
@@ -15866,7 +16349,7 @@ joined by :meth:<code>join_days</code> may come with different samplings).</p>
             </td>
             <td>
               <div class="doc-md-description">
-                <p>Parsed <abbr title="Standard Product 3 — precise satellite orbit (position ± ~2 cm) file format, produced by IGS analysis centres (Navipedia: SP3)">SP3</abbr> dataset.</p>
+                <p>Parsed <abbr title="Standard Product 3 — precise satellite orbit file format, produced by IGS analysis centres (Navipedia: SP3)">SP3</abbr> dataset.</p>
 <!-- Glossary: hover any abbreviation to see its definition -->
 
 <!-- GNSS fundamentals — see Navipedia (navipedia.net) for detailed articles -->
@@ -18133,7 +18616,7 @@ class docstring).</p>
         <p>Add broadcast spherical coordinates to <abbr title="Labelled multi-dimensional arrays for Python — extends NumPy with named dims, coords, and attrs">xarray</abbr> Dataset.</p>
 <p>Same convention as :func:<code>add_spherical_coords_to_dataset</code> but attrs
 reflect that values come from the receiver's <abbr title="Septentrio Binary Format — proprietary binary telemetry from Septentrio receivers; embeds satellite geometry">SBF</abbr> SatVisibility block
-(broadcast ephemeris) rather than independently-computed <abbr title="Standard Product 3 — precise satellite orbit (position ± ~2 cm) file format, produced by IGS analysis centres (Navipedia: SP3)">SP3</abbr>/<abbr title="Clock — precise satellite and station clock correction file (30 s intervals), companion to SP3 orbits">CLK</abbr>
+(broadcast ephemeris) rather than independently-computed <abbr title="Standard Product 3 — precise satellite orbit file format, produced by IGS analysis centres (Navipedia: SP3)">SP3</abbr>/<abbr title="Clock — precise satellite and station clock correction file (30 s intervals), companion to SP3 orbits">CLK</abbr>
 ephemerides.</p>
 <!-- Glossary: hover any abbreviation to see its definition -->
 
@@ -18875,7 +19358,7 @@ convention.</p>
 
 
         <p>Product specification with structural validation.</p>
-<p>A product is published as one <abbr title="Standard Product 3 — precise satellite orbit (position ± ~2 cm) file format, produced by IGS analysis centres (Navipedia: SP3)">SP3</abbr> and, if it has clocks, one <abbr title="Clock — precise satellite and station clock correction file (30 s intervals), companion to SP3 orbits">CLK</abbr> file
+<p>A product is published as one <abbr title="Standard Product 3 — precise satellite orbit file format, produced by IGS analysis centres (Navipedia: SP3)">SP3</abbr> and, if it has clocks, one <abbr title="Clock — precise satellite and station clock correction file (30 s intervals), companion to SP3 orbits">CLK</abbr> file
 per day. Agencies have changed the sampling of their files over the
 years, so <code>sp3_samplings</code> and <code>clk_samplings</code> list every sampling
 the product has been published with, in the order they are tried.</p>
@@ -19092,7 +19575,7 @@ during download, and for the whole registry by
 
     <div class="doc doc-contents ">
 
-        <p><abbr title="Standard Product 3 — precise satellite orbit (position ± ~2 cm) file format, produced by IGS analysis centres (Navipedia: SP3)">SP3</abbr> file names for one day, in the order they are tried.</p>
+        <p><abbr title="Standard Product 3 — precise satellite orbit file format, produced by IGS analysis centres (Navipedia: SP3)">SP3</abbr> file names for one day, in the order they are tried.</p>
 <!-- Glossary: hover any abbreviation to see its definition -->
 
 <!-- GNSS fundamentals — see Navipedia (navipedia.net) for detailed articles -->

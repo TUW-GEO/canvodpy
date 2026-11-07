@@ -595,7 +595,7 @@
   <span class="md-ellipsis">
     
   
-  What's new in v1.0.0
+  What's new
 
     
   </span>
@@ -1089,6 +1089,17 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#satellites-without-a-position" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Satellites without a position
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#search-the-logs" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
@@ -1120,6 +1131,17 @@
     <span class="md-ellipsis">
       <span class="md-typeset">
         The run history
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#copy-the-logs-off-the-server" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Copy the logs off the server
       </span>
     </span>
   </a>
@@ -4221,6 +4243,17 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#satellites-without-a-position" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Satellites without a position
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#search-the-logs" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
@@ -4252,6 +4285,17 @@
     <span class="md-ellipsis">
       <span class="md-typeset">
         The run history
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#copy-the-logs-off-the-server" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Copy the logs off the server
       </span>
     </span>
   </a>
@@ -4627,16 +4671,39 @@ is not processed, so it gets no <abbr title="Vegetation Optical Depth — dimens
 receiver that lacks files and logs a <code>days_without_vod</code> warning:</p>
 <div class="highlight"><pre><span></span><code>  no VOD on 2 days, reference_01 has no files: 2025002, 2025003
 </code></pre></div>
+<p>Such a day is a data gap, not a failure: it doesn't count as a failed
+receiver-day and doesn't change the exit code. A reference receiver
+paired with several canopy receivers is prepared on that day only for
+the canopy receivers that have files.</p>
 <p>When the <abbr title="Vegetation Optical Depth — dimensionless measure of microwave attenuation through vegetation canopy (τ = −ln(T)·cos θ)">VOD</abbr> of a processed day is skipped because the data of a
 receiver is missing, for example because that receiver-day failed, the
 run prints which data is missing and logs a <code>vod_skipped</code> warning; the
 log says why the receiver-day failed:</p>
 <div class="highlight"><pre><span></span><code>  VOD canopy_01_vs_reference_01: skipped, no data of canopy_01 on 2025001 (the log says why)
 </code></pre></div>
-<p>In Python, <code>site.pipeline(on_incomplete_day=..., on_days_without_vod=...)</code>
-receives the same findings: <code>(receiver, day, files_found, files_expected)</code>
-for each incomplete receiver-day, and a receiver with its days without
-<abbr title="Vegetation Optical Depth — dimensionless measure of microwave attenuation through vegetation canopy (τ = −ln(T)·cos θ)">VOD</abbr>.</p>
+<h3 id="satellites-without-a-position">Satellites without a position<a class="headerlink" href="#satellites-without-a-position" title="Permanent link">&para;</a></h3>
+<p>A satellite has no position at an epoch when no orbit covers it: no
+navigation record of the satellite is valid then (a broadcast run), or
+the orbit product lacks the satellite (a run with precise orbits). Its
+angles (<code>theta</code>, <code>phi</code>) are NaN there, never extrapolated, so these
+observations get no <abbr title="Vegetation Optical Depth — dimensionless measure of microwave attenuation through vegetation canopy (τ = −ln(T)·cos θ)">VOD</abbr>. For each receiver-day with such satellites,
+the run prints one line with the epochs per satellite and logs a
+<code>satellites_without_position</code> warning, which the run history also
+keeps:</p>
+<div class="highlight"><pre><span></span><code>  no position: canopy_01 on 2025001: G08 (360 epochs), R19 (12 epochs)
+</code></pre></div>
+<p>The epochs count the epochs of the day's files at which the satellite
+has an observation but no position. The log book of the receiver's
+group keeps the same list per file, in the column
+<code>satellites_without_position</code> (JSON, for example <code>{"G08": 180}</code>; <code>{}</code>
+when every satellite had a position, empty in rows written before
+canVODpy checked this).</p>
+<p>In Python, <code>site.pipeline(on_incomplete_day=..., on_days_without_vod=...,
+on_satellites_without_position=...)</code> receives the same findings:
+<code>(receiver, day, files_found, files_expected)</code> for each incomplete
+receiver-day, a receiver with its days without <abbr title="Vegetation Optical Depth — dimensionless measure of microwave attenuation through vegetation canopy (τ = −ln(T)·cos θ)">VOD</abbr>, and
+<code>(receiver, day, {satellite: epochs})</code> for each receiver-day with
+satellites without a position.</p>
 <h3 id="search-the-logs">Search the logs<a class="headerlink" href="#search-the-logs" title="Permanent link">&para;</a></h3>
 <p>Each line of <code>machine/agent.json</code> is one JSON object, so you can search
 it with <code>grep</code> or <a href="https://jqlang.org/">jq</a>:</p>
@@ -4810,6 +4877,42 @@ don't provide. A run refuses to start when the log folder
 (<code>processing.logging.log_dir</code>) is on a network drive. Errors that stop
 <code>canvodpy run</code> before processing starts (for example a settings check)
 are in the log files only.</p>
+<hr />
+<h2 id="copy-the-logs-off-the-server">Copy the logs off the server<a class="headerlink" href="#copy-the-logs-off-the-server" title="Permanent link">&para;</a></h2>
+<p>To look at the logs of a server run on another machine, or to send them
+to someone, copy the log folder to one new folder first:</p>
+<div class="highlight"><pre><span></span><code>canvodpy<span class="w"> </span>logs<span class="w"> </span>collect<span class="w"> </span>~/logs-copy
+</code></pre></div>
+<p>The command copies every log file, with its folders <code>human/</code>,
+<code>machine/</code>, and <code>component/</code>. It copies the run history through SQLite,
+as one file that holds every record so far, so the copy is complete
+even while a run is writing. Copying <code>run_history.sqlite</code> with <code>cp</code> or
+<code>rsync</code> during a run can miss the newest records, which are still in
+the <code>run_history.sqlite-wal</code> file. The log folder is the one of the
+settings, also with <code>--config-dir</code> and <code>--config</code>. Nothing is
+overwritten: the folder you give must be new or empty. The whole log
+folder can grow to several gigabytes: <code>machine/agent.json</code> alone keeps
+150 older files of up to 100 MB.</p>
+<p>The log files themselves are copied one after another. When a run fills
+<code>machine/agent.json</code> during the copy, its older files are renamed and
+the oldest is deleted. The command notices a file that was removed or
+renamed after it listed the folder, leaves it out, so nothing is copied
+twice, and says how many it left out. Those files, or the events in
+them with <code>--run-id</code>, are then missing from the copy. For a complete
+copy, collect between runs.</p>
+<p>To copy one run only, give its run ID:</p>
+<div class="highlight"><pre><span></span><code>canvodpy<span class="w"> </span>logs<span class="w"> </span>collect<span class="w"> </span>~/logs-copy<span class="w"> </span>--run-id<span class="w"> </span>ExampleSite-20261010-030000-3f9a1c
+</code></pre></div>
+<p>The folder then holds the run history with only that run, and
+<code>ExampleSite-20261010-030000-3f9a1c.json</code> with every event the run
+logged, from the main process and the workers, in time order. The
+readable logs in <code>human/</code> and <code>component/</code> are left out, since they
+mix runs.</p>
+<p>Then send the folder on with the tool you use for files, for example:</p>
+<div class="highlight"><pre><span></span><code>rsync<span class="w"> </span>-ah<span class="w"> </span>~/logs-copy/<span class="w"> </span>my-laptop:server-logs/
+</code></pre></div>
+<p>The copy holds the paths and settings of this machine. Check it before
+you share it outside your group.</p>
 <hr />
 <h2 id="see-where-a-run-spends-its-time">See where a run spends its time<a class="headerlink" href="#see-where-a-run-spends-its-time" title="Permanent link">&para;</a></h2>
 <p>Finding the files is the first thing a run does, before it reads a file.

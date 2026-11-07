@@ -590,7 +590,7 @@
   <span class="md-ellipsis">
     
   
-  What's new in v1.0.0
+  What's new
 
     
   </span>
@@ -5284,7 +5284,7 @@ the proven GnssResearchSite implementation internally.</p>
 
 
 <h2 id="canvodpy.Site.pipeline" class="doc doc-heading">
-            <code class="highlight language-python"><span class="n">pipeline</span><span class="p">(</span><span class="n">keep_vars</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">aux_agency</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">n_workers</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">dry_run</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">max_memory_gb</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">cpu_affinity</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">nice_priority</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">threads_per_worker</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">on_group_written</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">on_discovery_start</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">on_discovery_end</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">on_incomplete_day</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">on_days_without_vod</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span></code>
+            <code class="highlight language-python"><span class="n">pipeline</span><span class="p">(</span><span class="n">keep_vars</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">aux_agency</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">n_workers</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">dry_run</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">max_memory_gb</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">cpu_affinity</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">nice_priority</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">threads_per_worker</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">on_group_written</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">on_discovery_start</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">on_discovery_end</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">on_incomplete_day</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">on_days_without_vod</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">on_satellites_without_position</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span></code>
 
 <a href="#canvodpy.Site.pipeline" class="headerlink" title="Permanent link">&para;</a></h2>
 
@@ -5654,6 +5654,37 @@ file length gives for a whole day. Today is not checked.</p>
                 <p>Called with a receiver and the days in the range on which it has
 no files while its pair has: those days are not processed and
 get no <abbr title="Vegetation Optical Depth — dimensionless measure of microwave attenuation through vegetation canopy (τ = −ln(T)·cos θ)">VOD</abbr>.</p>
+<!-- Glossary: hover any abbreviation to see its definition -->
+
+<!-- GNSS fundamentals — see Navipedia (navipedia.net) for detailed articles -->
+<!-- Satellite identifiers -->
+<!-- Observation data -->
+<!-- VOD and transmissometry -->
+<!-- Ephemerides and orbits -->
+<!-- Data standards -->
+<!-- Infrastructure -->
+<!-- Coordinate systems -->
+<!-- Signal bands -->
+<!-- Software tools -->
+              </div>
+            </td>
+            <td>
+                  <code>None</code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>on_satellites_without_position</code>
+            </td>
+            <td>
+                  <code><span title="collections.abc.Callable">Callable</span>[[<span title="str">str</span>, <span title="str">str</span>, <span title="dict">dict</span>[<span title="str">str</span>, <span title="int">int</span>]], None]</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Called with <code>(receiver, YYYYDOY, {satellite: epochs})</code> for each
+processed receiver-day with satellites observed at epochs
+without a position (no orbit record or product): their angles
+are NaN.</p>
 <!-- Glossary: hover any abbreviation to see its definition -->
 
 <!-- GNSS fundamentals — see Navipedia (navipedia.net) for detailed articles -->
@@ -6129,6 +6160,36 @@ length gives for a whole day. Today is not checked.</p>
                 <p>Called with a receiver and the days in the range on which it has no
 files while its pair has: those days are not processed and get no
 <abbr title="Vegetation Optical Depth — dimensionless measure of microwave attenuation through vegetation canopy (τ = −ln(T)·cos θ)">VOD</abbr>.</p>
+<!-- Glossary: hover any abbreviation to see its definition -->
+
+<!-- GNSS fundamentals — see Navipedia (navipedia.net) for detailed articles -->
+<!-- Satellite identifiers -->
+<!-- Observation data -->
+<!-- VOD and transmissometry -->
+<!-- Ephemerides and orbits -->
+<!-- Data standards -->
+<!-- Infrastructure -->
+<!-- Coordinate systems -->
+<!-- Signal bands -->
+<!-- Software tools -->
+              </div>
+            </td>
+            <td>
+                  <code>None</code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>on_satellites_without_position</code>
+            </td>
+            <td>
+                  <code><span title="collections.abc.Callable">Callable</span>[[<span title="str">str</span>, <span title="str">str</span>, <span title="dict">dict</span>[<span title="str">str</span>, <span title="int">int</span>]], None]</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Called with <code>(receiver, YYYYDOY, {satellite: epochs})</code> for each
+processed receiver-day with satellites observed at epochs without a
+position (no orbit record or product): their angles are NaN.</p>
 <!-- Glossary: hover any abbreviation to see its definition -->
 
 <!-- GNSS fundamentals — see Navipedia (navipedia.net) for detailed articles -->

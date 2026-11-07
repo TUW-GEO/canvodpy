@@ -590,7 +590,7 @@
   <span class="md-ellipsis">
     
   
-  What's new in v1.0.0
+  What's new
 
     
   </span>
@@ -4854,7 +4854,7 @@ of its own, measure them yourself and emit each with
 <code>record_stage_timing(stage, seconds, ...)</code> (see <code>_preprocess_file</code> in
 <code>processor.py</code>). Checkpoints that are not dashboard stages belong in one
 specific, well-named event with their own rich context (see
-<code>_preprocess_aux_data_with_hermite</code> in <code>processor.py</code>), which is more useful
+<code>_preprocess_aux_data</code> in <code>processor.py</code>), which is more useful
 than forcing everything through one generic name.</p>
 <p>Only the main process adds stages to the <code>run_summary</code>; stages timed in a
 worker process reach the log and the dashboard only.</p>

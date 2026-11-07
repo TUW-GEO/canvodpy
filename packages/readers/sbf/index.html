@@ -595,7 +595,7 @@
   <span class="md-ellipsis">
     
   
-  What's new in v1.0.0
+  What's new
 
     
   </span>
@@ -4678,7 +4678,7 @@ the observations of that same epoch. One decoder serves <code>iter_epochs()</cod
 <p class="admonition-title">No ephemeris download needed</p>
 <p>The <abbr title="Septentrio Binary Format — proprietary binary telemetry from Septentrio receivers; embeds satellite geometry">SBF</abbr> reader differs from <code>Rnxv3Obs</code> (<abbr title="Receiver Independent Exchange Format — standard ASCII format for GNSS observations, defined by IGS (Navipedia: RINEX)">RINEX</abbr>) in one fundamental respect:
 <strong>satellite geometry is embedded in the binary stream</strong>.
-No <abbr title="Standard Product 3 — precise satellite orbit (position ± ~2 cm) file format, produced by IGS analysis centres (Navipedia: SP3)">SP3</abbr> ephemeris download is required for quick-look analysis:
+No <abbr title="Standard Product 3 — precise satellite orbit file format, produced by IGS analysis centres (Navipedia: SP3)">SP3</abbr> ephemeris download is required for quick-look analysis:
 the receiver firmware reports azimuth and elevation for every satellite
 it has an almanac or broadcast ephemeris for.</p>
 </div>
@@ -5383,7 +5383,7 @@ detect whether <code>sbf_obs</code> metadata is available.</p>
 <p>The <abbr title="Septentrio Binary Format — proprietary binary telemetry from Septentrio receivers; embeds satellite geometry">SBF</abbr> <code>SatVisibility</code> block provides satellite azimuth and elevation computed
 by the receiver firmware, per satellite either from its almanac or from its
 broadcast ephemeris (<code>broadcast_angle_source</code>). This makes <abbr title="Septentrio Binary Format — proprietary binary telemetry from Septentrio receivers; embeds satellite geometry">SBF</abbr> files a
-<strong>self-contained ephemeris source</strong>: no <abbr title="Standard Product 3 — precise satellite orbit (position ± ~2 cm) file format, produced by IGS analysis centres (Navipedia: SP3)">SP3</abbr>/<abbr title="Clock — precise satellite and station clock correction file (30 s intervals), companion to SP3 orbits">CLK</abbr> download needed.</p>
+<strong>self-contained ephemeris source</strong>: no <abbr title="Standard Product 3 — precise satellite orbit file format, produced by IGS analysis centres (Navipedia: SP3)">SP3</abbr>/<abbr title="Clock — precise satellite and station clock correction file (30 s intervals), companion to SP3 orbits">CLK</abbr> download needed.</p>
 <p>The <code>SbfBroadcastProvider</code> (an <code>EphemerisProvider</code> implementation) extracts
 theta/phi from the <code>sbf_obs</code> auxiliary dataset and aligns them to observation
 epochs and SIDs. It uses only angles computed from the broadcast ephemeris;
@@ -5403,7 +5403,7 @@ raises an error:</p>
 <span class="n">phi</span> <span class="o">=</span> <span class="n">sbf_obs</span><span class="p">[</span><span class="s2">"broadcast_phi"</span><span class="p">]</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">from_ephemeris</span><span class="p">)</span>  <span class="c1"># geographic azimuth (rad)</span>
 </code></pre></div>
 <div class="admonition tip">
-<p class="admonition-title">When to use broadcast vs agency final</p>
+<p class="admonition-title">When to use the broadcast or the precise ephemeris</p>
 <p>The receiver reports the angles in steps of <span class="arithmatex">\(0.01^\circ\)</span>. Almanac-based angles
 are not used: on the 2025-001 test data they differed from the
 ephemeris-based angles by at most <span class="arithmatex">\(0.03^\circ\)</span> for <abbr title="Global Positioning System — US satellite navigation constellation, 31 SVs in 6 orbital planes (Navipedia: GPS)">GPS</abbr> and <abbr title="European Global Navigation Satellite System — 30 SVs, dual-frequency civilian design (Navipedia: Galileo)">Galileo</abbr>, but by up to
@@ -5471,7 +5471,7 @@ TX power, mass, and orbital plane as coordinates:</p>
 </tr>
 <tr>
 <td>Geometry (<span class="arithmatex">\(\theta\)</span>, <span class="arithmatex">\(\varphi\)</span>)</td>
-<td>Requires <abbr title="Standard Product 3 — precise satellite orbit (position ± ~2 cm) file format, produced by IGS analysis centres (Navipedia: SP3)">SP3</abbr> download</td>
+<td><abbr title="Standard Product 3 — precise satellite orbit file format, produced by IGS analysis centres (Navipedia: SP3)">SP3</abbr> download, or the receiver's <abbr title="Receiver Independent Exchange Format — standard ASCII format for GNSS observations, defined by IGS (Navipedia: RINEX)">RINEX</abbr> navigation files</td>
 <td><strong>Embedded in file</strong></td>
 </tr>
 <tr>
@@ -5501,7 +5501,7 @@ TX power, mass, and orbital plane as coordinates:</p>
 </tr>
 <tr>
 <td>Broadcast ephemeris</td>
-<td>Not supported (needs a navigation file)</td>
+<td>From <abbr title="Receiver Independent Exchange Format — standard ASCII format for GNSS observations, defined by IGS (Navipedia: RINEX)">RINEX</abbr> navigation files (<code>nav_directory</code>)</td>
 <td>Built-in via SatVisibility</td>
 </tr>
 <tr>
@@ -5511,7 +5511,7 @@ TX power, mass, and orbital plane as coordinates:</p>
 </tr>
 <tr>
 <td><abbr title="Signal-to-Noise Ratio — carrier power relative to noise floor, in dB-Hz. Key observable for GNSS transmissometry. (Navipedia: GNSS Measurements)">SNR</abbr> quantization</td>
-<td>~0.001 dB</td>
+<td>0.001 (format F14.3, <abbr title="Receiver Independent Exchange Format — standard ASCII format for GNSS observations, defined by IGS (Navipedia: RINEX)">RINEX</abbr> 3.04 Table A3)</td>
 <td>0.25 dB-Hz; 0.03125 dB-Hz with MeasExtra</td>
 </tr>
 </tbody>

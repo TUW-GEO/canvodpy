@@ -595,7 +595,7 @@
   <span class="md-ellipsis">
     
   
-  What's new in v1.0.0
+  What's new
 
     
   </span>
@@ -1315,22 +1315,22 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#cubic-hermite-spline-orbits" class="md-nav__link">
+  <a href="#orbits" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Cubic Hermite spline (orbits)
+        Orbits
       </span>
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="Cubic Hermite spline (orbits)">
+    <nav class="md-nav" aria-label="Orbits">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#start-and-end-of-the-day" class="md-nav__link">
+  <a href="#polynomial-of-degree-10-lagrange" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Start and end of the day
+        Polynomial of degree 10 (<code>lagrange</code>)
       </span>
     </span>
   </a>
@@ -1338,10 +1338,32 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#accuracy" class="md-nav__link">
+  <a href="#hermite-spline-hermite" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Accuracy
+        Hermite spline (<code>hermite</code>)
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#one-method-per-store" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        One method per store
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#start-and-end-of-the-day" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Start and end of the day
       </span>
     </span>
   </a>
@@ -4121,22 +4143,22 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#cubic-hermite-spline-orbits" class="md-nav__link">
+  <a href="#orbits" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Cubic Hermite spline (orbits)
+        Orbits
       </span>
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="Cubic Hermite spline (orbits)">
+    <nav class="md-nav" aria-label="Orbits">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#start-and-end-of-the-day" class="md-nav__link">
+  <a href="#polynomial-of-degree-10-lagrange" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Start and end of the day
+        Polynomial of degree 10 (<code>lagrange</code>)
       </span>
     </span>
   </a>
@@ -4144,10 +4166,32 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#accuracy" class="md-nav__link">
+  <a href="#hermite-spline-hermite" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Accuracy
+        Hermite spline (<code>hermite</code>)
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#one-method-per-store" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        One method per store
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#start-and-end-of-the-day" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Start and end of the day
       </span>
     </span>
   </a>
@@ -4338,7 +4382,7 @@
 
 
 <h1 id="interpolation-methods">Interpolation methods<a class="headerlink" href="#interpolation-methods" title="Permanent link">&para;</a></h1>
-<p><abbr title="Standard Product 3 — precise satellite orbit (position ± ~2 cm) file format, produced by IGS analysis centres (Navipedia: SP3)">SP3</abbr> orbits come every 5 or 15 minutes and <abbr title="Clock — precise satellite and station clock correction file (30 s intervals), companion to SP3 orbits">CLK</abbr> clocks every 30 s or 5
+<p><abbr title="Standard Product 3 — precise satellite orbit file format, produced by IGS analysis centres (Navipedia: SP3)">SP3</abbr> orbits come every 5 or 15 minutes and <abbr title="Clock — precise satellite and station clock correction file (30 s intervals), companion to SP3 orbits">CLK</abbr> clocks every 30 s or 5
 minutes; observations come every 1 to 30 s. canvod-auxiliary interpolates
 one day of orbits and clocks onto a regular grid that starts at 00:00 and
 has the sampling interval of the observations
@@ -4348,11 +4392,12 @@ provider of the Python API and the Airflow tasks all use these functions.</p>
 <div class="grid cards">
 <ul>
 <li>
-<p><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.3.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2026 Fonticons, Inc.--><path fill="currentColor" d="M64 96c0-17.7 14.3-32 32-32h160c17.7 0 32 14.3 32 32v288h96V256c0-17.7 14.3-32 32-32h64c17.7 0 32 14.3 32 32s-14.3 32-32 32h-32v128c0 17.7-14.3 32-32 32H256c-17.7 0-32-14.3-32-32V128h-96v128c0 17.7-14.3 32-32 32H32c-17.7 0-32-14.3-32-32s14.3-32 32-32h32z"/></svg></span> &nbsp; <strong>Cubic Hermite spline</strong></p>
+<p><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.3.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2026 Fonticons, Inc.--><path fill="currentColor" d="M64 96c0-17.7 14.3-32 32-32h160c17.7 0 32 14.3 32 32v288h96V256c0-17.7 14.3-32 32-32h64c17.7 0 32 14.3 32 32s-14.3 32-32 32h-32v128c0 17.7-14.3 32-32 32H256c-17.7 0-32-14.3-32-32V128h-96v128c0 17.7-14.3 32-32 32H32c-17.7 0-32-14.3-32-32s14.3-32 32-32h32z"/></svg></span> &nbsp; <strong>Polynomial of degree 10 or Hermite spline</strong></p>
 <hr />
-<p>Used for <strong><abbr title="Standard Product 3 — precise satellite orbit (position ± ~2 cm) file format, produced by IGS analysis centres (Navipedia: SP3)">SP3</abbr> orbits</strong> (satellite X, Y, Z).</p>
-<p>The spline matches the positions and the satellite velocities at
-every <abbr title="Standard Product 3 — precise satellite orbit (position ± ~2 cm) file format, produced by IGS analysis centres (Navipedia: SP3)">SP3</abbr> epoch.</p>
+<p>Used for <strong><abbr title="Standard Product 3 — precise satellite orbit file format, produced by IGS analysis centres (Navipedia: SP3)">SP3</abbr> orbits</strong> (satellite X, Y, Z).</p>
+<p>By default, the polynomial through the positions at the 11 orbit
+epochs nearest to each target epoch; or, as before v1.1.0, the cubic
+Hermite spline through the positions and velocities.</p>
 </li>
 <li>
 <p><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.3.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2026 Fonticons, Inc.--><path fill="currentColor" d="M64 64c0-17.7-14.3-32-32-32S0 46.3 0 64v336c0 44.2 35.8 80 80 80h400c17.7 0 32-14.3 32-32s-14.3-32-32-32H80c-8.8 0-16-7.2-16-16zm406.6 86.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0L320 210.7l-57.4-57.3c-12.5-12.5-32.8-12.5-45.3 0l-96 96c-12.5 12.5-12.5 32.8 0 45.3s32.8 12.5 45.3 0l73.4-73.4 57.4 57.4c12.5 12.5 32.8 12.5 45.3 0l128-128z"/></svg></span> &nbsp; <strong>Piecewise linear</strong></p>
@@ -4364,91 +4409,81 @@ clock jump.</p>
 </ul>
 </div>
 <hr />
-<h2 id="cubic-hermite-spline-orbits">Cubic Hermite spline (orbits)<a class="headerlink" href="#cubic-hermite-spline-orbits" title="Permanent link">&para;</a></h2>
-<p>Orbital motion is smooth, so a cubic polynomial between two <abbr title="Standard Product 3 — precise satellite orbit (position ± ~2 cm) file format, produced by IGS analysis centres (Navipedia: SP3)">SP3</abbr> epochs
-fits it well. A Hermite spline fixes each polynomial by the positions and
-velocities at both ends of the interval
-(<a href="https://docs.scipy.org/doc/scipy/reference/generated/scipy.interpolate.CubicHermiteSpline.html"><code>scipy.interpolate.CubicHermiteSpline</code></a>).</p>
-<p><abbr title="Standard Product 3 — precise satellite orbit (position ± ~2 cm) file format, produced by IGS analysis centres (Navipedia: SP3)">SP3</abbr> files read by canVODpy provide positions only. The <abbr title="Standard Product 3 — precise satellite orbit (position ± ~2 cm) file format, produced by IGS analysis centres (Navipedia: SP3)">SP3</abbr> reader
-(<code>Sp3File</code>, <code>add_velocities=True</code> by default) estimates the velocities
-from the positions by central differences (forward and backward
-differences at the first and last epoch); a run computes them on the day
-joined with its neighbors (see below), so the day's own first and last
-epochs get central differences too.</p>
+<h2 id="orbits">Orbits<a class="headerlink" href="#orbits" title="Permanent link">&para;</a></h2>
+<p>The setting <code>processing.aux_data.sp3_interpolation</code> picks the method:</p>
+<table>
+<thead>
+<tr>
+<th>Value</th>
+<th>Method</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>lagrange</code> (default)</td>
+<td>Polynomial of degree 10 through the 11 nearest orbit epochs</td>
+</tr>
+<tr>
+<td><code>hermite</code></td>
+<td>Cubic Hermite spline through the positions and velocities, the method of canvodpy before v1.1.0</td>
+</tr>
+</tbody>
+</table>
+<p>Despite its name, the setting also applies to the broadcast orbits of
+<abbr title="Receiver Independent Exchange Format — standard ASCII format for GNSS observations, defined by IGS (Navipedia: RINEX)">RINEX</abbr> navigation files (see below).</p>
+<h3 id="polynomial-of-degree-10-lagrange">Polynomial of degree 10 (<code>lagrange</code>)<a class="headerlink" href="#polynomial-of-degree-10-lagrange" title="Permanent link">&para;</a></h3>
+<p>Each interpolated position comes from the Lagrange polynomial of degree
+10 through the positions at the 11 orbit epochs nearest to it, as RTKLIB
+interpolates precise ephemerides
+(<a href="https://github.com/tomojitakasu/RTKLIB">RTKLIB 2.4.2 p13</a>, <code>src/preceph.c</code>,
+<code>pephpos</code>). The velocities <code>Vx</code>, <code>Vy</code>, <code>Vz</code> of the interpolated orbits are
+the derivative of the same polynomial, both evaluated in the barycentric
+form
+(<a href="https://doi.org/10.1137/S0036144502417715">Barycentric Lagrange Interpolation</a>,
+SIAM Review 46(3), 2004).</p>
+<p>The broadcast ephemeris of <abbr title="Receiver Independent Exchange Format — standard ASCII format for GNSS observations, defined by IGS (Navipedia: RINEX)">RINEX</abbr> files goes through the same
+interpolation: its orbits are first computed on a 5-minute grid (see
+<a href="../../readers/ephemeris-sources/">Ephemeris sources</a>).</p>
+<h3 id="hermite-spline-hermite">Hermite spline (<code>hermite</code>)<a class="headerlink" href="#hermite-spline-hermite" title="Permanent link">&para;</a></h3>
+<p>Each coordinate is interpolated with the cubic Hermite spline through the
+positions and velocities at the orbit epochs (<code>scipy.interpolate.CubicHermiteSpline</code>).
+The velocities of the precise orbits are central differences of the <abbr title="Standard Product 3 — precise satellite orbit file format, produced by IGS analysis centres (Navipedia: SP3)">SP3</abbr>
+positions (<code>Sp3File</code>); the velocity records of an <abbr title="Standard Product 3 — precise satellite orbit file format, produced by IGS analysis centres (Navipedia: SP3)">SP3</abbr> file are not read.
+The broadcast orbits get their velocities when they are computed (see
+<a href="../../readers/ephemeris-sources/">Ephemeris sources</a>). The velocities of the interpolated orbits are the
+derivative of the spline. This is the code of canvodpy v1.0.0, unchanged:
+a run with <code>hermite</code> gives the angles of v1.0.0.</p>
 <div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">canvod.auxiliary.interpolation</span><span class="w"> </span><span class="kn">import</span> <span class="n">Sp3Config</span><span class="p">,</span> <span class="n">Sp3InterpolationStrategy</span>
 
-<span class="n">config</span> <span class="o">=</span> <span class="n">Sp3Config</span><span class="p">(</span>
-    <span class="n">use_velocities</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>  <span class="c1"># Hermite spline with Vx, Vy, Vz</span>
-    <span class="n">fallback_method</span><span class="o">=</span><span class="s2">"linear"</span><span class="p">,</span>  <span class="c1"># used when the dataset has no velocities</span>
-<span class="p">)</span>
-
-<span class="n">interpolator</span> <span class="o">=</span> <span class="n">Sp3InterpolationStrategy</span><span class="p">(</span><span class="n">config</span><span class="o">=</span><span class="n">config</span><span class="p">)</span>
+<span class="n">interpolator</span> <span class="o">=</span> <span class="n">Sp3InterpolationStrategy</span><span class="p">(</span><span class="n">config</span><span class="o">=</span><span class="n">Sp3Config</span><span class="p">(</span><span class="n">method</span><span class="o">=</span><span class="s2">"hermite"</span><span class="p">))</span>
 <span class="n">result</span> <span class="o">=</span> <span class="n">interpolator</span><span class="o">.</span><span class="n">interpolate</span><span class="p">(</span><span class="n">sp3_data</span><span class="p">,</span> <span class="n">target_epochs</span><span class="p">)</span>
 </code></pre></div>
-<table>
-<thead>
-<tr>
-<th>Parameter</th>
-<th>Default</th>
-<th>Effect</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td><code>use_velocities</code></td>
-<td><code>True</code></td>
-<td>Hermite spline if <code>Vx</code>, <code>Vy</code>, <code>Vz</code> are in the dataset</td>
-</tr>
-<tr>
-<td><code>fallback_method</code></td>
-<td><code>"linear"</code></td>
-<td><code>xarray</code> interpolation method without velocities</td>
-</tr>
-</tbody>
-</table>
+<p><code>Sp3Config()</code> is the default, <code>lagrange</code>. Another value raises a
+<code>ValueError</code>.</p>
+<h3 id="one-method-per-store">One method per store<a class="headerlink" href="#one-method-per-store" title="Permanent link">&para;</a></h3>
+<p>A <abbr title="Global Navigation Satellite System — umbrella term for GPS, Galileo, GLONASS, BeiDou, etc. (Navipedia: GNSS)">GNSS</abbr> store records the method in its content settings, and refuses a
+run with the other one (see
+<a href="../../../guides/configuration/#content-settings-fixed-for-each-store">content settings</a>). A store created
+before v1.1.0 records none: it counts as <code>hermite</code>, the only method then.
+To continue writing to such a store, set
+<code>processing.aux_data.sp3_interpolation: hermite</code>; with the default, write
+to a new store. The log book of a store records the method of every file
+(column <code>orbit_interpolation</code>).</p>
 <h3 id="start-and-end-of-the-day">Start and end of the day<a class="headerlink" href="#start-and-end-of-the-day" title="Permanent link">&para;</a></h3>
 <p>A daily orbit file can end before midnight (ESA's 15-minute rapid orbits
-end at 23:45; CODE's 5-minute orbits include 24:00), and the velocities of
-its first and last epoch are one-sided differences. So every run loads the
-orbit and clock files of the <strong>previous and the next day</strong> too
-(<code>AuxDataPipeline.create_standard</code>), keeps one hour of each
-(<code>AuxFile.join_days</code>; where files overlap, the day's own epoch is kept) and
-computes the velocities on the joined data. Every epoch of the day then
-lies between two orbit epochs: nothing is extrapolated. If a neighboring
-day's file cannot be obtained, the run stops with an error naming it.
+end at 23:45; CODE's 5-minute orbits include 24:00), and near its first
+and last epoch the interpolation would have orbit epochs on one side only.
+So every run loads the orbit and clock files of the <strong>previous and the
+next day</strong> too (<code>AuxDataPipeline.create_standard</code>) and keeps one hour of
+each (<code>AuxFile.join_days</code>; where files overlap, the day's own epoch is
+kept). Every epoch of the day then lies between two orbit epochs: nothing
+is extrapolated. If a neighboring day's file cannot be obtained, the run
+stops with an error naming it.
 Final products come out per <abbr title="Global Positioning System — US satellite navigation constellation, 31 SVs in 6 orbital planes (Navipedia: GPS)">GPS</abbr> week, so the last day of a week can be
 processed only once the next week's products are published.</p>
-<p>The spline is fitted per satellite on the epochs with data. A target epoch
-outside a satellite's data, or in a gap of more than 1.5 sampling
-intervals, is NaN.</p>
-<h3 id="accuracy">Accuracy<a class="headerlink" href="#accuracy" title="Permanent link">&para;</a></h3>
-<p>Measured on the CODE final orbits of 2025-001 (with 2024-366 and
-2025-002), by leaving orbit epochs out and interpolating them from the
-rest; the angle is the largest direction error seen from the ground:</p>
-<table>
-<thead>
-<tr>
-<th>Orbit sampling</th>
-<th>Largest position error</th>
-<th>Largest angle error</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>10 min (positions at the 5-min epochs in between)</td>
-<td>81 m</td>
-<td><span class="arithmatex">\(0.0002^\circ\)</span></td>
-</tr>
-<tr>
-<td>15 min</td>
-<td>1.1 km</td>
-<td><span class="arithmatex">\(0.004^\circ\)</span></td>
-</tr>
-</tbody>
-</table>
-<p>With the day's file alone (before the neighbors were loaded), the first
-and last interval of the day were off by up to 37 km (<span class="arithmatex">\(0.11^\circ\)</span>), and a
-15-minute file ending at 23:45 was extrapolated by up to 990 km (<span class="arithmatex">\(2.9^\circ\)</span>).</p>
+<p>Either method goes through the epochs of the satellite with data. A
+target epoch outside a satellite's data, or in a gap of more than 1.5
+sampling intervals, is NaN.</p>
 <hr />
 <h2 id="piecewise-linear-clocks">Piecewise linear (clocks)<a class="headerlink" href="#piecewise-linear-clocks" title="Permanent link">&para;</a></h2>
 <p>Satellite clock offsets can jump. Linear interpolation between
@@ -4492,7 +4527,7 @@ attributes.</p>
 
 
 <span class="k">class</span><span class="w"> </span><span class="nc">CustomStrategy</span><span class="p">(</span><span class="n">Interpolator</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">"""Example: Lagrange polynomial interpolation."""</span>
+<span class="w">    </span><span class="sd">"""Example: your own interpolation."""</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">interpolate</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>

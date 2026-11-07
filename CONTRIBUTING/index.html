@@ -590,7 +590,7 @@
   <span class="md-ellipsis">
     
   
-  What's new in v1.0.0
+  What's new
 
     
   </span>
@@ -4540,6 +4540,7 @@ just<span class="w"> </span>docs<span class="w">                      </span><sp
 just<span class="w"> </span>docs-lint<span class="w">                 </span><span class="c1"># Language check of the docs (Vale)</span>
 just<span class="w"> </span>docs-lint-changed<span class="w">         </span><span class="c1"># Vale on the pages changed since origin/main</span>
 just<span class="w"> </span>docs-links<span class="w">                </span><span class="c1"># Link check of the built docs (lychee)</span>
+just<span class="w"> </span>reference-check<span class="w">           </span><span class="c1"># Compare with the reference stores (needs the test data)</span>
 </code></pre></div>
 <h2 id="continuous-integration">Continuous integration<a class="headerlink" href="#continuous-integration" title="Permanent link">&para;</a></h2>
 <p>Every push and pull request runs these checks on GitHub Actions:</p>
@@ -4554,6 +4555,18 @@ just<span class="w"> </span>docs-links<span class="w">                </span><sp
 <li><strong>Platform Tests:</strong> the test suite on Linux, Windows, and macOS.</li>
 <li><strong>Docs Quality:</strong> a language check (Vale) of the changed pages and root
   files, and a link check (lychee) of the built site.</li>
+<li><strong>Reference stores:</strong> on a change of the package sources or <code>uv.lock</code>,
+  builds the <abbr title="Global Navigation Satellite System — umbrella term for GPS, Galileo, GLONASS, BeiDou, etc. (Navipedia: GNSS)">GNSS</abbr> and <abbr title="Vegetation Optical Depth — dimensionless measure of microwave attenuation through vegetation canopy (τ = −ln(T)·cos θ)">VOD</abbr> stores of every setting profile from the test
+  data and compares them with the published reference stores
+  (<code>just reference-check</code>, Linux only). A difference fails the job and
+  uploads the report, <code>reference-check.txt</code>, as the artifact
+  <code>reference-check-report</code>. If your change alters a result on purpose,
+  say why in the pull request, attach the report, and change the
+  reference stores as
+  <a href="https://canvodpy.eu/guides/reference-stores/#changing-the-reference-stores">Reference stores</a>
+  describes; the job fails until the new stores are published and
+  pinned. Otherwise the difference is a bug: run <code>just reference-check</code>
+  locally to fix it.</li>
 </ul>
 <h2 id="pull-request-guidelines">Pull request guidelines<a class="headerlink" href="#pull-request-guidelines" title="Permanent link">&para;</a></h2>
 <ol>

@@ -590,7 +590,7 @@
   <span class="md-ellipsis">
     
   
-  What's new in v1.0.0
+  What's new
 
     
   </span>
@@ -4274,10 +4274,18 @@ e.g. <code>G01|L1|C</code>.
 The time of an observation, always <abbr title="Global Positioning System — US satellite navigation constellation, 31 SVs in 6 orbital planes (Navipedia: GPS)">GPS</abbr> time.
 <em>Avoid</em>: timestamp, time step</p>
 <p><strong>Ephemeris</strong>:
-The orbit (and clock) of the satellites, from agency products or from
-the receiver's broadcast navigation data; gives each epoch's polar angle
-and azimuth.
+The orbit (and clock) of the satellites, either a precise ephemeris or
+the broadcast ephemeris; gives each epoch's polar angle and azimuth.
 <em>Avoid</em>: aux data, orbit file (for the data itself)</p>
+<p><strong>Precise ephemeris</strong>:
+Satellite orbits and clocks computed afterwards by an analysis center,
+as final or rapid products.
+<em>Avoid</em>: final (for the source), <abbr title="Standard Product 3 — precise satellite orbit file format, produced by IGS analysis centres (Navipedia: SP3)">SP3</abbr> (for the data)</p>
+<p><strong>Broadcast ephemeris</strong>:
+Satellite orbits and clocks from the navigation message the satellites
+transmit and the receiver records, either as the receiver's own angles
+or as navigation files; available in real time.
+<em>Avoid</em>: nav data (for the source), real-time orbit</p>
 <p><strong>Hemisphere grid</strong>:
 A division of the sky seen from the receiver into cells, used to
 aggregate observations and <abbr title="Vegetation Optical Depth — dimensionless measure of microwave attenuation through vegetation canopy (τ = −ln(T)·cos θ)">VOD</abbr> by direction.

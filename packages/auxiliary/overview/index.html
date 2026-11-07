@@ -595,7 +595,7 @@
   <span class="md-ellipsis">
     
   
-  What's new in v1.0.0
+  What's new
 
     
   </span>
@@ -4305,7 +4305,7 @@
 
 <h1 id="canvod-auxiliary">canvod-auxiliary<a class="headerlink" href="#canvod-auxiliary" title="Permanent link">&para;</a></h1>
 <h2 id="purpose">Purpose<a class="headerlink" href="#purpose" title="Permanent link">&para;</a></h2>
-<p>The <code>canvod-auxiliary</code> package provides auxiliary data management for <a href="https://gssc.esa.int/navipedia/index.php/GNSS" target="_blank"><abbr title="Global Navigation Satellite System — umbrella term for GPS, Galileo, GLONASS, BeiDou, etc. (Navipedia: GNSS)">GNSS</abbr> Transmissometry</a> (<abbr title="GNSS Transmissometry — method using differential SNR between canopy and reference receivers to estimate vegetation properties">GNSS-T</abbr>) analysis. It handles downloading, parsing, preprocessing, and interpolating <a href="https://igs.org/formats-and-standards/" target="_blank"><abbr title="Standard Product 3 — precise satellite orbit (position ± ~2 cm) file format, produced by IGS analysis centres (Navipedia: SP3)">SP3</abbr> ephemerides</a> to augment <abbr title="Receiver Independent Exchange Format — standard ASCII format for GNSS observations, defined by IGS (Navipedia: RINEX)">RINEX</abbr> observation data with precise satellite positions. It can also fetch <abbr title="Clock — precise satellite and station clock correction file (30 s intervals), companion to SP3 orbits">CLK</abbr> <a href="https://gssc.esa.int/navipedia/index.php/Precise_GNSS_Satellite_Coordinates_Computation" target="_blank">clock corrections</a> with <code>aux_data.fetch_clock: true</code>; the <abbr title="Vegetation Optical Depth — dimensionless measure of microwave attenuation through vegetation canopy (τ = −ln(T)·cos θ)">VOD</abbr> formula doesn't use them, so they are off by default.</p>
+<p>The <code>canvod-auxiliary</code> package provides auxiliary data management for <a href="https://gssc.esa.int/navipedia/index.php/GNSS" target="_blank"><abbr title="Global Navigation Satellite System — umbrella term for GPS, Galileo, GLONASS, BeiDou, etc. (Navipedia: GNSS)">GNSS</abbr> Transmissometry</a> (<abbr title="GNSS Transmissometry — method using differential SNR between canopy and reference receivers to estimate vegetation properties">GNSS-T</abbr>) analysis. It handles downloading, parsing, preprocessing, and interpolating <a href="https://igs.org/formats-and-standards/" target="_blank"><abbr title="Standard Product 3 — precise satellite orbit file format, produced by IGS analysis centres (Navipedia: SP3)">SP3</abbr> ephemerides</a> to augment <abbr title="Receiver Independent Exchange Format — standard ASCII format for GNSS observations, defined by IGS (Navipedia: RINEX)">RINEX</abbr> observation data with precise satellite positions. It can also fetch <abbr title="Clock — precise satellite and station clock correction file (30 s intervals), companion to SP3 orbits">CLK</abbr> <a href="https://gssc.esa.int/navipedia/index.php/Precise_GNSS_Satellite_Coordinates_Computation" target="_blank">clock corrections</a> with <code>aux_data.fetch_clock: true</code>; the <abbr title="Vegetation Optical Depth — dimensionless measure of microwave attenuation through vegetation canopy (τ = −ln(T)·cos θ)">VOD</abbr> formula doesn't use them, so they are off by default.</p>
 <hr />
 <h2 id="the-dimension-alignment-problem">The dimension alignment problem<a class="headerlink" href="#the-dimension-alignment-problem" title="Permanent link">&para;</a></h2>
 <p><abbr title="GNSS Transmissometry — method using differential SNR between canopy and reference receivers to estimate vegetation properties">GNSS-T</abbr> analysis requires combining two data sources with fundamentally different indexing:</p>
@@ -4319,12 +4319,12 @@
 </ul>
 </div>
 <div class="admonition abstract">
-<p class="admonition-title"><abbr title="Standard Product 3 — precise satellite orbit (position ± ~2 cm) file format, produced by IGS analysis centres (Navipedia: SP3)">SP3</abbr> / <abbr title="Clock — precise satellite and station clock correction file (30 s intervals), companion to SP3 orbits">CLK</abbr> Auxiliary</p>
+<p class="admonition-title"><abbr title="Standard Product 3 — precise satellite orbit file format, produced by IGS analysis centres (Navipedia: SP3)">SP3</abbr> / <abbr title="Clock — precise satellite and station clock correction file (30 s intervals), companion to SP3 orbits">CLK</abbr> Auxiliary</p>
 <ul>
 <li>Low temporal resolution: 5–15 min</li>
 <li>Satellite-level indexing by <abbr title="Space Vehicle — a single GNSS satellite, identified by system prefix + PRN number">SV</abbr>: <code>"G01"</code></li>
 <li>Dimensions: <code>(epoch: 96, sv: 32)</code></li>
-<li><abbr title="Clock — precise satellite and station clock correction file (30 s intervals), companion to SP3 orbits">CLK</abbr> is optional (<code>aux_data.fetch_clock</code>, default <code>false</code>); <abbr title="Standard Product 3 — precise satellite orbit (position ± ~2 cm) file format, produced by IGS analysis centres (Navipedia: SP3)">SP3</abbr> is always required</li>
+<li><abbr title="Clock — precise satellite and station clock correction file (30 s intervals), companion to SP3 orbits">CLK</abbr> is optional (<code>aux_data.fetch_clock</code>, default <code>false</code>); <abbr title="Standard Product 3 — precise satellite orbit file format, produced by IGS analysis centres (Navipedia: SP3)">SP3</abbr> is always required</li>
 </ul>
 </div>
 </div>
@@ -4352,13 +4352,13 @@
 <div class="grid cards">
 <ul>
 <li>
-<p><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.3.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2026 Fonticons, Inc.--><path fill="currentColor" d="M418.4 157.9c35.3-8.3 61.6-40 61.6-77.9 0-44.2-35.8-80-80-80-43.4 0-78.7 34.5-80 77.5l-183.8 73.6C121.7 136.8 101.9 128 80 128c-44.2 0-80 35.8-80 80s35.8 80 80 80c12.2 0 23.8-2.7 34.1-7.6l145.6 127.4c-2.4 7.6-3.7 15.8-3.7 24.2 0 44.2 35.8 80 80 80s80-35.8 80-80c0-27.7-14-52.1-35.4-66.4zm-262.1 74.3c2.2-6.9 3.5-14.2 3.7-21.7L343.8 137c3.6 3.5 7.4 6.7 11.6 9.5l-37.8 207.6c-5.5 1.3-10.8 3.1-15.8 5.5z"/></svg></span> &nbsp; <strong><abbr title="Standard Product 3 — precise satellite orbit (position ± ~2 cm) file format, produced by IGS analysis centres (Navipedia: SP3)">SP3</abbr> (Hermite cubic splines)</strong></p>
+<p><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.3.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2026 Fonticons, Inc.--><path fill="currentColor" d="M418.4 157.9c35.3-8.3 61.6-40 61.6-77.9 0-44.2-35.8-80-80-80-43.4 0-78.7 34.5-80 77.5l-183.8 73.6C121.7 136.8 101.9 128 80 128c-44.2 0-80 35.8-80 80s35.8 80 80 80c12.2 0 23.8-2.7 34.1-7.6l145.6 127.4c-2.4 7.6-3.7 15.8-3.7 24.2 0 44.2 35.8 80 80 80s80-35.8 80-80c0-27.7-14-52.1-35.4-66.4zm-262.1 74.3c2.2-6.9 3.5-14.2 3.7-21.7L343.8 137c3.6 3.5 7.4 6.7 11.6 9.5l-37.8 207.6c-5.5 1.3-10.8 3.1-15.8 5.5z"/></svg></span> &nbsp; <strong><abbr title="Standard Product 3 — precise satellite orbit file format, produced by IGS analysis centres (Navipedia: SP3)">SP3</abbr> (polynomial of degree 10 or Hermite spline)</strong></p>
 <hr />
-<p>Satellite orbital motion is smooth and predictable.
-Hermite splines exploit available velocity data for C1-continuity
-and sub-millimeter interpolation accuracy.</p>
-<div class="highlight"><pre><span></span><code><span class="n">config</span> <span class="o">=</span> <span class="n">Sp3Config</span><span class="p">(</span><span class="n">use_velocities</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">fallback</span><span class="o">=</span><span class="s2">"linear"</span><span class="p">)</span>
-<span class="n">strategy</span> <span class="o">=</span> <span class="n">Sp3InterpolationStrategy</span><span class="p">(</span><span class="n">config</span><span class="o">=</span><span class="n">config</span><span class="p">)</span>
+<p>By default, each position comes from the polynomial through the 11
+nearest orbit epochs, as in RTKLIB; the velocities are its derivative.
+<code>Sp3Config(method="hermite")</code> (<code>aux_data.sp3_interpolation: hermite</code>)
+gives the cubic Hermite spline of v1.0.0.</p>
+<div class="highlight"><pre><span></span><code><span class="n">strategy</span> <span class="o">=</span> <span class="n">Sp3InterpolationStrategy</span><span class="p">(</span><span class="n">config</span><span class="o">=</span><span class="n">Sp3Config</span><span class="p">())</span>
 </code></pre></div>
 </li>
 <li>
@@ -4451,7 +4451,7 @@ receiver position from the data.</p>
     Preprocessor--&gt;&gt;User: {epoch: 96, sid: 384}
 
     User-&gt;&gt;Interpolator: interpolate onto the day's epoch grid
-    Interpolator-&gt;&gt;Interpolator: Hermite splines
+    Interpolator-&gt;&gt;Interpolator: polynomial of degree 10 (default)
     Interpolator--&gt;&gt;User: {epoch: 2880, sid: 384}
 
     User-&gt;&gt;Coordinates: compute_spherical_coordinates()

@@ -595,7 +595,7 @@
   <span class="md-ellipsis">
     
   
-  What's new in v1.0.0
+  What's new
 
     
   </span>
@@ -4348,13 +4348,13 @@
 
 
 <h1 id="preprocessing-pipeline">Preprocessing pipeline<a class="headerlink" href="#preprocessing-pipeline" title="Permanent link">&para;</a></h1>
-<p>Before interpolation, auxiliary data must be restructured to match the <code>(epoch × sid)</code> layout of the observation datasets. This pipeline bridges the <code>sv</code> (satellite) indexing of <abbr title="Standard Product 3 — precise satellite orbit (position ± ~2 cm) file format, produced by IGS analysis centres (Navipedia: SP3)">SP3</abbr>/<abbr title="Clock — precise satellite and station clock correction file (30 s intervals), companion to SP3 orbits">CLK</abbr> files and the <code>sid</code> (signal ID) indexing of the observations.</p>
+<p>Before interpolation, auxiliary data must be restructured to match the <code>(epoch × sid)</code> layout of the observation datasets. This pipeline bridges the <code>sv</code> (satellite) indexing of <abbr title="Standard Product 3 — precise satellite orbit file format, produced by IGS analysis centres (Navipedia: SP3)">SP3</abbr>/<abbr title="Clock — precise satellite and station clock correction file (30 s intervals), companion to SP3 orbits">CLK</abbr> files and the <code>sid</code> (signal ID) indexing of the observations.</p>
 <p>In a run, <code>AuxDataPipeline</code> calls <code>prep_aux_ds()</code> with the signal IDs kept by the <code>sids:</code> settings, so the orbits and clocks carry the same signals as the observations before they are interpolated.</p>
 <hr />
 <h2 id="the-dimension-mismatch-problem">The dimension mismatch problem<a class="headerlink" href="#the-dimension-mismatch-problem" title="Permanent link">&para;</a></h2>
 <div class="grid">
 <div class="admonition info">
-<p class="admonition-title"><abbr title="Standard Product 3 — precise satellite orbit (position ± ~2 cm) file format, produced by IGS analysis centres (Navipedia: SP3)">SP3</abbr> / <abbr title="Clock — precise satellite and station clock correction file (30 s intervals), companion to SP3 orbits">CLK</abbr> files</p>
+<p class="admonition-title"><abbr title="Standard Product 3 — precise satellite orbit file format, produced by IGS analysis centres (Navipedia: SP3)">SP3</abbr> / <abbr title="Clock — precise satellite and station clock correction file (30 s intervals), companion to SP3 orbits">CLK</abbr> files</p>
 <p>Index by <strong>satellite vehicle</strong> (<code>sv</code>):</p>
 <div class="highlight"><pre><span></span><code><span class="n">sp3_data</span><span class="o">.</span><span class="n">dims</span>
 <span class="c1"># {'epoch': 96, 'sv': 32}</span>
@@ -4471,7 +4471,7 @@ G01|L5|I  G01|L5|Q  G01|L5|X  G01|L5|u
 <p>Replicating satellite positions across signal IDs is scientifically valid:</p>
 <div class="admonition success">
 <p class="admonition-title">One position per satellite is enough for the angles</p>
-<p><abbr title="Standard Product 3 — precise satellite orbit (position ± ~2 cm) file format, produced by IGS analysis centres (Navipedia: SP3)">SP3</abbr> positions refer to the satellite's center of mass. The antenna
+<p><abbr title="Standard Product 3 — precise satellite orbit file format, produced by IGS analysis centres (Navipedia: SP3)">SP3</abbr> positions refer to the satellite's center of mass. The antenna
 phase centers of the signals sit up to a few meters from it and differ
 slightly between frequencies. Seen from a receiver about 20 000 km
 away, a few meters change <span class="arithmatex">\(\theta\)</span> and <span class="arithmatex">\(\varphi\)</span> by about <span class="arithmatex">\(10^{-7}\)</span> rad, far below

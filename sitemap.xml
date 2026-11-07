@@ -94,6 +94,9 @@
         <loc>https://canvodpy.eu/adr/0022-credentials-from-the-environment/</loc>
       </url>
       <url>
+        <loc>https://canvodpy.eu/adr/0023-broadcast-ephemeris-through-the-precise-path/</loc>
+      </url>
+      <url>
         <loc>https://canvodpy.eu/agents/domain/</loc>
       </url>
       <url>

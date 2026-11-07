@@ -6,7 +6,7 @@
       <meta charset="utf-8">
       <meta name="viewport" content="width=device-width,initial-scale=1">
       
-        <meta name="description" content="Three levels of satellite ephemeris for computing observation geometry">
+        <meta name="description" content="The precise and the broadcast ephemeris, how to choose between them, and how to set up navigation files">
       
       
         <meta name="author" content="Nicolas Bader">
@@ -595,7 +595,7 @@
   <span class="md-ellipsis">
     
   
-  What's new in v1.0.0
+  What's new
 
     
   </span>
@@ -1234,6 +1234,17 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
+  <a href="#setting-up-a-run" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Setting up a run
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#source-overview" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
@@ -1256,15 +1267,15 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#agency-final-products-sp3clk" class="md-nav__link">
+  <a href="#precise-ephemeris-sp3clk" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Agency final products (SP3/CLK)
+        Precise ephemeris (SP3/CLK)
       </span>
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="Agency final products (SP3&#x2f;CLK)">
+    <nav class="md-nav" aria-label="Precise ephemeris (SP3&#x2f;CLK)">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
@@ -1306,15 +1317,15 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#sbf-broadcast" class="md-nav__link">
+  <a href="#broadcast-ephemeris-from-sbf" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        SBF broadcast
+        Broadcast ephemeris from SBF
       </span>
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="SBF broadcast">
+    <nav class="md-nav" aria-label="Broadcast ephemeris from SBF">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
@@ -1356,22 +1367,22 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#rinex-nav-broadcast" class="md-nav__link">
+  <a href="#broadcast-ephemeris-from-rinex-navigation-files" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        RINEX NAV broadcast
+        Broadcast ephemeris from RINEX navigation files
       </span>
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="RINEX NAV broadcast">
+    <nav class="md-nav" aria-label="Broadcast ephemeris from RINEX navigation files">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#keplerian-propagation" class="md-nav__link">
+  <a href="#how-it-works_1" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Keplerian propagation
+        How it works
       </span>
     </span>
   </a>
@@ -1379,32 +1390,10 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#glonass-exception" class="md-nav__link">
+  <a href="#configuration_2" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        GLONASS exception
-      </span>
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#nav-file-types" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        NAV file types
-      </span>
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#validity-intervals" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        Validity intervals
+        Configuration
       </span>
     </span>
   </a>
@@ -4254,6 +4243,17 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
+  <a href="#setting-up-a-run" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Setting up a run
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#source-overview" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
@@ -4276,15 +4276,15 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#agency-final-products-sp3clk" class="md-nav__link">
+  <a href="#precise-ephemeris-sp3clk" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Agency final products (SP3/CLK)
+        Precise ephemeris (SP3/CLK)
       </span>
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="Agency final products (SP3&#x2f;CLK)">
+    <nav class="md-nav" aria-label="Precise ephemeris (SP3&#x2f;CLK)">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
@@ -4326,15 +4326,15 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#sbf-broadcast" class="md-nav__link">
+  <a href="#broadcast-ephemeris-from-sbf" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        SBF broadcast
+        Broadcast ephemeris from SBF
       </span>
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="SBF broadcast">
+    <nav class="md-nav" aria-label="Broadcast ephemeris from SBF">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
@@ -4376,22 +4376,22 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#rinex-nav-broadcast" class="md-nav__link">
+  <a href="#broadcast-ephemeris-from-rinex-navigation-files" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        RINEX NAV broadcast
+        Broadcast ephemeris from RINEX navigation files
       </span>
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="RINEX NAV broadcast">
+    <nav class="md-nav" aria-label="Broadcast ephemeris from RINEX navigation files">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#keplerian-propagation" class="md-nav__link">
+  <a href="#how-it-works_1" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Keplerian propagation
+        How it works
       </span>
     </span>
   </a>
@@ -4399,32 +4399,10 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#glonass-exception" class="md-nav__link">
+  <a href="#configuration_2" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        GLONASS exception
-      </span>
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#nav-file-types" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        NAV file types
-      </span>
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#validity-intervals" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        Validity intervals
+        Configuration
       </span>
     </span>
   </a>
@@ -4605,23 +4583,64 @@
 
 <h1 id="ephemeris-sources">Ephemeris sources<a class="headerlink" href="#ephemeris-sources" title="Permanent link">&para;</a></h1>
 <p>Computing satellite geometry (theta, phi) requires knowing where each satellite
-is at each observation epoch. canvodpy supports two ephemeris sources; a third
-(<abbr title="Receiver Independent Exchange Format — standard ASCII format for GNSS observations, defined by IGS (Navipedia: RINEX)">RINEX</abbr> navigation files) is planned.</p>
+is at each observation epoch. canvodpy supports two ephemeris sources: the
+precise ephemeris of an analysis center (<code>ephemeris_source: precise</code>) and the
+broadcast ephemeris the receiver recorded (<code>ephemeris_source: broadcast</code>,
+from <abbr title="Septentrio Binary Format — proprietary binary telemetry from Septentrio receivers; embeds satellite geometry">SBF</abbr> files or from <abbr title="Receiver Independent Exchange Format — standard ASCII format for GNSS observations, defined by IGS (Navipedia: RINEX)">RINEX</abbr> navigation files). A store holds one
+ephemeris: its content settings record the source, and a run with the
+other source stops at an existing store. Give that run a store of its own
+(another <code>gnss_store_name</code>).</p>
+<h2 id="setting-up-a-run">Setting up a run<a class="headerlink" href="#setting-up-a-run" title="Permanent link">&para;</a></h2>
+<ol>
+<li>Choose the source (see <a href="#choosing-an-ephemeris-source">Choosing an ephemeris source</a>).</li>
+<li>With <code>broadcast</code>, give each receiver with <abbr title="Receiver Independent Exchange Format — standard ASCII format for GNSS observations, defined by IGS (Navipedia: RINEX)">RINEX</abbr> files the folder of its
+   navigation files as <code>nav_directory</code>; the files need canonical names.
+   In shared-position mode (the default)
+   only the canopy receivers need them (see
+   <a href="#broadcast-ephemeris-from-rinex-navigation-files">Broadcast ephemeris from <abbr title="Receiver Independent Exchange Format — standard ASCII format for GNSS observations, defined by IGS (Navipedia: RINEX)">RINEX</abbr> navigation files</a>).
+   <abbr title="Septentrio Binary Format — proprietary binary telemetry from Septentrio receivers; embeds satellite geometry">SBF</abbr> files need nothing more.</li>
+<li>Check the settings, then run:</li>
+</ol>
+<div class="tabbed-set tabbed-alternate" data-tabs="1:2"><input checked="checked" id="__tabbed_1_1" name="__tabbed_1" type="radio" /><input id="__tabbed_1_2" name="__tabbed_1" type="radio" /><div class="tabbed-labels"><label for="__tabbed_1_1">Command line</label><label for="__tabbed_1_2">Python</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code>canvodpy<span class="w"> </span>config<span class="w"> </span>validate
+canvodpy<span class="w"> </span>run<span class="w"> </span>--site<span class="w"> </span>ExampleSite<span class="w"> </span>--start<span class="w"> </span><span class="m">2025001</span><span class="w"> </span>--end<span class="w"> </span><span class="m">2025007</span><span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--ephemeris-source<span class="w"> </span>broadcast
+</code></pre></div>
+<p>Without <code>--ephemeris-source</code>, the run takes
+<code>processing.params.ephemeris_source</code> from the settings file. A site
+whose store was made with the other source stops; see the start of
+this page.</p>
+</div>
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">canvodpy</span><span class="w"> </span><span class="kn">import</span> <span class="n">Site</span>
+
+<span class="n">site</span> <span class="o">=</span> <span class="n">Site</span><span class="p">(</span><span class="s2">"ExampleSite"</span><span class="p">)</span>
+<span class="k">with</span> <span class="n">site</span><span class="o">.</span><span class="n">pipeline</span><span class="p">()</span> <span class="k">as</span> <span class="n">pipeline</span><span class="p">:</span>
+    <span class="k">for</span> <span class="n">unit</span> <span class="ow">in</span> <span class="n">pipeline</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="s2">"2025001"</span><span class="p">,</span> <span class="s2">"2025007"</span><span class="p">):</span>
+        <span class="nb">print</span><span class="p">(</span><span class="nb">sorted</span><span class="p">(</span><span class="n">unit</span><span class="o">.</span><span class="n">days</span><span class="p">),</span> <span class="n">unit</span><span class="o">.</span><span class="n">vod</span><span class="o">.</span><span class="n">written</span><span class="p">)</span>
+</code></pre></div>
+<p>The pipeline takes <code>processing.params.ephemeris_source</code> from the
+settings file.</p>
+</div>
+</div>
+</div>
 <hr />
 <h2 id="source-overview">Source overview<a class="headerlink" href="#source-overview" title="Permanent link">&para;</a></h2>
 <div class="grid cards">
 <ul>
 <li>
-<p><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.3.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2026 Fonticons, Inc.--><path fill="currentColor" d="M144.3 0h224c26.5 0 48.1 21.8 47.1 48.2-.2 5.3-.4 10.6-.7 15.8h49.6c26.1 0 49.1 21.6 47.1 49.8-7.5 103.7-60.5 160.7-118 190.5-15.8 8.2-31.9 14.3-47.2 18.8-20.2 28.6-41.2 43.7-57.9 51.8V448h64c17.7 0 32 14.3 32 32s-14.3 32-32 32h-192c-17.7 0-32-14.3-32-32s14.3-32 32-32h64v-73.1c-16-7.7-35.9-22-55.3-48.3-18.4-4.8-38.4-12.1-57.9-23.1C57 273.2 8.2 216.1 1.2 113.6c-1.9-28.1 21-49.7 47.1-49.7h49.6c-.3-5.2-.5-10.4-.7-15.8-1-26.5 20.6-48.2 47.1-48.2zm-42.8 112H49.1c6.2 84.7 45.1 127.1 85.2 149.6-14.4-37.3-26.3-86-32.8-149.6M380 256.8c40.5-23.8 77.1-66.1 83.3-144.8H411c-6.2 60.9-17.4 108.2-31 144.8"/></svg></span> &nbsp; <strong>Agency Final Products (<abbr title="Standard Product 3 — precise satellite orbit (position ± ~2 cm) file format, produced by IGS analysis centres (Navipedia: SP3)">SP3</abbr>/<abbr title="Clock — precise satellite and station clock correction file (30 s intervals), companion to SP3 orbits">CLK</abbr>)</strong></p>
+<p><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.3.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2026 Fonticons, Inc.--><path fill="currentColor" d="M144.3 0h224c26.5 0 48.1 21.8 47.1 48.2-.2 5.3-.4 10.6-.7 15.8h49.6c26.1 0 49.1 21.6 47.1 49.8-7.5 103.7-60.5 160.7-118 190.5-15.8 8.2-31.9 14.3-47.2 18.8-20.2 28.6-41.2 43.7-57.9 51.8V448h64c17.7 0 32 14.3 32 32s-14.3 32-32 32h-192c-17.7 0-32-14.3-32-32s14.3-32 32-32h64v-73.1c-16-7.7-35.9-22-55.3-48.3-18.4-4.8-38.4-12.1-57.9-23.1C57 273.2 8.2 216.1 1.2 113.6c-1.9-28.1 21-49.7 47.1-49.7h49.6c-.3-5.2-.5-10.4-.7-15.8-1-26.5 20.6-48.2 47.1-48.2zm-42.8 112H49.1c6.2 84.7 45.1 127.1 85.2 149.6-14.4-37.3-26.3-86-32.8-149.6M380 256.8c40.5-23.8 77.1-66.1 83.3-144.8H411c-6.2 60.9-17.4 108.2-31 144.8"/></svg></span> &nbsp; <strong>Precise ephemeris (<abbr title="Standard Product 3 — precise satellite orbit file format, produced by IGS analysis centres (Navipedia: SP3)">SP3</abbr>/<abbr title="Clock — precise satellite and station clock correction file (30 s intervals), companion to SP3 orbits">CLK</abbr>)</strong></p>
 <hr />
-<p>Precise orbits (and, by default, clocks) from analysis centers (CODE,
-ESA, <abbr title="International GNSS Service — global network of 500+ stations providing orbits, clocks, and reference frame products (Navipedia: IGS)">IGS</abbr>). Downloaded via <abbr title="File Transfer Protocol">FTP</abbr>. Final products are published about two
-weeks after observation.</p>
-<p><strong>Input:</strong> <abbr title="Standard Product 3 — precise satellite orbit (position ± ~2 cm) file format, produced by IGS analysis centres (Navipedia: SP3)">SP3</abbr> (+ <abbr title="Clock — precise satellite and station clock correction file (30 s intervals), companion to SP3 orbits">CLK</abbr>, optional, see <code>aux_data.fetch_clock</code>) files (downloaded)
+<p>Orbits (and, optionally, clocks) computed afterwards by analysis
+centers (CODE, ESA, <abbr title="International GNSS Service — global network of 500+ stations providing orbits, clocks, and reference frame products (Navipedia: IGS)">IGS</abbr>), as final or rapid products. Downloaded via
+<abbr title="File Transfer Protocol">FTP</abbr>. Final products are published only after a delay.</p>
+<p><strong>Input:</strong> <abbr title="Standard Product 3 — precise satellite orbit file format, produced by IGS analysis centres (Navipedia: SP3)">SP3</abbr> (+ <abbr title="Clock — precise satellite and station clock correction file (30 s intervals), companion to SP3 orbits">CLK</abbr>, optional, see <code>aux_data.fetch_clock</code>) files (downloaded)
 <strong>Output:</strong> <abbr title="Earth-Centered Earth-Fixed — Cartesian (X,Y,Z) coordinate frame co-rotating with Earth (Navipedia: Reference Frames in GNSS)">ECEF</abbr> XYZ <span class="arithmatex">\(\rightarrow\)</span> <span class="arithmatex">\(\theta\)</span>, <span class="arithmatex">\(\varphi\)</span>, <span class="arithmatex">\(r\)</span></p>
 </li>
 <li>
-<p><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.3.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2026 Fonticons, Inc.--><path fill="currentColor" d="M199 7c9.4-9.4 24.6-9.4 33.9 0l89.4 89.4 55-55c12.5-12.5 32.8-12.5 45.3 0l48 48c12.5 12.5 12.5 32.8 0 45.3l-55 55 89.4 89.4c9.4 9.4 9.4 24.6 0 33.9l-96 96c-9.4 9.4-24.6 9.4-33.9 0l-89.4-89.4-15.5 15.5c11.4 24.6 17.8 52 17.8 80.9 0 31.7-7.7 61.5-21.2 87.8-4.7 9-16.7 10.3-23.8 3.1l-96.3-96.3-60 60c-12.5 12.5-32.8 12.5-45.3 0s-12.5-32.8 0-45.3l60-60L5.1 269c-7.2-7.2-5.9-19.2 3.1-23.8C34.5 231.6 64.4 224 96 224c28.9 0 56.3 6.4 80.9 17.8l15.5-15.5L103 137c-9.4-9.4-9.4-24.6 0-33.9zm17 50.9L153.9 120l72.4 72.4 62.1-62.1zm176 300.2 62.1-62.1-72.4-72.4-62.1 62.1z"/></svg></span> &nbsp; <strong><abbr title="Septentrio Binary Format — proprietary binary telemetry from Septentrio receivers; embeds satellite geometry">SBF</abbr> Broadcast (SatVisibility)</strong></p>
+<p><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.3.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2026 Fonticons, Inc.--><path fill="currentColor" d="M199 7c9.4-9.4 24.6-9.4 33.9 0l89.4 89.4 55-55c12.5-12.5 32.8-12.5 45.3 0l48 48c12.5 12.5 12.5 32.8 0 45.3l-55 55 89.4 89.4c9.4 9.4 9.4 24.6 0 33.9l-96 96c-9.4 9.4-24.6 9.4-33.9 0l-89.4-89.4-15.5 15.5c11.4 24.6 17.8 52 17.8 80.9 0 31.7-7.7 61.5-21.2 87.8-4.7 9-16.7 10.3-23.8 3.1l-96.3-96.3-60 60c-12.5 12.5-32.8 12.5-45.3 0s-12.5-32.8 0-45.3l60-60L5.1 269c-7.2-7.2-5.9-19.2 3.1-23.8C34.5 231.6 64.4 224 96 224c28.9 0 56.3 6.4 80.9 17.8l15.5-15.5L103 137c-9.4-9.4-9.4-24.6 0-33.9zm17 50.9L153.9 120l72.4 72.4 62.1-62.1zm176 300.2 62.1-62.1-72.4-72.4-62.1 62.1z"/></svg></span> &nbsp; <strong>Broadcast ephemeris, <abbr title="Septentrio Binary Format — proprietary binary telemetry from Septentrio receivers; embeds satellite geometry">SBF</abbr> (SatVisibility)</strong></p>
 <hr />
 <p>Satellite elevation and azimuth computed by the receiver firmware
 from broadcast ephemerides embedded in the <abbr title="Septentrio Binary Format — proprietary binary telemetry from Septentrio receivers; embeds satellite geometry">SBF</abbr> binary stream.
@@ -4630,33 +4649,44 @@ Immediate availability, no internet required.</p>
 <strong>Output:</strong> theta, phi directly</p>
 </li>
 <li>
-<p><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 384 512"><!--! Font Awesome Free 7.3.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2026 Fonticons, Inc.--><path fill="currentColor" d="M0 64C0 28.7 28.7 0 64 0h149.5c17 0 33.3 6.7 45.3 18.7l106.5 106.6c12 12 18.7 28.3 18.7 45.3V448c0 35.3-28.7 64-64 64H64c-35.3 0-64-28.7-64-64zm208-5.5V152c0 13.3 10.7 24 24 24h93.5zM120 256c-13.3 0-24 10.7-24 24s10.7 24 24 24h144c13.3 0 24-10.7 24-24s-10.7-24-24-24zm0 96c-13.3 0-24 10.7-24 24s10.7 24 24 24h144c13.3 0 24-10.7 24-24s-10.7-24-24-24z"/></svg></span> &nbsp; <strong><abbr title="Receiver Independent Exchange Format — standard ASCII format for GNSS observations, defined by IGS (Navipedia: RINEX)">RINEX</abbr> NAV Broadcast (planned)</strong></p>
+<p><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 384 512"><!--! Font Awesome Free 7.3.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2026 Fonticons, Inc.--><path fill="currentColor" d="M0 64C0 28.7 28.7 0 64 0h149.5c17 0 33.3 6.7 45.3 18.7l106.5 106.6c12 12 18.7 28.3 18.7 45.3V448c0 35.3-28.7 64-64 64H64c-35.3 0-64-28.7-64-64zm208-5.5V152c0 13.3 10.7 24 24 24h93.5zM120 256c-13.3 0-24 10.7-24 24s10.7 24 24 24h144c13.3 0 24-10.7 24-24s-10.7-24-24-24zm0 96c-13.3 0-24 10.7-24 24s10.7 24 24 24h144c13.3 0 24-10.7 24-24s-10.7-24-24-24z"/></svg></span> &nbsp; <strong>Broadcast ephemeris, <abbr title="Receiver Independent Exchange Format — standard ASCII format for GNSS observations, defined by IGS (Navipedia: RINEX)">RINEX</abbr> navigation files</strong></p>
 <hr />
-<p>Not implemented yet. Keplerian orbital elements from <abbr title="Receiver Independent Exchange Format — standard ASCII format for GNSS observations, defined by IGS (Navipedia: RINEX)">RINEX</abbr> navigation files (<code>.YYp</code>).
-Propagated to target epochs using the Keplerian model (<abbr title="Global Positioning System — US satellite navigation constellation, 31 SVs in 6 orbital planes (Navipedia: GPS)">GPS</abbr>/<abbr title="European Global Navigation Satellite System — 30 SVs, dual-frequency civilian design (Navipedia: Galileo)">Galileo</abbr>/<abbr title="BeiDou Navigation Satellite System — Chinese constellation with regional and global services (Navipedia: BeiDou)">BeiDou</abbr>)
-or RK4 integration (<abbr title="GLObal NAvigation Satellite System — Russian constellation using FDMA and CDMA signals (Navipedia: GLONASS)">GLONASS</abbr> state vectors). Immediate, no internet.</p>
-<p><strong>Input:</strong> <code>.YYp</code> / <code>.YYn</code> / <code>.YYg</code> nav files
+<p>Orbit parameters the satellites broadcast, recorded by the receiver
+in <abbr title="Receiver Independent Exchange Format — standard ASCII format for GNSS observations, defined by IGS (Navipedia: RINEX)">RINEX</abbr> navigation files. Satellite positions on a 5-minute grid,
+then the same interpolation as the precise ephemeris. <abbr title="Global Positioning System — US satellite navigation constellation, 31 SVs in 6 orbital planes (Navipedia: GPS)">GPS</abbr>, <abbr title="European Global Navigation Satellite System — 30 SVs, dual-frequency civilian design (Navipedia: Galileo)">Galileo</abbr>,
+<abbr title="GLObal NAvigation Satellite System — Russian constellation using FDMA and CDMA signals (Navipedia: GLONASS)">GLONASS</abbr>, <abbr title="BeiDou Navigation Satellite System — Chinese constellation with regional and global services (Navipedia: BeiDou)">BeiDou</abbr>, <abbr title="Quasi-Zenith Satellite System — Japanese regional augmentation optimised for urban canyons (Navipedia: QZSS)">QZSS</abbr>, and <abbr title="Satellite-Based Augmentation System — geostationary broadcasts providing integrity and corrections (Navipedia: SBAS)">SBAS</abbr> so far.</p>
+<p><strong>Input:</strong> <abbr title="Receiver Independent Exchange Format — standard ASCII format for GNSS observations, defined by IGS (Navipedia: RINEX)">RINEX</abbr> 3.04/3.05 navigation files (<code>nav_directory</code>)
 <strong>Output:</strong> <abbr title="Earth-Centered Earth-Fixed — Cartesian (X,Y,Z) coordinate frame co-rotating with Earth (Navipedia: Reference Frames in GNSS)">ECEF</abbr> XYZ <span class="arithmatex">\(\rightarrow\)</span> <span class="arithmatex">\(\theta\)</span>, <span class="arithmatex">\(\varphi\)</span>, <span class="arithmatex">\(r\)</span></p>
 </li>
 </ul>
 </div>
 <hr />
 <h2 id="accuracy">Accuracy<a class="headerlink" href="#accuracy" title="Permanent link">&para;</a></h2>
-<p>The <abbr title="Septentrio Binary Format — proprietary binary telemetry from Septentrio receivers; embeds satellite geometry">SBF</abbr> angles are stored by the receiver with a resolution of <span class="arithmatex">\(0.01^\circ\)</span>
-(SatVisibility block), so they cannot be more precise than that. The <abbr title="Standard Product 3 — precise satellite orbit (position ± ~2 cm) file format, produced by IGS analysis centres (Navipedia: SP3)">SP3</abbr>
-path computes <span class="arithmatex">\(\theta\)</span> and <span class="arithmatex">\(\varphi\)</span> from interpolated satellite positions and the
-receiver position. canvodpy has not quantified the difference between the
-two sources on its test data; until then, do not mix them in one analysis.</p>
+<p>To date, no in-depth scientific analysis or comparison of the precise and
+the broadcast ephemeris has been done. It is up to you to decide which one
+to use for which task and to what end.</p>
+<p>The receiver stores the SatVisibility angles of <abbr title="Septentrio Binary Format — proprietary binary telemetry from Septentrio receivers; embeds satellite geometry">SBF</abbr> files with a
+resolution of <span class="arithmatex">\(0.01^\circ\)</span> (SatVisibility block; Septentrio AsteRx SB3
+ProBase Firmware v4.14.0 Reference Guide, p. 400).</p>
 <hr />
-<h2 id="agency-final-products-sp3clk">Agency final products (<abbr title="Standard Product 3 — precise satellite orbit (position ± ~2 cm) file format, produced by IGS analysis centres (Navipedia: SP3)">SP3</abbr>/<abbr title="Clock — precise satellite and station clock correction file (30 s intervals), companion to SP3 orbits">CLK</abbr>)<a class="headerlink" href="#agency-final-products-sp3clk" title="Permanent link">&para;</a></h2>
-<p>The default path of <code>canvodpy run</code> (<code>ephemeris_source: final</code>).</p>
+<h2 id="precise-ephemeris-sp3clk">Precise ephemeris (<abbr title="Standard Product 3 — precise satellite orbit file format, produced by IGS analysis centres (Navipedia: SP3)">SP3</abbr>/<abbr title="Clock — precise satellite and station clock correction file (30 s intervals), companion to SP3 orbits">CLK</abbr>)<a class="headerlink" href="#precise-ephemeris-sp3clk" title="Permanent link">&para;</a></h2>
+<p>The default source (<code>ephemeris_source: precise</code>). The
+products are chosen by <code>aux_data.agency</code> and <code>aux_data.product_type</code>
+(<code>final</code> or <code>rapid</code>). Before v1.1.0 this source was called <code>final</code>; that name
+still works until v2.0.0 and warns.</p>
+<p>The agency and the product type apply only to the precise ephemeris. With
+<code>ephemeris_source: broadcast</code>, a store records them as empty in its content
+settings, and a value other than the default (<code>COD</code>, <code>final</code>) warns that it
+is ignored. A broadcast store created before v1.1.0 recorded them as they
+were set; runs still write to it, since broadcast stores do not compare them.</p>
 <h3 id="pipeline">Pipeline<a class="headerlink" href="#pipeline" title="Permanent link">&para;</a></h3>
 <div class="highlight"><pre><span></span><code>1. AuxDataPipeline: download SP3 (+ CLK, if aux_data.fetch_clock) from FTP (CODE/ESA/IGS)
 2. Epoch grid of the day: 00:00 plus multiples of the sampling interval of the
    observations (1 s with a shared aux cache), in GPS time like the SP3 file
-3. Hermite interpolation: SP3 positions → epoch grid
+3. Interpolation (sp3_interpolation: polynomial of degree 10 or Hermite spline): SP3 positions → epoch grid
 4. Clock piecewise linear interpolation (skipped if fetch_clock=False)
-5. Write Zarr cache: 00_aux_zarr/aux_{date}.zarr
+5. Write Zarr cache: 00_aux_zarr/aux_{date}_{site}_{sampling}s.zarr; with a shared aux cache an
+   entry of aux_cache.zarr, one value per satellite for all its signals
 6. Per file: open Zarr → nearest grid epoch per observation epoch
    → compute_spherical_coordinates()
 7. Output: ds["theta"], ds["phi"], ds["r"]
@@ -4668,7 +4698,7 @@ default, which skips step 1's clock download and step 4 entirely.</p>
 <div class="highlight"><pre><span></span><code><span class="c1"># canvod-settings.yaml</span>
 <span class="nt">processing</span><span class="p">:</span>
 <span class="w">  </span><span class="nt">params</span><span class="p">:</span>
-<span class="w">    </span><span class="nt">ephemeris_source</span><span class="p">:</span><span class="w"> </span><span class="s">"final"</span>
+<span class="w">    </span><span class="nt">ephemeris_source</span><span class="p">:</span><span class="w"> </span><span class="s">"precise"</span>
 <span class="w">  </span><span class="nt">aux_data</span><span class="p">:</span>
 <span class="w">    </span><span class="nt">agency</span><span class="p">:</span><span class="w"> </span><span class="s">"COD"</span>
 <span class="w">    </span><span class="nt">product_type</span><span class="p">:</span><span class="w"> </span><span class="s">"final"</span>
@@ -4686,7 +4716,7 @@ default, which skips step 1's clock download and step 4 entirely.</p>
 </thead>
 <tbody>
 <tr>
-<td><abbr title="Standard Product 3 — precise satellite orbit (position ± ~2 cm) file format, produced by IGS analysis centres (Navipedia: SP3)">SP3</abbr>/<abbr title="Clock — precise satellite and station clock correction file (30 s intervals), companion to SP3 orbits">CLK</abbr> download</td>
+<td><abbr title="Standard Product 3 — precise satellite orbit file format, produced by IGS analysis centres (Navipedia: SP3)">SP3</abbr>/<abbr title="Clock — precise satellite and station clock correction file (30 s intervals), companion to SP3 orbits">CLK</abbr> download</td>
 <td>canvod-auxiliary</td>
 <td><code>pipeline.py</code></td>
 </tr>
@@ -4696,7 +4726,7 @@ default, which skips step 1's clock download and step 4 entirely.</p>
 <td><code>core/downloader.py</code></td>
 </tr>
 <tr>
-<td>Hermite interpolation</td>
+<td>Orbit interpolation</td>
 <td>canvod-auxiliary</td>
 <td><code>interpolation/interpolator.py</code></td>
 </tr>
@@ -4713,7 +4743,7 @@ default, which skips step 1's clock download and step 4 entirely.</p>
 </tbody>
 </table>
 <hr />
-<h2 id="sbf-broadcast"><abbr title="Septentrio Binary Format — proprietary binary telemetry from Septentrio receivers; embeds satellite geometry">SBF</abbr> broadcast<a class="headerlink" href="#sbf-broadcast" title="Permanent link">&para;</a></h2>
+<h2 id="broadcast-ephemeris-from-sbf">Broadcast ephemeris from <abbr title="Septentrio Binary Format — proprietary binary telemetry from Septentrio receivers; embeds satellite geometry">SBF</abbr><a class="headerlink" href="#broadcast-ephemeris-from-sbf" title="Permanent link">&para;</a></h2>
 <p>Available when the receiver is a Septentrio unit outputting <abbr title="Septentrio Binary Format — proprietary binary telemetry from Septentrio receivers; embeds satellite geometry">SBF</abbr> binary format,
 with <code>ephemeris_source: broadcast</code>.
 The receiver firmware computes satellite elevation and azimuth from the
@@ -4750,70 +4780,93 @@ convention used throughout canvodpy.</p>
 <li>Theta/phi are tied to the receiver's computed position: if the receiver
   position is inaccurate (poor fix), geometry is slightly affected</li>
 <li>No satellite distance (<span class="arithmatex">\(r\)</span>), only angles</li>
+<li>The angles are used as the receiver writes them: canvodpy does not
+  check them against an orbit
+  (<a href="https://github.com/TUW-GEO/canvodpy/issues/564">#564</a>). For
+  angles that canvodpy computes from the orbits, use the precise ephemeris.</li>
 </ul>
 <hr />
-<h2 id="rinex-nav-broadcast"><abbr title="Receiver Independent Exchange Format — standard ASCII format for GNSS observations, defined by IGS (Navipedia: RINEX)">RINEX</abbr> NAV broadcast<a class="headerlink" href="#rinex-nav-broadcast" title="Permanent link">&para;</a></h2>
-<div class="admonition abstract">
-<p class="admonition-title">Status: not implemented</p>
-<p>A <code>RinexNavProvider</code> is planned but not built. This section records
-the intended design.</p>
-</div>
-<p>For <abbr title="Receiver Independent Exchange Format — standard ASCII format for GNSS observations, defined by IGS (Navipedia: RINEX)">RINEX</abbr> receivers, broadcast ephemerides are available in navigation files
-(<code>.YYp</code> for mixed <abbr title="Global Navigation Satellite System — umbrella term for GPS, Galileo, GLONASS, BeiDou, etc. (Navipedia: GNSS)">GNSS</abbr>, <code>.YYn</code> for <abbr title="Global Positioning System — US satellite navigation constellation, 31 SVs in 6 orbital planes (Navipedia: GPS)">GPS</abbr>, <code>.YYg</code> for <abbr title="GLObal NAvigation Satellite System — Russian constellation using FDMA and CDMA signals (Navipedia: GLONASS)">GLONASS</abbr>) that sit alongside
-observation files in the same directory.</p>
-<h3 id="keplerian-propagation">Keplerian propagation<a class="headerlink" href="#keplerian-propagation" title="Permanent link">&para;</a></h3>
-<p><abbr title="Global Positioning System — US satellite navigation constellation, 31 SVs in 6 orbital planes (Navipedia: GPS)">GPS</abbr>, <abbr title="European Global Navigation Satellite System — 30 SVs, dual-frequency civilian design (Navipedia: Galileo)">Galileo</abbr>, and <abbr title="BeiDou Navigation Satellite System — Chinese constellation with regional and global services (Navipedia: BeiDou)">BeiDou</abbr> use a common 16-parameter Keplerian orbital model
-(IS-<abbr title="Global Positioning System — US satellite navigation constellation, 31 SVs in 6 orbital planes (Navipedia: GPS)">GPS</abbr>-200, <abbr title="European Global Navigation Satellite System — 30 SVs, dual-frequency civilian design (Navipedia: Galileo)">Galileo</abbr> ICD, <abbr title="BeiDou Navigation Satellite System — Chinese constellation with regional and global services (Navipedia: BeiDou)">BeiDou</abbr> ICD):</p>
-<div class="highlight"><pre><span></span><code>Input: orbital elements (a, e, i₀, Ω₀, ω, M₀) + correction terms
-       from navigation message
-
-Steps:
-  1. Mean motion:  n = √(μ/a³) + Δn
-  2. Mean anomaly: M = M₀ + n·(t - tₒₑ)
-  3. Kepler's equation: E - e·sin(E) = M  (iterate ~10×)
-  4. True anomaly: ν = atan2(√(1-e²)·sin(E), cos(E)-e)
-  5. Argument of latitude with corrections
-  6. Radius with corrections
-  7. Inclination with corrections
-  8. ECEF rotation from orbital plane
-
-Output: satellite ECEF (X, Y, Z) in meters
+<h2 id="broadcast-ephemeris-from-rinex-navigation-files">Broadcast ephemeris from <abbr title="Receiver Independent Exchange Format — standard ASCII format for GNSS observations, defined by IGS (Navipedia: RINEX)">RINEX</abbr> navigation files<a class="headerlink" href="#broadcast-ephemeris-from-rinex-navigation-files" title="Permanent link">&para;</a></h2>
+<p>With <code>ephemeris_source: broadcast</code>, a receiver with <abbr title="Receiver Independent Exchange Format — standard ASCII format for GNSS observations, defined by IGS (Navipedia: RINEX)">RINEX</abbr> files takes the
+satellite positions from its own <abbr title="Receiver Independent Exchange Format — standard ASCII format for GNSS observations, defined by IGS (Navipedia: RINEX)">RINEX</abbr> 3.04/3.05 navigation files (ADR 0023).
+In shared-position mode (<code>receiver_position_mode: shared</code>, the default) a
+reference receiver takes them from the navigation files of the canopy it is
+paired with, as with <abbr title="Septentrio Binary Format — proprietary binary telemetry from Septentrio receivers; embeds satellite geometry">SBF</abbr> files, and needs none of its own.
+So far <abbr title="Global Positioning System — US satellite navigation constellation, 31 SVs in 6 orbital planes (Navipedia: GPS)">GPS</abbr>, <abbr title="European Global Navigation Satellite System — 30 SVs, dual-frequency civilian design (Navipedia: Galileo)">Galileo</abbr>, <abbr title="GLObal NAvigation Satellite System — Russian constellation using FDMA and CDMA signals (Navipedia: GLONASS)">GLONASS</abbr>, <abbr title="BeiDou Navigation Satellite System — Chinese constellation with regional and global services (Navipedia: BeiDou)">BeiDou</abbr>, <abbr title="Quasi-Zenith Satellite System — Japanese regional augmentation optimised for urban canyons (Navipedia: QZSS)">QZSS</abbr>, and <abbr title="Satellite-Based Augmentation System — geostationary broadcasts providing integrity and corrections (Navipedia: SBAS)">SBAS</abbr>: the signals of the other systems
+are stored without <span class="arithmatex">\(\theta\)</span> and <span class="arithmatex">\(\varphi\)</span>, so they get no <abbr title="Vegetation Optical Depth — dimensionless measure of microwave attenuation through vegetation canopy (τ = −ln(T)·cos θ)">VOD</abbr>; the run log
+names the systems with angles for each receiver and day. The files sit in
+the folder <code>nav_directory</code> names, relative to the site data root like
+<code>directory</code> (it may be the same folder), and need canonical names of type
+<code>nav</code> with sampling <code>00U</code>, for example
+<code>FANA01INK_R_20250010000_15M_00U_AA.nav</code>. Navigation files with other
+names must be renamed or linked under their canonical names: canvod-filemap
+has no naming recipes for navigation files yet, and a receiver with a
+<code>nav_recipe</code> stops with an error that says so.
+In per-receiver mode (<code>receiver_position_mode: per_receiver</code>) every
+receiver with <abbr title="Receiver Independent Exchange Format — standard ASCII format for GNSS observations, defined by IGS (Navipedia: RINEX)">RINEX</abbr> files reads its own navigation files.</p>
+<h3 id="how-it-works_1">How it works<a class="headerlink" href="#how-it-works_1" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code>1. Read the day's navigation files of the receiver (canvod-readers, rinex/nav.py)
+2. Per satellite and 5-minute grid time, the record with the nearest time of
+   ephemeris, if the time lies within half its fit interval; elsewhere NaN
+3. Orbit from the record's Keplerian elements (IS-GPS-200N, Table 20-IV,
+   with each system's constants; BeiDou GEO satellites with the rotations
+   of BDS-SIS-ICD-B1I-3.0, Table 5-11); velocities from the positions
+   0.5 s before and after. GLONASS: the record's position, velocity and
+   luni-solar acceleration, integrated to the grid time (ICD GLONASS,
+   Edition 5.1, A.3.1.2), which also gives the velocity. SBAS: the
+   record's position, moved with its velocity and acceleration to the grid
+   time (RINEX 3.05, Table A16)
+4. From here as the precise ephemeris: interpolation onto the epoch
+   grid, Zarr cache 00_aux_zarr/aux_{date}_{site}_{receiver}_nav.zarr,
+   theta/phi. With `shared_aux_cache_dir` the interpolated orbits go to the
+   shared cache instead, one entry per date and content of the navigation
+   files (SHA-256), so a rerun of the day computes nothing again and a
+   changed or added navigation file gives a new entry
 </code></pre></div>
-<h3 id="glonass-exception"><abbr title="GLObal NAvigation Satellite System — Russian constellation using FDMA and CDMA signals (Navipedia: GLONASS)">GLONASS</abbr> exception<a class="headerlink" href="#glonass-exception" title="Permanent link">&para;</a></h3>
-<p><abbr title="GLObal NAvigation Satellite System — Russian constellation using FDMA and CDMA signals (Navipedia: GLONASS)">GLONASS</abbr> broadcasts state vectors (<span class="arithmatex">\(x\)</span>, <span class="arithmatex">\(y\)</span>, <span class="arithmatex">\(z\)</span>, <span class="arithmatex">\(v_x\)</span>, <span class="arithmatex">\(v_y\)</span>, <span class="arithmatex">\(v_z\)</span>) in PZ-90 frame
-instead of Keplerian elements. Propagation uses fourth-order Runge-Kutta
-numerical integration.</p>
-<h3 id="nav-file-types">NAV file types<a class="headerlink" href="#nav-file-types" title="Permanent link">&para;</a></h3>
-<table>
-<thead>
-<tr>
-<th>Extension</th>
-<th>Content</th>
-<th>Constellations</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td><code>.YYp</code></td>
-<td>Mixed <abbr title="Global Navigation Satellite System — umbrella term for GPS, Galileo, GLONASS, BeiDou, etc. (Navipedia: GNSS)">GNSS</abbr> navigation</td>
-<td>All (<abbr title="Global Positioning System — US satellite navigation constellation, 31 SVs in 6 orbital planes (Navipedia: GPS)">GPS</abbr>, <abbr title="GLObal NAvigation Satellite System — Russian constellation using FDMA and CDMA signals (Navipedia: GLONASS)">GLONASS</abbr>, <abbr title="European Global Navigation Satellite System — 30 SVs, dual-frequency civilian design (Navipedia: Galileo)">Galileo</abbr>, <abbr title="BeiDou Navigation Satellite System — Chinese constellation with regional and global services (Navipedia: BeiDou)">BeiDou</abbr>, and others)</td>
-</tr>
-<tr>
-<td><code>.YYn</code></td>
-<td><abbr title="Global Positioning System — US satellite navigation constellation, 31 SVs in 6 orbital planes (Navipedia: GPS)">GPS</abbr>-only navigation</td>
-<td><abbr title="Global Positioning System — US satellite navigation constellation, 31 SVs in 6 orbital planes (Navipedia: GPS)">GPS</abbr></td>
-</tr>
-<tr>
-<td><code>.YYg</code></td>
-<td><abbr title="GLObal NAvigation Satellite System — Russian constellation using FDMA and CDMA signals (Navipedia: GLONASS)">GLONASS</abbr>-only navigation</td>
-<td><abbr title="GLObal NAvigation Satellite System — Russian constellation using FDMA and CDMA signals (Navipedia: GLONASS)">GLONASS</abbr></td>
-</tr>
-</tbody>
-</table>
-<h3 id="validity-intervals">Validity intervals<a class="headerlink" href="#validity-intervals" title="Permanent link">&para;</a></h3>
-<p>Broadcast ephemerides are valid for ~2-4 hours around their reference epoch
-(toe). The propagator must select the closest valid ephemeris set for each
-target epoch, not simply the first record found.</p>
+<p>The fit interval is the one in the record for <abbr title="Global Positioning System — US satellite navigation constellation, 31 SVs in 6 orbital planes (Navipedia: GPS)">GPS</abbr> (at least 4 hours) and
+2 hours for <abbr title="Quasi-Zenith Satellite System — Japanese regional augmentation optimised for urban canyons (Navipedia: QZSS)">QZSS</abbr> (IS-<abbr title="Quasi-Zenith Satellite System — Japanese regional augmentation optimised for urban canyons (Navipedia: QZSS)">QZSS</abbr>-PNT-005, Table 4.1.1-2). The <abbr title="European Global Navigation Satellite System — 30 SVs, dual-frequency civilian design (Navipedia: Galileo)">Galileo</abbr> and <abbr title="BeiDou Navigation Satellite System — Chinese constellation with regional and global services (Navipedia: BeiDou)">BeiDou</abbr>
+interface specifications give none; canvodpy uses those records for 4
+hours too, 2 hours on either side of their time of ephemeris. A <abbr title="GLObal NAvigation Satellite System — Russian constellation using FDMA and CDMA signals (Navipedia: GLONASS)">GLONASS</abbr>
+record is used within 15 minutes of its time, the interval over which the
+ICD keeps its luni-solar acceleration constant (A.3.1.2). <abbr title="GLObal NAvigation Satellite System — Russian constellation using FDMA and CDMA signals (Navipedia: GLONASS)">GLONASS</abbr> records
+are in UTC; canvodpy converts them to <abbr title="Global Positioning System — US satellite navigation constellation, 31 SVs in 6 orbital planes (Navipedia: GPS)">GPS</abbr> time with the leap seconds of
+the date. An <abbr title="Satellite-Based Augmentation System — geostationary broadcasts providing integrity and corrections (Navipedia: SBAS)">SBAS</abbr> record is used within 6 minutes of its time, the
+time-out of the GEO navigation message for en route, terminal and
+non-precision approach (RTCA DO-229D, Table 2-1 and Table A-25). The
+standard counts the time-out from the end of reception; a <abbr title="Receiver Independent Exchange Format — standard ASCII format for GNSS observations, defined by IGS (Navipedia: RINEX)">RINEX</abbr>
+navigation file keeps no reception time, so canvodpy takes the 6 minutes
+on either side of the record's time.</p>
+<p>A satellite with no valid record at an epoch has NaN angles there,
+never extrapolated ones. The run names these satellites with their
+epochs, per receiver-day and in the log book (see
+<a href="../../../guides/diagnostics/#satellites-without-a-position">Satellites without a position</a>).</p>
+<p>Records flagged unhealthy are still used.</p>
+<p><code>ephemeris_source: broadcast</code> supports <abbr title="Septentrio Binary Format — proprietary binary telemetry from Septentrio receivers; embeds satellite geometry">SBF</abbr> and <abbr title="Receiver Independent Exchange Format — standard ASCII format for GNSS observations, defined by IGS (Navipedia: RINEX)">RINEX</abbr> files. NMEA receivers
+and receivers read by a reader plugin take their angles from the precise
+ephemeris only: under <code>broadcast</code>, <code>canvodpy run</code> and
+<code>canvodpy config validate</code> refuse a site with NMEA receivers, and the run
+refuses the others once their files show the format.</p>
+<p>A day without navigation files stops the run, with an error that names the
+receiver, the day, and the folder searched. There is no fallback to the
+precise ephemeris.</p>
+<h3 id="configuration_2">Configuration<a class="headerlink" href="#configuration_2" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><span class="nt">processing</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">params</span><span class="p">:</span>
+<span class="w">    </span><span class="nt">ephemeris_source</span><span class="p">:</span><span class="w"> </span><span class="s">"broadcast"</span>
+<span class="nt">sites</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">&lt;site&gt;</span><span class="p">:</span>
+<span class="w">    </span><span class="nt">receivers</span><span class="p">:</span>
+<span class="w">      </span><span class="nt">canopy_01</span><span class="p">:</span>
+<span class="w">        </span><span class="nt">directory</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">02_canopy</span>
+<span class="w">        </span><span class="nt">nav_directory</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">02_canopy_nav</span>
+<span class="w">        </span><span class="nt">reader_format</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">rinex3</span>
+</code></pre></div>
+<p>Under <code>broadcast</code>, <code>canvodpy run</code> and <code>canvodpy config validate</code> refuse a
+site with a receiver whose <code>reader_format</code> is a <abbr title="Receiver Independent Exchange Format — standard ASCII format for GNSS observations, defined by IGS (Navipedia: RINEX)">RINEX</abbr> format but that has
+no <code>nav_directory</code>; in shared-position mode, reference receivers are
+exempt. Only the site a run processes is checked, so one settings file
+can hold sites that a broadcast run can't process. In Airflow, <code>check_day</code> waits for the
+navigation files as it waits for the observation files.</p>
 <hr />
 <h2 id="receiver-file-types-summary">Receiver file types summary<a class="headerlink" href="#receiver-file-types-summary" title="Permanent link">&para;</a></h2>
 <table>
@@ -4842,11 +4895,11 @@ target epoch, not simply the first record found.</p>
 <td>Observations + broadcast geometry</td>
 </tr>
 <tr>
-<td><code>.YYp</code></td>
+<td><code>.YYp</code> / <code>.nav</code></td>
 <td><abbr title="Receiver Independent Exchange Format — standard ASCII format for GNSS observations, defined by IGS (Navipedia: RINEX)">RINEX</abbr> 3 NAV (mixed)</td>
 <td style="text-align: center;">No</td>
 <td style="text-align: center;"><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.3.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2026 Fonticons, Inc.--><path fill="currentColor" d="M434.8 70.1c14.3 10.4 17.5 30.4 7.1 44.7l-256 352c-5.5 7.6-14 12.3-23.4 13.1s-18.5-2.7-25.1-9.3l-128-128c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0l101.5 101.5 234-321.7c10.4-14.3 30.4-17.5 44.7-7.1z"/></svg></span></td>
-<td>Not read (planned)</td>
+<td>Broadcast ephemeris (<abbr title="Global Positioning System — US satellite navigation constellation, 31 SVs in 6 orbital planes (Navipedia: GPS)">GPS</abbr>, <abbr title="European Global Navigation Satellite System — 30 SVs, dual-frequency civilian design (Navipedia: Galileo)">Galileo</abbr>, <abbr title="GLObal NAvigation Satellite System — Russian constellation using FDMA and CDMA signals (Navipedia: GLONASS)">GLONASS</abbr>, <abbr title="BeiDou Navigation Satellite System — Chinese constellation with regional and global services (Navipedia: BeiDou)">BeiDou</abbr>, <abbr title="Quasi-Zenith Satellite System — Japanese regional augmentation optimised for urban canyons (Navipedia: QZSS)">QZSS</abbr>, <abbr title="Satellite-Based Augmentation System — geostationary broadcasts providing integrity and corrections (Navipedia: SBAS)">SBAS</abbr> so far), canonical type <code>nav</code></td>
 </tr>
 <tr>
 <td><code>.YYn</code></td>
@@ -4857,7 +4910,7 @@ target epoch, not simply the first record found.</p>
 </tr>
 <tr>
 <td><code>.YYg</code></td>
-<td><abbr title="Receiver Independent Exchange Format — standard ASCII format for GNSS observations, defined by IGS (Navipedia: RINEX)">RINEX</abbr> NAV (<abbr title="GLObal NAvigation Satellite System — Russian constellation using FDMA and CDMA signals (Navipedia: GLONASS)">GLONASS</abbr>)</td>
+<td><abbr title="Receiver Independent Exchange Format — standard ASCII format for GNSS observations, defined by IGS (Navipedia: RINEX)">RINEX</abbr> 2 NAV (<abbr title="GLObal NAvigation Satellite System — Russian constellation using FDMA and CDMA signals (Navipedia: GLONASS)">GLONASS</abbr>)</td>
 <td style="text-align: center;">No</td>
 <td style="text-align: center;"><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.3.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2026 Fonticons, Inc.--><path fill="currentColor" d="M434.8 70.1c14.3 10.4 17.5 30.4 7.1 44.7l-256 352c-5.5 7.6-14 12.3-23.4 13.1s-18.5-2.7-25.1-9.3l-128-128c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0l101.5 101.5 234-321.7c10.4-14.3 30.4-17.5 44.7-7.1z"/></svg></span></td>
 <td>Not read (planned)</td>
@@ -4867,7 +4920,7 @@ target epoch, not simply the first record found.</p>
 <td>NMEA 0183</td>
 <td style="text-align: center;"><abbr title="Signal-to-Noise Ratio — carrier power relative to noise floor, in dB-Hz. Key observable for GNSS transmissometry. (Navipedia: GNSS Measurements)">SNR</abbr> only</td>
 <td style="text-align: center;">No</td>
-<td>Observations (<code>NmeaObs</code>); geometry from <abbr title="Standard Product 3 — precise satellite orbit (position ± ~2 cm) file format, produced by IGS analysis centres (Navipedia: SP3)">SP3</abbr></td>
+<td>Observations (<code>NmeaObs</code>); geometry from <abbr title="Standard Product 3 — precise satellite orbit file format, produced by IGS analysis centres (Navipedia: SP3)">SP3</abbr></td>
 </tr>
 <tr>
 <td><code>.ubx</code></td>
@@ -4882,26 +4935,27 @@ target epoch, not simply the first record found.</p>
 <p class="admonition-title">NMEA is not an ephemeris source</p>
 <p>NMEA GSV sentences carry satellite elevation and azimuth in whole
 degrees. <code>NmeaObs</code> reads the signal strengths only; the geometry of
-NMEA data comes from <abbr title="Standard Product 3 — precise satellite orbit (position ± ~2 cm) file format, produced by IGS analysis centres (Navipedia: SP3)">SP3</abbr> files and the receiver position of the GGA
+NMEA data comes from <abbr title="Standard Product 3 — precise satellite orbit file format, produced by IGS analysis centres (Navipedia: SP3)">SP3</abbr> files and the receiver position of the GGA
 fixes (<a href="../overview/">readers overview</a>).</p>
 </div>
 <hr />
 <h2 id="choosing-an-ephemeris-source">Choosing an ephemeris source<a class="headerlink" href="#choosing-an-ephemeris-source" title="Permanent link">&para;</a></h2>
 <details class="question">
-<summary>When to use agency final products</summary>
-<p>Use <code>ephemeris_source: "final"</code> when:</p>
+<summary>When to use the precise ephemeris</summary>
+<p>Use <code>ephemeris_source: "precise"</code> when:</p>
 <ul>
-<li>The receivers write <abbr title="Receiver Independent Exchange Format — standard ASCII format for GNSS observations, defined by IGS (Navipedia: RINEX)">RINEX</abbr> or NMEA (the only source for them)</li>
-<li>Final products are available for the days (about two weeks after
-  observation)</li>
+<li>The receivers write NMEA (the only source for them), or <abbr title="Receiver Independent Exchange Format — standard ASCII format for GNSS observations, defined by IGS (Navipedia: RINEX)">RINEX</abbr>
+  without navigation files</li>
+<li>Final products are available for the days</li>
 <li>You have internet access during processing</li>
 </ul>
 </details>
 <details class="question">
-<summary>When to use broadcast ephemerides</summary>
+<summary>When to use the broadcast ephemeris</summary>
 <p>Use <code>ephemeris_source: "broadcast"</code> when:</p>
 <ul>
-<li>The receivers write <abbr title="Septentrio Binary Format — proprietary binary telemetry from Septentrio receivers; embeds satellite geometry">SBF</abbr> (the geometry is embedded in the file)</li>
+<li>The receivers write <abbr title="Septentrio Binary Format — proprietary binary telemetry from Septentrio receivers; embeds satellite geometry">SBF</abbr> (the geometry is embedded in the file), or
+  <abbr title="Receiver Independent Exchange Format — standard ASCII format for GNSS observations, defined by IGS (Navipedia: RINEX)">RINEX</abbr> navigation files next to their <abbr title="Receiver Independent Exchange Format — standard ASCII format for GNSS observations, defined by IGS (Navipedia: RINEX)">RINEX</abbr> observations</li>
 <li>Processing recent data, before final products are published</li>
 <li>Working offline</li>
 </ul>

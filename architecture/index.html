@@ -590,7 +590,7 @@
   <span class="md-ellipsis">
     
   
-  What's new in v1.0.0
+  What's new
 
     
   </span>
@@ -4399,8 +4399,9 @@ editable mode, from one lock file, so all packages are developed and tested
 against the same versions of their dependencies. Each package is
 published to <abbr title="Python Package Index — public Python package repository">PyPI</abbr> on its own, all of them except <code>canvod-preflight</code> so
 far, so you can install only the parts you need:</p>
-<div class="highlight"><pre><span></span><code>uv<span class="w"> </span>add<span class="w"> </span>canvod-readers<span class="w">   </span><span class="c1"># the readers only</span>
-uv<span class="w"> </span>add<span class="w"> </span>canvodpy<span class="w">         </span><span class="c1"># everything</span>
+<div class="highlight"><pre><span></span><code>uv<span class="w"> </span>add<span class="w"> </span>canvod-readers<span class="w">     </span><span class="c1"># the readers only</span>
+uv<span class="w"> </span>add<span class="w"> </span>canvodpy<span class="w">           </span><span class="c1"># everything</span>
+uv<span class="w"> </span>tool<span class="w"> </span>install<span class="w"> </span>canvodpy<span class="w">  </span><span class="c1"># the command line, as a uv tool</span>
 </code></pre></div>
 <hr />
 <h2 id="what-a-run-does">What a run does<a class="headerlink" href="#what-a-run-does" title="Permanent link">&para;</a></h2>
@@ -4437,9 +4438,10 @@ only; the Airflow <abbr title="Directed Acyclic Graph — task dependency struct
    <code>reader_format</code> in the settings of the receiver, or is detected from the
    files.</li>
 <li><strong>Prepare each day.</strong> For each day, the run gets the satellite orbits
-   (<abbr title="Standard Product 3 — precise satellite orbit (position ± ~2 cm) file format, produced by IGS analysis centres (Navipedia: SP3)">SP3</abbr>) and, if <code>aux_data.fetch_clock</code> is <code>true</code>, the satellite
+   (<abbr title="Standard Product 3 — precise satellite orbit file format, produced by IGS analysis centres (Navipedia: SP3)">SP3</abbr>) and, if <code>aux_data.fetch_clock</code> is <code>true</code>, the satellite
    clocks (<abbr title="Clock — precise satellite and station clock correction file (30 s intervals), companion to SP3 orbits">CLK</abbr>), and interpolates them onto the epochs of the day: orbits
-   with cubic Hermite splines, clocks piecewise linearly. Without a NASA
+   with a polynomial of degree 10 (or the cubic Hermite spline of v1.0.0,
+   <code>aux_data.sp3_interpolation</code>), clocks piecewise linearly. Without a NASA
    Earthdata account in the settings, the files come from ESA; with one,
    from NASA <abbr title="Crustal Dynamics Data Information System — NASA archive for GNSS orbits, clocks, and observation data">CDDIS</abbr> first and from ESA if that fails. For <abbr title="Septentrio Binary Format — proprietary binary telemetry from Septentrio receivers; embeds satellite geometry">SBF</abbr> files, the
    setting <code>ephemeris_source: broadcast</code> uses the satellite angles that the

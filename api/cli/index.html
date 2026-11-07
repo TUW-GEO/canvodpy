@@ -590,7 +590,7 @@
   <span class="md-ellipsis">
     
   
-  What's new in v1.0.0
+  What's new
 
     
   </span>
@@ -3960,6 +3960,34 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#canvodpy-logs" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        <code>canvodpy logs</code>
+      </span>
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="canvodpy logs">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#canvodpy-logs-collect" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        <code>canvodpy logs collect</code>
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#in-the-terminal" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
@@ -4607,6 +4635,34 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#canvodpy-logs" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        <code>canvodpy logs</code>
+      </span>
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="canvodpy logs">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#canvodpy-logs-collect" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        <code>canvodpy logs collect</code>
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#in-the-terminal" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
@@ -4746,6 +4802,7 @@ text in the terminal. For a walk through a first run, see
 <li><code>config</code>: Create, check, show, and edit...</li>
 <li><code>store</code>: Inspect the <abbr title="Version-controlled cloud-native tensor storage engine — git-like snapshots over Zarr v3 chunks">Icechunk</abbr> stores of the sites...</li>
 <li><code>stac</code>: Write the <abbr title="SpatioTemporal Asset Catalog — open specification for geospatial metadata and search">STAC</abbr> catalog of every store...</li>
+<li><code>logs</code>: Copy the log folder of this machine, to...</li>
 </ul>
 <h2 id="canvodpy-run"><code>canvodpy run</code><a class="headerlink" href="#canvodpy-run" title="Permanent link">&para;</a></h2>
 <p>Process <abbr title="Global Navigation Satellite System — umbrella term for GPS, Galileo, GLONASS, BeiDou, etc. (Navipedia: GNSS)">GNSS</abbr> observations into <abbr title="Version-controlled cloud-native tensor storage engine — git-like snapshots over Zarr v3 chunks">Icechunk</abbr> stores and compute <abbr title="Vegetation Optical Depth — dimensionless measure of microwave attenuation through vegetation canopy (τ = −ln(T)·cos θ)">VOD</abbr>.</p>
@@ -4767,7 +4824,7 @@ the run stopped.</p>
 <li><code>--workers &lt;int&gt;</code>: Number of worker processes. Default: from the resource settings in canvod-settings.yaml.</li>
 <li><code>-c, --config-dir &lt;path|url&gt;</code>: Configuration directory, holding canvod-settings.yaml and recipes/, or the URL of a settings file in a GitHub repository, fetched by each run (<a href="https://raw.githubusercontent.com/">https://raw.githubusercontent.com/</a><account>/<repo>/<commit, tag or branch>/.../canvod-settings.yaml). Default: $CANVOD_CONFIG_DIR, else config/ of the canvodpy checkout, else ~/.config/canvodpy.</li>
 <li><code>--config &lt;str&gt;</code>: Settings file whose values replace those of canvod-settings.yaml.</li>
-<li><code>--ephemeris-source &lt;final|broadcast&gt;</code>: Where the satellite orbits and clocks come from: final uses the <abbr title="Standard Product 3 — precise satellite orbit (position ± ~2 cm) file format, produced by IGS analysis centres (Navipedia: SP3)">SP3</abbr> and <abbr title="Clock — precise satellite and station clock correction file (30 s intervals), companion to SP3 orbits">CLK</abbr> products of an analysis center, broadcast uses the SatVisibility blocks of the <abbr title="Septentrio Binary Format — proprietary binary telemetry from Septentrio receivers; embeds satellite geometry">SBF</abbr> files. Default: from canvod-settings.yaml.</li>
+<li><code>--ephemeris-source &lt;precise|broadcast|final&gt;</code>: Where the satellite orbits and clocks come from: precise uses the <abbr title="Standard Product 3 — precise satellite orbit file format, produced by IGS analysis centres (Navipedia: SP3)">SP3</abbr> and <abbr title="Clock — precise satellite and station clock correction file (30 s intervals), companion to SP3 orbits">CLK</abbr> products of an analysis center, broadcast uses the broadcast ephemeris the receiver recorded: the SatVisibility blocks of <abbr title="Septentrio Binary Format — proprietary binary telemetry from Septentrio receivers; embeds satellite geometry">SBF</abbr> files, or the <abbr title="Receiver Independent Exchange Format — standard ASCII format for GNSS observations, defined by IGS (Navipedia: RINEX)">RINEX</abbr> navigation files in each receiver's nav_directory (final: old name of precise). Default: from canvod-settings.yaml.</li>
 <li><code>--vod-calculator &lt;tau_omega&gt;</code>: <abbr title="Vegetation Optical Depth — dimensionless measure of microwave attenuation through vegetation canopy (τ = −ln(T)·cos θ)">VOD</abbr> calculator to use.  [default: tau_omega]</li>
 <li><code>--write-catalog</code>: After the run, write the latest <abbr title="SpatioTemporal Asset Catalog — open specification for geospatial metadata and search">STAC</abbr> catalog of every store under the data root, as <code>canvodpy stac write</code> does.</li>
 <li><code>--dashboard</code>: Start the marimo performance dashboard next to this run, in a process of its own. Its startup messages go to a log file, not to this terminal.</li>
@@ -4882,6 +4939,8 @@ listed, and the command exits with code 1.</p>
 <li><code>--config &lt;path&gt;</code>: Settings file whose values replace those of canvod-settings.yaml.</li>
 <li><code>--site &lt;str&gt;</code>: Check the data of this site only. Repeat for several sites. Default: all sites.</li>
 <li><code>--check-sampling / --no-check-sampling</code>: Read the first file of the first and the last day of each receiver and compare the sampling interval of its data with the one in its canonical name.  [default: check-sampling]</li>
+<li><code>--start &lt;str&gt;</code>: Check the data from this day on, in YYYYDOY format, for example 2025001. Default: the first day with files.</li>
+<li><code>--end &lt;str&gt;</code>: Check the data up to this day, in YYYYDOY format, for example 2025007. Default: the last day with files.</li>
 <li><code>--help</code>: Show this message and exit.</li>
 </ul>
 <h3 id="canvodpy-config-show"><code>canvodpy config show</code><a class="headerlink" href="#canvodpy-config-show" title="Permanent link">&para;</a></h3>
@@ -5241,6 +5300,44 @@ catalog is written.</p>
 <ul>
 <li><code>--root &lt;path&gt;</code>: Data root to catalog. Default: storage.stores_root_dir in the settings.</li>
 <li><code>-c, --config-dir &lt;path|url&gt;</code>: Configuration directory, holding canvod-settings.yaml and recipes/, or the URL of a settings file in a GitHub repository, fetched by each run (<a href="https://raw.githubusercontent.com/">https://raw.githubusercontent.com/</a><account>/<repo>/<commit, tag or branch>/.../canvod-settings.yaml). Default: $CANVOD_CONFIG_DIR, else config/ of the canvodpy checkout, else ~/.config/canvodpy.</li>
+<li><code>--help</code>: Show this message and exit.</li>
+</ul>
+<h2 id="canvodpy-logs"><code>canvodpy logs</code><a class="headerlink" href="#canvodpy-logs" title="Permanent link">&para;</a></h2>
+<p>Copy the log folder of this machine, to send it on.</p>
+<p><strong>Usage</strong>:</p>
+<div class="highlight"><pre><span></span><code><span class="gp">$ </span>canvodpy<span class="w"> </span>logs<span class="w"> </span><span class="o">[</span>OPTIONS<span class="o">]</span><span class="w"> </span>COMMAND<span class="w"> </span><span class="o">[</span>ARGS<span class="o">]</span>...
+</code></pre></div>
+<p><strong>Options</strong>:</p>
+<ul>
+<li><code>--help</code>: Show this message and exit.</li>
+</ul>
+<p><strong>Commands</strong>:</p>
+<ul>
+<li><code>collect</code>: Copy the log folder of the settings to DEST.</li>
+</ul>
+<h3 id="canvodpy-logs-collect"><code>canvodpy logs collect</code><a class="headerlink" href="#canvodpy-logs-collect" title="Permanent link">&para;</a></h3>
+<p>Copy the log folder of the settings to DEST.</p>
+<p>Every log file is copied with its folders (human/, machine/,
+component/). The run history is copied through SQLite, with the
+records a running run hasn't merged out of its WAL file yet, as one
+file. Nothing in DEST is overwritten: it must be new or empty. A log
+file that is removed or renamed during the copy, as a running run's
+log rotation does, is left out, and the command says how many.</p>
+<p>With --run-id, DEST gets that run's records of the run history and its
+events, from the main process and the workers, in DEST/<run-id>.json.
+The readable logs are left out: they mix runs.</p>
+<p><strong>Usage</strong>:</p>
+<div class="highlight"><pre><span></span><code><span class="gp">$ </span>canvodpy<span class="w"> </span>logs<span class="w"> </span>collect<span class="w"> </span><span class="o">[</span>OPTIONS<span class="o">]</span><span class="w"> </span><span class="o">{</span>dest<span class="o">}</span>
+</code></pre></div>
+<p><strong>Arguments</strong>:</p>
+<ul>
+<li><code>dest</code>: New or empty folder for the copy.  [required]</li>
+</ul>
+<p><strong>Options</strong>:</p>
+<ul>
+<li><code>--run-id &lt;str&gt;</code>: Copy only this run: its records of the run history and its events from machine/agent*.json, as DEST/<run-id>.json.</li>
+<li><code>-c, --config-dir &lt;path|url&gt;</code>: Configuration directory, holding canvod-settings.yaml and recipes/, or the URL of a settings file in a GitHub repository, fetched by each run (<a href="https://raw.githubusercontent.com/">https://raw.githubusercontent.com/</a><account>/<repo>/<commit, tag or branch>/.../canvod-settings.yaml). Default: $CANVOD_CONFIG_DIR, else config/ of the canvodpy checkout, else ~/.config/canvodpy.</li>
+<li><code>--config &lt;path&gt;</code>: Settings file whose values replace those of canvod-settings.yaml.</li>
 <li><code>--help</code>: Show this message and exit.</li>
 </ul>
 <h2 id="in-the-terminal">In the terminal<a class="headerlink" href="#in-the-terminal" title="Permanent link">&para;</a></h2>

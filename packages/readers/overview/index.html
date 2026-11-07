@@ -595,7 +595,7 @@
   <span class="md-ellipsis">
     
   
-  What's new in v1.0.0
+  What's new
 
     
   </span>
@@ -4453,7 +4453,7 @@
 plain-text format for <abbr title="Global Navigation Satellite System — umbrella term for GPS, Galileo, GLONASS, BeiDou, etc. (Navipedia: GNSS)">GNSS</abbr> observations, supported by every major receiver manufacturer.
 Observation files (<code>.rnx</code>) contain timestamped pseudorange, carrier phase, Doppler, and
 signal-to-noise measurements per satellite and signal.
-Satellite geometry is not embedded; it requires external <abbr title="Standard Product 3 — precise satellite orbit (position ± ~2 cm) file format, produced by IGS analysis centres (Navipedia: SP3)">SP3</abbr> precise ephemerides
+Satellite geometry is not embedded; it requires external <abbr title="Standard Product 3 — precise satellite orbit file format, produced by IGS analysis centres (Navipedia: SP3)">SP3</abbr> precise ephemerides
 (<abbr title="Clock — precise satellite and station clock correction file (30 s intervals), companion to SP3 orbits">CLK</abbr> clock corrections are fetched too by default, though unused for <abbr title="Vegetation Optical Depth — dimensionless measure of microwave attenuation through vegetation canopy (τ = −ln(T)·cos θ)">VOD</abbr>;
 see <code>aux_data.fetch_clock</code>).</p>
 <p><a href="../rinex-format/"><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13.22 19.03a.75.75 0 0 1 0-1.06L18.19 13H3.75a.75.75 0 0 1 0-1.5h14.44l-4.97-4.97a.749.749 0 0 1 .326-1.275.75.75 0 0 1 .734.215l6.25 6.25a.75.75 0 0 1 0 1.06l-6.25 6.25a.75.75 0 0 1-1.06 0"/></svg></span> <abbr title="Receiver Independent Exchange Format — standard ASCII format for GNSS observations, defined by IGS (Navipedia: RINEX)">RINEX</abbr> format</a></p>
@@ -4540,10 +4540,10 @@ day none of whose files has such a fix can't be processed.</p>
 </tr>
 <tr>
 <td>Satellite geometry (<span class="arithmatex">\(\theta\)</span>, <span class="arithmatex">\(\varphi\)</span>)</td>
-<td><abbr title="Standard Product 3 — precise satellite orbit (position ± ~2 cm) file format, produced by IGS analysis centres (Navipedia: SP3)">SP3</abbr> download</td>
-<td><abbr title="Standard Product 3 — precise satellite orbit (position ± ~2 cm) file format, produced by IGS analysis centres (Navipedia: SP3)">SP3</abbr> download</td>
-<td><abbr title="Standard Product 3 — precise satellite orbit (position ± ~2 cm) file format, produced by IGS analysis centres (Navipedia: SP3)">SP3</abbr> download, or <strong>embedded</strong> (SatVisibility)</td>
-<td><abbr title="Standard Product 3 — precise satellite orbit (position ± ~2 cm) file format, produced by IGS analysis centres (Navipedia: SP3)">SP3</abbr> download</td>
+<td><abbr title="Standard Product 3 — precise satellite orbit file format, produced by IGS analysis centres (Navipedia: SP3)">SP3</abbr> download</td>
+<td><abbr title="Standard Product 3 — precise satellite orbit file format, produced by IGS analysis centres (Navipedia: SP3)">SP3</abbr> download</td>
+<td><abbr title="Standard Product 3 — precise satellite orbit file format, produced by IGS analysis centres (Navipedia: SP3)">SP3</abbr> download, or <strong>embedded</strong> (SatVisibility)</td>
+<td><abbr title="Standard Product 3 — precise satellite orbit file format, produced by IGS analysis centres (Navipedia: SP3)">SP3</abbr> download</td>
 </tr>
 <tr>
 <td>Extra metadata</td>
@@ -4562,7 +4562,7 @@ day none of whose files has such a fix can't be processed.</p>
 </tbody>
 </table>
 <p>Every reader has <code>to_ds()</code> and <code>iter_epochs()</code>. Every epoch is <abbr title="Global Positioning System — US satellite navigation constellation, 31 SVs in 6 orbital planes (Navipedia: GPS)">GPS</abbr> time,
-the time scale of the orbits and clocks (<abbr title="Standard Product 3 — precise satellite orbit (position ± ~2 cm) file format, produced by IGS analysis centres (Navipedia: SP3)">SP3</abbr>, <abbr title="Clock — precise satellite and station clock correction file (30 s intervals), companion to SP3 orbits">CLK</abbr>), recorded in the
+the time scale of the orbits and clocks (<abbr title="Standard Product 3 — precise satellite orbit file format, produced by IGS analysis centres (Navipedia: SP3)">SP3</abbr>, <abbr title="Clock — precise satellite and station clock correction file (30 s intervals), companion to SP3 orbits">CLK</abbr>), recorded in the
 <code>time_system</code> attribute of the <code>epoch</code> coordinate (<code>GPS</code>). NMEA times are
 UTC: the reader adds the leap seconds of the date (<span class="arithmatex">\(\text{GPS} - \text{UTC}\)</span>, 18 s since
 2017; <code>canvod.readers.gnss_specs.leap_seconds</code>). Stores written before
@@ -4577,7 +4577,7 @@ is one signal (a <abbr title="Signal Identifier — canVODpy format: SV|Band|Cod
 <abbr title="Signal-to-Noise Ratio — carrier power relative to noise floor, in dB-Hz. Key observable for GNSS transmissometry. (Navipedia: GNSS Measurements)">SNR</abbr>, with its unit in the <code>units</code> attribute. The same dimensions, coordinates, and required attributes
 are guaranteed, so downstream analysis code is reader-agnostic for observables.
 Geometry provisioning differs: <abbr title="Receiver Independent Exchange Format — standard ASCII format for GNSS observations, defined by IGS (Navipedia: RINEX)">RINEX</abbr> datasets are augmented with satellite
-positions from <abbr title="Standard Product 3 — precise satellite orbit (position ± ~2 cm) file format, produced by IGS analysis centres (Navipedia: SP3)">SP3</abbr> files (by default <abbr title="Clock — precise satellite and station clock correction file (30 s intervals), companion to SP3 orbits">CLK</abbr> too, which is optional; see
+positions from <abbr title="Standard Product 3 — precise satellite orbit file format, produced by IGS analysis centres (Navipedia: SP3)">SP3</abbr> files (by default <abbr title="Clock — precise satellite and station clock correction file (30 s intervals), companion to SP3 orbits">CLK</abbr> too, which is optional; see
 <code>aux_data.fetch_clock</code>); <abbr title="Septentrio Binary Format — proprietary binary telemetry from Septentrio receivers; embeds satellite geometry">SBF</abbr> datasets carry embedded SatVisibility
 data from the receiver.</p>
 </div>
@@ -4585,9 +4585,9 @@ data from the receiver.</p>
 <h2 id="design">Design<a class="headerlink" href="#design" title="Permanent link">&para;</a></h2>
 <h3 id="data-flow">Data flow<a class="headerlink" href="#data-flow" title="Permanent link">&para;</a></h3>
 <pre class="mermaid"><code>graph TD
-    A1["RINEX v3 File (.rnx)"] --&gt; B1["Rnxv3Obs (+ SP3/CLK)"]
+    A1["RINEX v3 File (.rnx)"] --&gt; B1["Rnxv3Obs (+ SP3/CLK or RINEX nav)"]
     A2["SBF File (.sbf)"] --&gt; B2["SbfReader"]
-    A3["RINEX v2 File (.YYo)"] --&gt; B3["Rnxv2Obs (+ SP3/CLK)"]
+    A3["RINEX v2 File (.YYo)"] --&gt; B3["Rnxv2Obs (+ SP3/CLK or RINEX nav)"]
     A4["NMEA File (.nmea)"] --&gt; B4["NmeaObs (+ SP3/CLK)"]
     B1 --&gt; C["validate_dataset()"]
     B3 --&gt; C

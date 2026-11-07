@@ -595,7 +595,7 @@
   <span class="md-ellipsis">
     
   
-  What's new in v1.0.0
+  What's new
 
     
   </span>
@@ -1056,6 +1056,17 @@
     <span class="md-ellipsis">
       <span class="md-typeset">
         <code>processing.aux_data.product_type</code>
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#processing-aux_data-sp3_interpolation" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        <code>processing.aux_data.sp3_interpolation</code>
       </span>
     </span>
   </a>
@@ -2561,6 +2572,28 @@
     <span class="md-ellipsis">
       <span class="md-typeset">
         <code>sites.&lt;site&gt;.receivers.&lt;receiver&gt;.reader_format</code>
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#sites-site-receivers-receiver-nav_directory" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        <code>sites.&lt;site&gt;.receivers.&lt;receiver&gt;.nav_directory</code>
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#sites-site-receivers-receiver-nav_recipe" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        <code>sites.&lt;site&gt;.receivers.&lt;receiver&gt;.nav_recipe</code>
       </span>
     </span>
   </a>
@@ -6220,6 +6253,17 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#processing-aux_data-sp3_interpolation" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        <code>processing.aux_data.sp3_interpolation</code>
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#processing-aux_data-ftp_timeout_s" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
@@ -7725,6 +7769,28 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#sites-site-receivers-receiver-nav_directory" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        <code>sites.&lt;site&gt;.receivers.&lt;receiver&gt;.nav_directory</code>
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#sites-site-receivers-receiver-nav_recipe" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        <code>sites.&lt;site&gt;.receivers.&lt;receiver&gt;.nav_recipe</code>
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#sites-site-receivers-receiver-recipe" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
@@ -8106,16 +8172,22 @@ the terminal, run <code>canvodpy config explain SETTING</code>, for example
 <h3 id="processing-aux_data"><code>processing.aux_data</code><a class="headerlink" href="#processing-aux_data" title="Permanent link">&para;</a></h3>
 <p>The orbit and clock products to download</p>
 <h4 id="processing-aux_data-agency"><code>processing.aux_data.agency</code><a class="headerlink" href="#processing-aux_data-agency" title="Permanent link">&para;</a></h4>
-<p>Analysis center code</p>
+<p>Analysis center code. Only for the precise ephemeris: with <code>ephemeris_source</code> broadcast it is ignored (a value other than the default warns), and the store records it as empty.</p>
 <ul>
 <li>Type: text</li>
 <li>Default: <code>COD</code></li>
 </ul>
 <h4 id="processing-aux_data-product_type"><code>processing.aux_data.product_type</code><a class="headerlink" href="#processing-aux_data-product_type" title="Permanent link">&para;</a></h4>
-<p>Product type. The agency must publish it: see the product registry of canvod-auxiliary (<code>products.toml</code>).</p>
+<p>Product type. The agency must publish it: see the product registry of canvod-auxiliary (<code>products.toml</code>). Only for the precise ephemeris: with <code>ephemeris_source</code> broadcast it is ignored (a value other than the default warns), and the store records it as empty.</p>
 <ul>
 <li>Type: one of <code>final</code>, <code>rapid</code></li>
 <li>Default: <code>final</code></li>
+</ul>
+<h4 id="processing-aux_data-sp3_interpolation"><code>processing.aux_data.sp3_interpolation</code><a class="headerlink" href="#processing-aux_data-sp3_interpolation" title="Permanent link">&para;</a></h4>
+<p>How the orbits are interpolated onto the epochs of the observations. <code>lagrange</code>: the polynomial of degree 10 through the 11 nearest orbit epochs. <code>hermite</code>: the cubic Hermite spline through the positions and velocities, the method of canvodpy before <code>v1.1.0</code>. Despite the name, it also applies to the broadcast orbits of <abbr title="Receiver Independent Exchange Format — standard ASCII format for GNSS observations, defined by IGS (Navipedia: RINEX)">RINEX</abbr> navigation files. A store records it and refuses runs with the other method; a store created before <code>v1.1.0</code> counts as <code>hermite</code> (a broadcast store, from <abbr title="Septentrio Binary Format — proprietary binary telemetry from Septentrio receivers; embeds satellite geometry">SBF</abbr> files then, accepts either).</p>
+<ul>
+<li>Type: one of <code>lagrange</code>, <code>hermite</code></li>
+<li>Default: <code>lagrange</code></li>
 </ul>
 <h4 id="processing-aux_data-ftp_timeout_s"><code>processing.aux_data.ftp_timeout_s</code><a class="headerlink" href="#processing-aux_data-ftp_timeout_s" title="Permanent link">&para;</a></h4>
 <p><abbr title="File Transfer Protocol">FTP</abbr> connection timeout in seconds</p>
@@ -8125,7 +8197,7 @@ the terminal, run <code>canvodpy config explain SETTING</code>, for example
 <li>Default: <code>30</code></li>
 </ul>
 <h4 id="processing-aux_data-fetch_clock"><code>processing.aux_data.fetch_clock</code><a class="headerlink" href="#processing-aux_data-fetch_clock" title="Permanent link">&para;</a></h4>
-<p>Download and interpolate the <abbr title="Clock — precise satellite and station clock correction file (30 s intervals), companion to SP3 orbits">CLK</abbr> clock files with the <abbr title="Standard Product 3 — precise satellite orbit (position ± ~2 cm) file format, produced by IGS analysis centres (Navipedia: SP3)">SP3</abbr> orbit files. <abbr title="Vegetation Optical Depth — dimensionless measure of microwave attenuation through vegetation canopy (τ = −ln(T)·cos θ)">VOD</abbr> doesn't use clock corrections, so they are off; set true to add each satellite's clock correction to the <abbr title="Global Navigation Satellite System — umbrella term for GPS, Galileo, GLONASS, BeiDou, etc. (Navipedia: GNSS)">GNSS</abbr> store as the variable clock.</p>
+<p>Download and interpolate the <abbr title="Clock — precise satellite and station clock correction file (30 s intervals), companion to SP3 orbits">CLK</abbr> clock files with the <abbr title="Standard Product 3 — precise satellite orbit file format, produced by IGS analysis centres (Navipedia: SP3)">SP3</abbr> orbit files. <abbr title="Vegetation Optical Depth — dimensionless measure of microwave attenuation through vegetation canopy (τ = −ln(T)·cos θ)">VOD</abbr> doesn't use clock corrections, so they are off; set true to add each satellite's clock correction to the <abbr title="Global Navigation Satellite System — umbrella term for GPS, Galileo, GLONASS, BeiDou, etc. (Navipedia: GNSS)">GNSS</abbr> store as the variable clock.</p>
 <ul>
 <li>Type: true or false</li>
 <li>Default: <code>false</code></li>
@@ -8241,10 +8313,10 @@ the terminal, run <code>canvodpy config explain SETTING</code>, for example
 <li>Default: <code>null</code></li>
 </ul>
 <h4 id="processing-params-ephemeris_source"><code>processing.params.ephemeris_source</code><a class="headerlink" href="#processing-params-ephemeris_source" title="Permanent link">&para;</a></h4>
-<p><code>final</code>: compute satellite coordinates from agency final products (<abbr title="Standard Product 3 — precise satellite orbit (position ± ~2 cm) file format, produced by IGS analysis centres (Navipedia: SP3)">SP3</abbr>/<abbr title="Clock — precise satellite and station clock correction file (30 s intervals), companion to SP3 orbits">CLK</abbr>). <code>broadcast</code>: use broadcast ephemerides from <abbr title="Septentrio Binary Format — proprietary binary telemetry from Septentrio receivers; embeds satellite geometry">SBF</abbr> SatVisibility blocks (<abbr title="Septentrio Binary Format — proprietary binary telemetry from Septentrio receivers; embeds satellite geometry">SBF</abbr> <code>reader_format</code> only, skips <abbr title="Standard Product 3 — precise satellite orbit (position ± ~2 cm) file format, produced by IGS analysis centres (Navipedia: SP3)">SP3</abbr>/<abbr title="Clock — precise satellite and station clock correction file (30 s intervals), companion to SP3 orbits">CLK</abbr> download). Broadcast is faster but less accurate (~1-2 m orbit).</p>
+<p><code>precise</code>: compute satellite coordinates from the precise ephemeris of an analysis center (<abbr title="Standard Product 3 — precise satellite orbit file format, produced by IGS analysis centres (Navipedia: SP3)">SP3</abbr>/<abbr title="Clock — precise satellite and station clock correction file (30 s intervals), companion to SP3 orbits">CLK</abbr> products; agency and product type under <code>aux_data</code>). <code>broadcast</code>: use the broadcast ephemeris the receiver recorded: the SatVisibility angles of <abbr title="Septentrio Binary Format — proprietary binary telemetry from Septentrio receivers; embeds satellite geometry">SBF</abbr> files, or for <abbr title="Receiver Independent Exchange Format — standard ASCII format for GNSS observations, defined by IGS (Navipedia: RINEX)">RINEX</abbr> files the receiver's navigation files (<code>nav_directory</code>); no <abbr title="Standard Product 3 — precise satellite orbit file format, produced by IGS analysis centres (Navipedia: SP3)">SP3</abbr>/<abbr title="Clock — precise satellite and station clock correction file (30 s intervals), companion to SP3 orbits">CLK</abbr> download. <code>final</code> is a deprecated name for <code>precise</code>.</p>
 <ul>
-<li>Type: one of <code>final</code>, <code>broadcast</code></li>
-<li>Default: <code>final</code></li>
+<li>Type: one of <code>precise</code>, <code>broadcast</code></li>
+<li>Default: <code>precise</code></li>
 </ul>
 <h4 id="processing-params-store_sbf_raw_observables"><code>processing.params.store_sbf_raw_observables</code><a class="headerlink" href="#processing-params-store_sbf_raw_observables" title="Permanent link">&para;</a></h4>
 <p>When reading <abbr title="Septentrio Binary Format — proprietary binary telemetry from Septentrio receivers; embeds satellite geometry">SBF</abbr> files, also store the observables before the receiver's corrections: <code>SNR_raw</code> (before CN0HighRes), <code>Pseudorange_unsmoothed</code> (before the Hatch filter), <code>Pseudorange_raw</code> (before the Hatch and multipath filters), and <code>Phase_raw</code> (before the carrier multipath correction). Set to false to make the stores smaller when you don't need them.</p>
@@ -8452,13 +8524,13 @@ the terminal, run <code>canvodpy config explain SETTING</code>, for example
 <li>Default: <code>vod</code></li>
 </ul>
 <h4 id="processing-storage-aux_data_dir"><code>processing.storage.aux_data_dir</code><a class="headerlink" href="#processing-storage-aux_data_dir" title="Permanent link">&para;</a></h4>
-<p>Directory for downloaded auxiliary files (<abbr title="Standard Product 3 — precise satellite orbit (position ± ~2 cm) file format, produced by IGS analysis centres (Navipedia: SP3)">SP3</abbr>, <abbr title="Clock — precise satellite and station clock correction file (30 s intervals), companion to SP3 orbits">CLK</abbr>) and transient <abbr title="Chunked, compressed N-dimensional array storage format — cloud-native alternative to HDF5/NetCDF">Zarr</abbr> caches. Raw files persist; caches are rebuilt each run. Defaults to system temp directory if not set.</p>
+<p>Directory for downloaded auxiliary files (<abbr title="Standard Product 3 — precise satellite orbit file format, produced by IGS analysis centres (Navipedia: SP3)">SP3</abbr>, <abbr title="Clock — precise satellite and station clock correction file (30 s intervals), companion to SP3 orbits">CLK</abbr>) and transient <abbr title="Chunked, compressed N-dimensional array storage format — cloud-native alternative to HDF5/NetCDF">Zarr</abbr> caches. Raw files persist; caches are rebuilt each run, one per day, site and sampling interval, so runs of different sites can share the directory. Defaults to system temp directory if not set.</p>
 <ul>
 <li>Type: path, or null</li>
 <li>Default: <code>null</code></li>
 </ul>
 <h4 id="processing-storage-shared_aux_cache_dir"><code>processing.storage.shared_aux_cache_dir</code><a class="headerlink" href="#processing-storage-shared_aux_cache_dir" title="Permanent link">&para;</a></h4>
-<p>Folder of an orbit and clock cache that several sites share (<abbr title="Standard Product 3 — precise satellite orbit (position ± ~2 cm) file format, produced by IGS analysis centres (Navipedia: SP3)">SP3</abbr> and <abbr title="Clock — precise satellite and station clock correction file (30 s intervals), companion to SP3 orbits">CLK</abbr>, interpolated). null (default): no shared cache; each site's cache is in <code>aux_data_dir</code> and rebuilt every run. Orbit and clock products are the same for every site, so sites that point at the same folder share one cache entry per agency, product and date instead of each building its own.</p>
+<p>Folder of an orbit and clock cache that several sites share (<abbr title="Standard Product 3 — precise satellite orbit file format, produced by IGS analysis centres (Navipedia: SP3)">SP3</abbr> and <abbr title="Clock — precise satellite and station clock correction file (30 s intervals), companion to SP3 orbits">CLK</abbr>, interpolated). null (default): no shared cache; each site's cache is in <code>aux_data_dir</code> and rebuilt every run. Orbit and clock products are the same for every site, so sites that point at the same folder share one cache entry per agency, product and date instead of each building its own. With <code>ephemeris_source</code> broadcast the orbits of the navigation files are cached there too, one entry per date and content of the navigation files: receivers with the same files share it, and a changed or added file gives a new one.</p>
 <ul>
 <li>Type: path, or null</li>
 <li>Default: <code>null</code></li>
@@ -8831,6 +8903,18 @@ the terminal, run <code>canvodpy config explain SETTING</code>, for example
 <ul>
 <li>Type: text</li>
 <li>Default: <code>auto</code></li>
+</ul>
+<h4 id="sites-site-receivers-receiver-nav_directory"><code>sites.&lt;site&gt;.receivers.&lt;receiver&gt;.nav_directory</code><a class="headerlink" href="#sites-site-receivers-receiver-nav_directory" title="Permanent link">&para;</a></h4>
+<p>Subdirectory for the receiver's <abbr title="Receiver Independent Exchange Format — standard ASCII format for GNSS observations, defined by IGS (Navipedia: RINEX)">RINEX</abbr> navigation files, relative to the site data root like <code>directory</code> (it may be the same folder). Needed with <code>ephemeris_source</code> broadcast for a receiver with <abbr title="Receiver Independent Exchange Format — standard ASCII format for GNSS observations, defined by IGS (Navipedia: RINEX)">RINEX</abbr> files: the satellite positions come from these files. In shared-position mode a reference receiver uses its canopy's files instead: it needs none, and its own are not read. They need canonical names of type <code>nav</code>.</p>
+<ul>
+<li>Type: text, or null</li>
+<li>Default: <code>null</code></li>
+</ul>
+<h4 id="sites-site-receivers-receiver-nav_recipe"><code>sites.&lt;site&gt;.receivers.&lt;receiver&gt;.nav_recipe</code><a class="headerlink" href="#sites-site-receivers-receiver-nav_recipe" title="Permanent link">&para;</a></h4>
+<p>Naming recipe of the files in <code>nav_directory</code>, given like <code>recipe</code> (a name or a raw GitHub URL), with <code>file_type</code> <code>nav</code>. canvod-filemap has no file type <code>nav</code> yet, so a run with it stops with an error; leave it unset and give the navigation files canonical canVOD names.</p>
+<ul>
+<li>Type: text, or null</li>
+<li>Default: <code>null</code></li>
 </ul>
 <h4 id="sites-site-receivers-receiver-recipe"><code>sites.&lt;site&gt;.receivers.&lt;receiver&gt;.recipe</code><a class="headerlink" href="#sites-site-receivers-receiver-recipe" title="Permanent link">&para;</a></h4>
 <p>Naming recipe: a name (for example <code>examplesite_reference</code>), read from &lt;config dir&gt;/recipes/&lt;site&gt;/{recipe}.yaml, or a raw GitHub URL, fetched by every run (<code>https://raw.githubusercontent.com/&lt;account&gt;/&lt;repo&gt;/&lt;commit, tag or branch&gt;/.../{name}.yaml</code>); stores record only its file name. A recipe in a private repository needs a token in <code>GH_TOKEN</code> or <code>GITHUB_TOKEN</code>. Without a recipe, only files with canonical canVOD names are processed.</p>

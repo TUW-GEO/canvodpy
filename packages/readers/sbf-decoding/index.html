@@ -595,7 +595,7 @@
   <span class="md-ellipsis">
     
   
-  What's new in v1.0.0
+  What's new
 
     
   </span>
@@ -1747,6 +1747,17 @@
     <span class="md-ellipsis">
       <span class="md-typeset">
         Epoch timestamps
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#satellite-names" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Satellite names
       </span>
     </span>
   </a>
@@ -4371,6 +4382,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#satellite-names" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Satellite names
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#signal-number-decoding" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
@@ -4849,6 +4871,35 @@ starts at 00:00:00 of that day and its epochs lie on the receiver's
 sampling grid. (Earlier versions stored UTC, 18 s earlier: such stores
 start at 23:59:42 of the previous day.)</p>
 <hr />
+<h2 id="satellite-names">Satellite names<a class="headerlink" href="#satellite-names" title="Permanent link">&para;</a></h2>
+<p><strong>Source:</strong> <code>SVID</code> (u1), RefGuide-4.14.0 Table 4.1.9, p.255.</p>
+<p>Each block names a satellite by Septentrio's internal number, the SVID.
+The reader turns it into the <abbr title="Receiver Independent Exchange Format — standard ASCII format for GNSS observations, defined by IGS (Navipedia: RINEX)">RINEX</abbr> satellite name (<abbr title="Receiver Independent Exchange Format — standard ASCII format for GNSS observations, defined by IGS (Navipedia: RINEX)">RINEX</abbr> 3.04 §8.4), the
+same name the <abbr title="Receiver Independent Exchange Format — standard ASCII format for GNSS observations, defined by IGS (Navipedia: RINEX)">RINEX</abbr> readers give, so SIDs from <abbr title="Septentrio Binary Format — proprietary binary telemetry from Septentrio receivers; embeds satellite geometry">SBF</abbr> and <abbr title="Receiver Independent Exchange Format — standard ASCII format for GNSS observations, defined by IGS (Navipedia: RINEX)">RINEX</abbr> files match.
+For <abbr title="Satellite-Based Augmentation System — geostationary broadcasts providing integrity and corrections (Navipedia: SBAS)">SBAS</abbr> the <abbr title="Receiver Independent Exchange Format — standard ASCII format for GNSS observations, defined by IGS (Navipedia: RINEX)">RINEX</abbr> number is the <abbr title="Pseudo-Random Noise — unique code identifying a satellite signal slot (e.g. G01, E02). PRN ≠ SVN; PRNs can be reassigned. (Navipedia: GNSS signal)">PRN</abbr> minus 100:</p>
+<table>
+<thead>
+<tr>
+<th>SVID</th>
+<th><abbr title="Pseudo-Random Noise — unique code identifying a satellite signal slot (e.g. G01, E02). PRN ≠ SVN; PRNs can be reassigned. (Navipedia: GNSS signal)">PRN</abbr></th>
+<th>Name</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>120–140</td>
+<td>SVID</td>
+<td><code>S20</code>–<code>S40</code></td>
+</tr>
+<tr>
+<td>198–215</td>
+<td>SVID − 57</td>
+<td><code>S41</code>–<code>S58</code></td>
+</tr>
+</tbody>
+</table>
+<p>For example, EGNOS <abbr title="Pseudo-Random Noise — unique code identifying a satellite signal slot (e.g. G01, E02). PRN ≠ SVN; PRNs can be reassigned. (Navipedia: GNSS signal)">PRN</abbr> 123 (SVID 123) is <code>S23</code>.</p>
+<hr />
 <h2 id="signal-number-decoding">Signal number decoding<a class="headerlink" href="#signal-number-decoding" title="Permanent link">&para;</a></h2>
 <p><strong>Source:</strong> <code>MeasEpochChannelType1.Type</code> (u1), p.261, and <code>ObsInfo</code> (u1), p.262.</p>
 <p>The 5 least-significant bits of <code>Type</code> carry a <em>signal index</em>:</p>
@@ -5171,6 +5222,10 @@ Add to the stored carrier phase to recover the unmitigated phase.</p>
 <td>Slot-dependent <abbr title="Frequency Division Multiple Access — GLONASS signal multiplexing: each SV on a different frequency channel (Navipedia: GLONASS Signal Plan)">FDMA</abbr> formula required for <span class="arithmatex">\(\lambda\)</span> and Type2 Doppler</td>
 </tr>
 <tr>
+<td><strong>Satellite name</strong></td>
+<td><abbr title="Satellite-Based Augmentation System — geostationary broadcasts providing integrity and corrections (Navipedia: SBAS)">SBAS</abbr>: <abbr title="Pseudo-Random Noise — unique code identifying a satellite signal slot (e.g. G01, E02). PRN ≠ SVN; PRNs can be reassigned. (Navipedia: GNSS signal)">PRN</abbr> <span class="arithmatex">\(-\)</span> 100, as in <abbr title="Receiver Independent Exchange Format — standard ASCII format for GNSS observations, defined by IGS (Navipedia: RINEX)">RINEX</abbr> (<abbr title="Pseudo-Random Noise — unique code identifying a satellite signal slot (e.g. G01, E02). PRN ≠ SVN; PRNs can be reassigned. (Navipedia: GNSS signal)">PRN</abbr> 123 <span class="arithmatex">\(\rightarrow\)</span> <code>S23</code>)</td>
+</tr>
+<tr>
 <td><strong>Epoch</strong></td>
 <td><abbr title="Global Positioning System — US satellite navigation constellation, 31 SVs in 6 orbital planes (Navipedia: GPS)">GPS</abbr> week + TOW (ms) <span class="arithmatex">\(\rightarrow\)</span> <code>datetime64[ns]</code> in <abbr title="Global Positioning System — US satellite navigation constellation, 31 SVs in 6 orbital planes (Navipedia: GPS)">GPS</abbr> time (no leap seconds)</td>
 </tr>
@@ -5190,6 +5245,7 @@ Add to the stored carrier phase to recover the unmitigated phase.</p>
 <li>Septentrio AsteRx SB3 ProBase Firmware v4.14.0 Reference Guide</li>
 <li>Septentrio AsteRx SB3 ProBase Firmware v4.15.1 Reference Guide</li>
 <li><abbr title="Receiver Independent Exchange Format — standard ASCII format for GNSS observations, defined by IGS (Navipedia: RINEX)">RINEX</abbr> 3.04 signal nomenclature, used verbatim for <abbr title="Signal Identifier — canVODpy format: SV|Band|Code (e.g. G01|L1|C). Uniquely identifies one observable per epoch.">SID</abbr> code strings</li>
+<li><abbr title="Receiver Independent Exchange Format — standard ASCII format for GNSS observations, defined by IGS (Navipedia: RINEX)">RINEX</abbr> 3.04 §8.4, satellite numbers (<abbr title="Satellite-Based Augmentation System — geostationary broadcasts providing integrity and corrections (Navipedia: SBAS)">SBAS</abbr>: <abbr title="Pseudo-Random Noise — unique code identifying a satellite signal slot (e.g. G01, E02). PRN ≠ SVN; PRNs can be reassigned. (Navipedia: GNSS signal)">PRN</abbr> <span class="arithmatex">\(-\)</span> 100)</li>
 </ul>
 <!-- Glossary: hover any abbreviation to see its definition -->
 

@@ -590,7 +590,7 @@
   <span class="md-ellipsis">
     
   
-  What's new in v1.0.0
+  What's new
 
     
   </span>
@@ -4525,7 +4525,7 @@ only this check; commitizen does not bump versions here.</p>
 not decide the version: the maintainer does.</p>
 <hr />
 <h2 id="2-versions-and-changelogs">2. Versions and changelogs<a class="headerlink" href="#2-versions-and-changelogs" title="Permanent link">&para;</a></h2>
-<p><code>scripts/release.py</code>, through three recipes:</p>
+<p><code>scripts/release.py</code>, through four recipes:</p>
 <table>
 <thead>
 <tr>
@@ -4537,6 +4537,10 @@ not decide the version: the maintainer does.</p>
 <tr>
 <td><code>just release-status</code></td>
 <td>For each package: version, last release tag, and the commits since that tag that touched the package's folder</td>
+</tr>
+<tr>
+<td><code>just release-check 1.1.0</code></td>
+<td>Read-only: whether the repository is ready for a release of canvodpy 1.1.0 (main and <abbr title="Continuous Integration — automated build and test on every commit">CI</abbr>, the increment, the submodule pointers, the demo notebook headers, the release notebook); one line per check, exits 1 on a failure (<a href="../../RELEASING/#before">Releasing</a>)</td>
 </tr>
 <tr>
 <td><code>just release canvod-store=1.1.0 canvodpy=1.1.0</code></td>

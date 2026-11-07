@@ -590,7 +590,7 @@
   <span class="md-ellipsis">
     
   
-  What's new in v1.0.0
+  What's new
 
     
   </span>
@@ -5748,9 +5748,12 @@ git<span class="w"> </span>commit<span class="w"> </span>-m<span class="w"> </sp
 </table>
 <p><abbr title="Continuous Integration — automated build and test on every commit">CI</abbr> also runs <code>just check-package-imports</code> (too slow for a hook, about two
 minutes): it installs each package with only the dependencies its own
-<code>pyproject.toml</code> declares and imports every module. It fails when a
-package imports a library it does not declare, which the shared <code>.venv</code>
-hides. Run it after you add an import of a new library to a package.</p>
+<code>pyproject.toml</code> declares. Then it imports every module, imports every
+module that the package's functions import, and runs the example of its
+README. It fails when a package imports a library it does not declare,
+which the shared <code>.venv</code> hides, or when a README example doesn't run with
+what its Install section installs. Run it after you add an import of a
+new library to a package or change a README example.</p>
 <p>After a commit, merge or checkout, the <strong>code graph</strong> hook rebuilds the
 code graph in the background (<code>.graphify/</code>, log in <code>.graphify/build.log</code>).
 To move <code>demo</code> and the test data to their latest commits, run

@@ -584,7 +584,7 @@
   <span class="md-ellipsis">
     
   
-  What's new in v1.0.0
+  What's new
 
     
   </span>
@@ -4050,7 +4050,7 @@ license as the test data. <code>demo_data()</code> names one commit of it, so th
 files can't change under a released canvodpy. It holds:</p>
 <ol>
 <li>demo input data, one zip per file type and receiver;</li>
-<li>the auxiliary data of the demo day (<abbr title="Standard Product 3 — precise satellite orbit (position ± ~2 cm) file format, produced by IGS analysis centres (Navipedia: SP3)">SP3</abbr> and <abbr title="Clock — precise satellite and station clock correction file (30 s intervals), companion to SP3 orbits">CLK</abbr> files and the
+<li>the auxiliary data of the demo day (<abbr title="Standard Product 3 — precise satellite orbit file format, produced by IGS analysis centres (Navipedia: SP3)">SP3</abbr> and <abbr title="Clock — precise satellite and station clock correction file (30 s intervals), companion to SP3 orbits">CLK</abbr> files and the
    processed <abbr title="Chunked, compressed N-dimensional array storage format — cloud-native alternative to HDF5/NetCDF">Zarr</abbr> store), marked as possibly out of date;</li>
 <li>reference stores: one <abbr title="Global Navigation Satellite System — umbrella term for GPS, Galileo, GLONASS, BeiDou, etc. (Navipedia: GNSS)">GNSS</abbr> store per input file type and one <abbr title="Vegetation Optical Depth — dimensionless measure of microwave attenuation through vegetation canopy (τ = −ln(T)·cos θ)">VOD</abbr>
    store each, for tests, development, comparison, and showcasing.</li>
@@ -4062,7 +4062,7 @@ same reason. The demo data is a subset of the test data, which is
 archived on Zenodo (<a href="https://doi.org/10.5281/zenodo.19708759">all versions</a>), and <code>just demo-archives</code>
 rebuilds the zips from it byte for byte, so the dataset needs no archive
 of its own.</p>
-<p><abbr title="Standard Product 3 — precise satellite orbit (position ± ~2 cm) file format, produced by IGS analysis centres (Navipedia: SP3)">SP3</abbr> and <abbr title="Clock — precise satellite and station clock correction file (30 s intervals), companion to SP3 orbits">CLK</abbr> files are always fetched from the agencies (ESA without an
+<p><abbr title="Standard Product 3 — precise satellite orbit file format, produced by IGS analysis centres (Navipedia: SP3)">SP3</abbr> and <abbr title="Clock — precise satellite and station clock correction file (30 s intervals), companion to SP3 orbits">CLK</abbr> files are always fetched from the agencies (ESA without an
 account, NASA <abbr title="Crustal Dynamics Data Information System — NASA archive for GNSS orbits, clocks, and observation data">CDDIS</abbr> when an Earthdata email is set); the auxiliary zip is only
 the fallback, used by <code>demo_data()</code> and never by the pipeline. The
 notebooks show which source the files came from, and compute the

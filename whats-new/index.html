@@ -6,7 +6,7 @@
       <meta charset="utf-8">
       <meta name="viewport" content="width=device-width,initial-scale=1">
       
-        <meta name="description" content="The changes canVODpy v1.0.0 brings, by area">
+        <meta name="description" content="The changes canVODpy v1.1.0 and v1.0.0 bring, by area">
       
       
         <meta name="author" content="Nicolas Bader">
@@ -30,7 +30,7 @@
     
     
       
-        <title>What's new in v1.0.0 - canVODpy</title>
+        <title>What's new - canVODpy</title>
       
     
     
@@ -191,7 +191,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              What's new in v1.0.0
+              What's new
             
           </span>
         </div>
@@ -597,6 +597,23 @@
         
       
       
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  What's new
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
       <a href="././" class="md-nav__link md-nav__link--active">
         
   
@@ -604,7 +621,7 @@
   <span class="md-ellipsis">
     
   
-  What's new in v1.0.0
+  What's new
 
     
   </span>
@@ -612,6 +629,48 @@
   
 
       </a>
+      
+        
+
+
+<nav class="md-nav md-nav--secondary" aria-label="On this page">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      On this page
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#v110" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        v1.1.0
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#v100" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        v1.0.0
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
       
     </li>
   
@@ -3986,6 +4045,11 @@
                       
                     
                     
+                      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+                      <div class="md-sidebar-button__wrapper">
+                        <label class="md-sidebar-button" for="__toc"></label>
+                      </div>
+                    
                   
                   <div class="md-sidebar__inner">
                     
@@ -3997,6 +4061,36 @@
   
     
   
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      On this page
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#v110" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        v1.1.0
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#v100" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        v1.0.0
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
   
 </nav>
                   </div>
@@ -4089,7 +4183,66 @@
   
 
 
-<h1 id="whats-new-in-v100">What's new in v1.0.0<a class="headerlink" href="#whats-new-in-v100" title="Permanent link">&para;</a></h1>
+<h1 id="whats-new">What's new<a class="headerlink" href="#whats-new" title="Permanent link">&para;</a></h1>
+<h2 id="v110">v1.1.0<a class="headerlink" href="#v110" title="Permanent link">&para;</a></h2>
+<p>The release notebook shows each change, on the demo data where it can.</p>
+<p><a class="md-button md-button--primary" href="https://molab.marimo.io/github/TUW-GEO/canvodpy/blob/main/release-notes/v1.1.0.py">Open the release notebook</a>
+<a class="md-button" href="https://github.com/TUW-GEO/canvodpy/blob/main/release-notes/v1.1.0.py">View it on GitHub</a></p>
+<div class="admonition warning">
+<p class="admonition-title">A store created with v1.0.0</p>
+<p>The orbits are now interpolated with a polynomial of degree 10 by
+default. A store created with v1.0.0 records the cubic Hermite spline
+and refuses runs with the new method: set
+<code>processing.aux_data.sp3_interpolation: hermite</code> to keep writing to it,
+or write to a new store
+(<a href="../packages/auxiliary/interpolation/">Interpolation methods</a>).</p>
+</div>
+<div class="grid cards">
+<ul>
+<li>
+<p><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.3.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2026 Fonticons, Inc.--><path fill="currentColor" d="M199 7c9.4-9.4 24.6-9.4 33.9 0l89.4 89.4 55-55c12.5-12.5 32.8-12.5 45.3 0l48 48c12.5 12.5 12.5 32.8 0 45.3l-55 55 89.4 89.4c9.4 9.4 9.4 24.6 0 33.9l-96 96c-9.4 9.4-24.6 9.4-33.9 0l-89.4-89.4-15.5 15.5c11.4 24.6 17.8 52 17.8 80.9 0 31.7-7.7 61.5-21.2 87.8-4.7 9-16.7 10.3-23.8 3.1l-96.3-96.3-60 60c-12.5 12.5-32.8 12.5-45.3 0s-12.5-32.8 0-45.3l60-60L5.1 269c-7.2-7.2-5.9-19.2 3.1-23.8C34.5 231.6 64.4 224 96 224c28.9 0 56.3 6.4 80.9 17.8l15.5-15.5L103 137c-9.4-9.4-9.4-24.6 0-33.9zm17 50.9L153.9 120l72.4 72.4 62.1-62.1zm176 300.2 62.1-62.1-72.4-72.4-62.1 62.1z"/></svg></span> &nbsp; <strong>Broadcast ephemeris for <abbr title="Receiver Independent Exchange Format — standard ASCII format for GNSS observations, defined by IGS (Navipedia: RINEX)">RINEX</abbr></strong></p>
+<hr />
+<ul>
+<li><code>ephemeris_source: broadcast</code> takes the satellite positions from the
+  receiver's <abbr title="Receiver Independent Exchange Format — standard ASCII format for GNSS observations, defined by IGS (Navipedia: RINEX)">RINEX</abbr> 3.04/3.05 navigation files (<code>nav_directory</code>)</li>
+<li>The ephemeris source <code>final</code> is now called <code>precise</code>; <code>final</code> warns
+  until v2.0.0</li>
+<li>Every run names the satellites it observed without a position</li>
+</ul>
+<p><a href="../packages/readers/ephemeris-sources/"><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13.22 19.03a.75.75 0 0 1 0-1.06L18.19 13H3.75a.75.75 0 0 1 0-1.5h14.44l-4.97-4.97a.749.749 0 0 1 .326-1.275.75.75 0 0 1 .734.215l6.25 6.25a.75.75 0 0 1 0 1.06l-6.25 6.25a.75.75 0 0 1-1.06 0"/></svg></span> Ephemeris sources</a></p>
+</li>
+<li>
+<p><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.3.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2026 Fonticons, Inc.--><path fill="currentColor" d="M9.4 118.6c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0l160 160c12.5 12.5 12.5 32.8 0 45.3l-160 160c-12.5 12.5-32.8 12.5-45.3 0s-12.5-32.8 0-45.3L146.7 256zM224 384h256c17.7 0 32 14.3 32 32s-14.3 32-32 32H224c-17.7 0-32-14.3-32-32s14.3-32 32-32"/></svg></span> &nbsp; <strong>Command line</strong></p>
+<hr />
+<ul>
+<li><code>canvodpy store log --path</code> shows the history of any store; <code>--svg</code> and
+  <code>--plain</code> draw it as an image or as plain text</li>
+<li><code>canvodpy logs collect</code> copies the logs and the run history to send on</li>
+<li><code>canvodpy config validate</code> checks chosen days and names the days
+  without files</li>
+<li>Colors that follow the terminal, <code>--help-all</code>, a dashboard button
+  that shuts the dashboard down</li>
+</ul>
+<p><a href="../api/cli/"><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13.22 19.03a.75.75 0 0 1 0-1.06L18.19 13H3.75a.75.75 0 0 1 0-1.5h14.44l-4.97-4.97a.749.749 0 0 1 .326-1.275.75.75 0 0 1 .734.215l6.25 6.25a.75.75 0 0 1 0 1.06l-6.25 6.25a.75.75 0 0 1-1.06 0"/></svg></span> Command line</a></p>
+</li>
+<li>
+<p><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.3.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2026 Fonticons, Inc.--><path fill="currentColor" d="M91.2 36.9c-12.4-6.8-27.4-6.5-39.6.7S32 57.9 32 72v368c0 14.1 7.5 27.2 19.6 34.4s27.2 7.5 39.6.7l336-184c12.8-7 20.8-20.5 20.8-35.1s-8-28.1-20.8-35.1z"/></svg></span> &nbsp; <strong>Runs</strong></p>
+<hr />
+<ul>
+<li>The days of a unit are prepared in the worker processes, several at
+  a time</li>
+<li>The memory budget counts preparing a day and computing its <abbr title="Vegetation Optical Depth — dimensionless measure of microwave attenuation through vegetation canopy (τ = −ln(T)·cos θ)">VOD</abbr> per
+  worker</li>
+<li><abbr title="Satellite-Based Augmentation System — geostationary broadcasts providing integrity and corrections (Navipedia: SBAS)">SBAS</abbr> satellites of <abbr title="Septentrio Binary Format — proprietary binary telemetry from Septentrio receivers; embeds satellite geometry">SBF</abbr> files keep their signals; <abbr title="Receiver Independent Exchange Format — standard ASCII format for GNSS observations, defined by IGS (Navipedia: RINEX)">RINEX</abbr> 2.11 epochs
+  that end early are left out</li>
+</ul>
+<p><a href="../guides/parallel-processing/"><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13.22 19.03a.75.75 0 0 1 0-1.06L18.19 13H3.75a.75.75 0 0 1 0-1.5h14.44l-4.97-4.97a.749.749 0 0 1 .326-1.275.75.75 0 0 1 .734.215l6.25 6.25a.75.75 0 0 1 0 1.06l-6.25 6.25a.75.75 0 0 1-1.06 0"/></svg></span> Parallel processing</a></p>
+</li>
+</ul>
+</div>
+<p>The full list is in the
+<a href="https://github.com/TUW-GEO/canvodpy/blob/main/CHANGELOG.md">changelog</a>.</p>
+<h2 id="v100">v1.0.0<a class="headerlink" href="#v100" title="Permanent link">&para;</a></h2>
 <div class="admonition warning">
 <p class="admonition-title">Upgrading from 0.x?</p>
 <p>Stores written with canVODpy 0.x must be migrated before a v1.0.0 run

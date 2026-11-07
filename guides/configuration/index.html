@@ -595,7 +595,7 @@
   <span class="md-ellipsis">
     
   
-  What's new in v1.0.0
+  What's new
 
     
   </span>
@@ -4666,6 +4666,10 @@ settings file in a GitHub repository, at a commit, a tag or a branch:</p>
   same commit, tag or branch, from <code>recipes/&lt;site&gt;/&lt;name&gt;.yaml</code> next to
   the settings file, as in a local folder. A <code>recipe:</code> that is a URL is
   read from that URL.</li>
+<li>An overlay file (<code>--config</code>) stays local. A recipe name that only the
+  overlay sets is read from the same repository and link as the
+  settings file. A recipe name set only by a <code>CANVOD__</code> environment
+  variable is not fetched: set it in the settings file or the overlay.</li>
 <li>Every run downloads the files again, into a folder of the run that
   only you can read. A run is a <code>canvodpy</code> command, a new <code>Site</code> in
   Python (also the second one in the same notebook) or an Airflow task.
@@ -4777,8 +4781,8 @@ change; to process with other settings, create a new store.</p>
 <td><code>processing.params.rinex_v3_parser</code>, <code>file_pairing</code>, <code>receiver_position_mode</code>, <code>ephemeris_source</code></td>
 </tr>
 <tr>
-<td>The orbit product</td>
-<td><code>processing.aux_data.agency</code>, <code>product_type</code>, <code>fetch_clock</code></td>
+<td>The orbit product and its interpolation</td>
+<td><code>processing.aux_data.agency</code>, <code>product_type</code>, <code>fetch_clock</code>, <code>sp3_interpolation</code></td>
 </tr>
 <tr>
 <td>Preprocessing</td>
@@ -4920,6 +4924,7 @@ them) is refused, naming <code>canvodpy store migrate-metadata</code>.</p>
 <span class="w">    </span><span class="nt">agency</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">COD</span><span class="w">          </span><span class="c1"># SP3/CLK analysis center code</span>
 <span class="w">    </span><span class="nt">product_type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">final</span><span class="w">  </span><span class="c1"># final or rapid; the agency must publish it</span>
 <span class="w">    </span><span class="c1"># fetch_clock: false # true adds the CLK files; VOD does not use them</span>
+<span class="w">    </span><span class="c1"># sp3_interpolation: lagrange # or hermite, the orbits as before v1.1.0</span>
 
 <span class="w">  </span><span class="nt">params</span><span class="p">:</span>
 <span class="w">    </span><span class="nt">keep_gnss_observables</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="nv">SNR</span><span class="p p-Indicator">]</span><span class="w">   </span><span class="c1"># observables to keep (SNR, Pseudorange, Phase, Doppler)</span>
@@ -4927,7 +4932,7 @@ them) is refused, naming <code>canvodpy store migrate-metadata</code>.</p>
 <span class="w">    </span><span class="nt">store_radial_distance</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">false</span><span class="w">   </span><span class="c1"># store satellite distance (r)</span>
 <span class="w">    </span><span class="nt">receiver_position_mode</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">shared</span><span class="w"> </span><span class="c1"># or per_receiver</span>
 <span class="w">    </span><span class="nt">file_pairing</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">complete</span><span class="w">         </span><span class="c1"># or paired</span>
-<span class="w">    </span><span class="nt">ephemeris_source</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">final</span><span class="w">        </span><span class="c1"># or broadcast (SBF only)</span>
+<span class="w">    </span><span class="nt">ephemeris_source</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">precise</span><span class="w">      </span><span class="c1"># or broadcast (SBF, or RINEX with nav_directory)</span>
 
 <span class="w">    </span><span class="c1"># --- Resource management ---</span>
 <span class="w">    </span><span class="nt">resource_mode</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">auto</span><span class="w">            </span><span class="c1"># auto or manual</span>
@@ -5000,13 +5005,18 @@ them) is refused, naming <code>canvodpy store migrate-metadata</code>.</p>
 </tr>
 <tr>
 <td><code>params.ephemeris_source</code></td>
-<td><code>final</code>, <code>broadcast</code></td>
-<td><code>final</code> computes satellite positions from agency <abbr title="Standard Product 3 — precise satellite orbit (position ± ~2 cm) file format, produced by IGS analysis centres (Navipedia: SP3)">SP3</abbr>/<abbr title="Clock — precise satellite and station clock correction file (30 s intervals), companion to SP3 orbits">CLK</abbr> products. <code>broadcast</code> uses the satellite angles the receiver computed from the broadcast ephemeris (<abbr title="Septentrio Binary Format — proprietary binary telemetry from Septentrio receivers; embeds satellite geometry">SBF</abbr> SatVisibility blocks; almanac-based angles are not used; <abbr title="Septentrio Binary Format — proprietary binary telemetry from Septentrio receivers; embeds satellite geometry">SBF</abbr> only, no <abbr title="Standard Product 3 — precise satellite orbit (position ± ~2 cm) file format, produced by IGS analysis centres (Navipedia: SP3)">SP3</abbr>/<abbr title="Clock — precise satellite and station clock correction file (30 s intervals), companion to SP3 orbits">CLK</abbr> download, faster but less accurate).</td>
+<td><code>precise</code>, <code>broadcast</code></td>
+<td><code>precise</code> computes satellite positions from the <abbr title="Standard Product 3 — precise satellite orbit file format, produced by IGS analysis centres (Navipedia: SP3)">SP3</abbr>/<abbr title="Clock — precise satellite and station clock correction file (30 s intervals), companion to SP3 orbits">CLK</abbr> products of an analysis center (<code>final</code> is the old name of <code>precise</code>; it works until v2.0.0 and warns). <code>broadcast</code> uses the broadcast ephemeris the receiver recorded: the SatVisibility angles of <abbr title="Septentrio Binary Format — proprietary binary telemetry from Septentrio receivers; embeds satellite geometry">SBF</abbr> files (almanac-based angles are not used), or for <abbr title="Receiver Independent Exchange Format — standard ASCII format for GNSS observations, defined by IGS (Navipedia: RINEX)">RINEX</abbr> files the receiver's navigation files (<code>nav_directory</code>); no <abbr title="Standard Product 3 — precise satellite orbit file format, produced by IGS analysis centres (Navipedia: SP3)">SP3</abbr>/<abbr title="Clock — precise satellite and station clock correction file (30 s intervals), companion to SP3 orbits">CLK</abbr> download (<a href="../../packages/readers/ephemeris-sources/">Ephemeris sources</a>).</td>
 </tr>
 <tr>
 <td><code>aux_data.fetch_clock</code></td>
 <td><code>true</code>, <code>false</code></td>
-<td>Whether to download and interpolate <abbr title="Clock — precise satellite and station clock correction file (30 s intervals), companion to SP3 orbits">CLK</abbr> clock-correction files alongside <abbr title="Standard Product 3 — precise satellite orbit (position ± ~2 cm) file format, produced by IGS analysis centres (Navipedia: SP3)">SP3</abbr> (only applies to <code>ephemeris_source: final</code>). Default <code>false</code>: <abbr title="Vegetation Optical Depth — dimensionless measure of microwave attenuation through vegetation canopy (τ = −ln(T)·cos θ)">VOD</abbr> does not use clock data. <code>true</code> adds each satellite's clock correction to the <abbr title="Global Navigation Satellite System — umbrella term for GPS, Galileo, GLONASS, BeiDou, etc. (Navipedia: GNSS)">GNSS</abbr> store as the variable <code>clock</code>.</td>
+<td>Whether to download and interpolate <abbr title="Clock — precise satellite and station clock correction file (30 s intervals), companion to SP3 orbits">CLK</abbr> clock-correction files alongside <abbr title="Standard Product 3 — precise satellite orbit file format, produced by IGS analysis centres (Navipedia: SP3)">SP3</abbr> (only applies to <code>ephemeris_source: precise</code>). Default <code>false</code>: <abbr title="Vegetation Optical Depth — dimensionless measure of microwave attenuation through vegetation canopy (τ = −ln(T)·cos θ)">VOD</abbr> does not use clock data. <code>true</code> adds each satellite's clock correction to the <abbr title="Global Navigation Satellite System — umbrella term for GPS, Galileo, GLONASS, BeiDou, etc. (Navipedia: GNSS)">GNSS</abbr> store as the variable <code>clock</code>.</td>
+</tr>
+<tr>
+<td><code>aux_data.sp3_interpolation</code></td>
+<td><code>lagrange</code>, <code>hermite</code></td>
+<td>How the orbits are interpolated onto the epochs: <code>lagrange</code> (default), the polynomial of degree 10 through the 11 nearest orbit epochs; <code>hermite</code>, the cubic Hermite spline of canvodpy before v1.1.0. Also applies to the broadcast orbits of <abbr title="Receiver Independent Exchange Format — standard ASCII format for GNSS observations, defined by IGS (Navipedia: RINEX)">RINEX</abbr> navigation files. A store created before v1.1.0 counts as <code>hermite</code> (<a href="../../packages/auxiliary/interpolation/#orbits">Interpolation</a>).</td>
 </tr>
 <tr>
 <td><code>params.days_per_batch</code></td>
@@ -5077,7 +5087,7 @@ reference data multiplies the rows. Don't use <code>unsafe_append</code> unless
 you need it.</p>
 </div>
 <h3 id="ephemeris-data-sources">Ephemeris data sources<a class="headerlink" href="#ephemeris-data-sources" title="Permanent link">&para;</a></h3>
-<p>canVODpy downloads <abbr title="Standard Product 3 — precise satellite orbit (position ± ~2 cm) file format, produced by IGS analysis centres (Navipedia: SP3)">SP3</abbr> and <abbr title="Clock — precise satellite and station clock correction file (30 s intervals), companion to SP3 orbits">CLK</abbr> products from <strong>ESA GSSC</strong>, which needs
+<p>canVODpy downloads <abbr title="Standard Product 3 — precise satellite orbit file format, produced by IGS analysis centres (Navipedia: SP3)">SP3</abbr> and <abbr title="Clock — precise satellite and station clock correction file (30 s intervals), companion to SP3 orbits">CLK</abbr> products from <strong>ESA GSSC</strong>, which needs
 no account. If you set <code>credentials.nasa_earthdata_acc_mail</code> to the email
 address of a (free) NASA Earthdata account, canVODpy downloads from
 <strong>NASA <abbr title="Crustal Dynamics Data Information System — NASA archive for GNSS orbits, clocks, and observation data">CDDIS</abbr></strong> first and falls back to ESA GSSC when that download fails.</p>
@@ -5239,6 +5249,15 @@ missing (its description, publisher, license or naming authority). To
 check one site:</p>
 <div class="highlight"><pre><span></span><code>canvodpy<span class="w"> </span>config<span class="w"> </span>validate<span class="w"> </span>--site<span class="w"> </span>&lt;site&gt;
 </code></pre></div>
+<p>To check only some days, give them as for <code>canvodpy run</code>, with <code>--start</code>
+and <code>--end</code>. An overlay used only for some days, for example with the
+recipes of a sampling interval the receivers used before, is checked
+over those days:</p>
+<div class="highlight"><pre><span></span><code>canvodpy<span class="w"> </span>config<span class="w"> </span>validate<span class="w"> </span>--site<span class="w"> </span>&lt;site&gt;<span class="w"> </span>--start<span class="w"> </span><span class="m">2025001</span><span class="w"> </span>--end<span class="w"> </span><span class="m">2025180</span><span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--config<span class="w"> </span>older-days.yaml
+</code></pre></div>
+<p>A range without any files gives a warning. The files that are
+never processed are still listed for the whole folder.</p>
 <hr />
 <h2 id="optional-non-canonical-filenames">Optional: non-canonical filenames<a class="headerlink" href="#optional-non-canonical-filenames" title="Permanent link">&para;</a></h2>
 <p>A run processes only files that follow the

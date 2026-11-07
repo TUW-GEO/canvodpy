@@ -595,7 +595,7 @@
   <span class="md-ellipsis">
     
   
-  What's new in v1.0.0
+  What's new
 
     
   </span>
@@ -4282,6 +4282,11 @@ around.</p>
 <p>Each extension is a package on <abbr title="Python Package Index — public Python package repository">PyPI</abbr>, released on its own under the tag
 <code>&lt;package&gt;-v&lt;version&gt;</code> (for example <code>canvod-filemap-v1.0.0</code>). None has
 extras: each package brings what it needs.</p>
+<p>For the command line, install an extension into the canvodpy tool with
+<code>--with</code>:</p>
+<div class="highlight"><pre><span></span><code>uv<span class="w"> </span>tool<span class="w"> </span>install<span class="w"> </span>canvodpy<span class="w"> </span>--with<span class="w"> </span>canvod-filemap
+</code></pre></div>
+<p>To use an extension from Python, add it to your <abbr title="Fast Python package manager written in Rust — replaces pip, pip-tools, virtualenv">uv</abbr> project:</p>
 <div class="highlight"><pre><span></span><code>uv<span class="w"> </span>add<span class="w"> </span>canvod-filemap
 uv<span class="w"> </span>add<span class="w"> </span>canvod-airflow
 uv<span class="w"> </span>add<span class="w"> </span>canvod-adapters

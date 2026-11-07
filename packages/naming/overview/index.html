@@ -595,7 +595,7 @@
   <span class="md-ellipsis">
     
   
-  What's new in v1.0.0
+  What's new
 
     
   </span>
@@ -4433,8 +4433,8 @@ process.</p>
 <tr>
 <td><code>SAMPLING</code></td>
 <td>3</td>
-<td>Data frequency: value + unit</td>
-<td><code>05S</code>, <code>01S</code></td>
+<td>Data frequency: value + unit; <code>00U</code> (unspecified) for navigation files</td>
+<td><code>05S</code>, <code>01S</code>, <code>00U</code></td>
 </tr>
 <tr>
 <td><code>CONTENT</code></td>
@@ -4445,8 +4445,8 @@ process.</p>
 <tr>
 <td><code>TYPE</code></td>
 <td>2--8</td>
-<td>File format, lowercase; runs read <code>rnx</code>, <code>sbf</code> and <code>nmea</code>, and the type of each installed <a href="../../../guides/plugins/">reader plugin</a></td>
-<td><code>rnx</code>, <code>sbf</code>, <code>nmea</code>, <code>ubx</code></td>
+<td>File format, lowercase; runs read <code>rnx</code>, <code>sbf</code> and <code>nmea</code>, and the type of each installed <a href="../../../guides/plugins/">reader plugin</a>; <code>nav</code> is a <abbr title="Receiver Independent Exchange Format — standard ASCII format for GNSS observations, defined by IGS (Navipedia: RINEX)">RINEX</abbr> navigation file</td>
+<td><code>rnx</code>, <code>sbf</code>, <code>nmea</code>, <code>ubx</code>, <code>nav</code></td>
 </tr>
 <tr>
 <td><code>COMPRESSION</code></td>
@@ -4485,6 +4485,11 @@ process.</p>
 <td><code>D</code></td>
 <td>Days</td>
 <td><code>01D</code> = 1 day</td>
+</tr>
+<tr>
+<td><code>U</code></td>
+<td>Unspecified, only <code>00U</code>, only for navigation files (<abbr title="Receiver Independent Exchange Format — standard ASCII format for GNSS observations, defined by IGS (Navipedia: RINEX)">RINEX</abbr> 4.00, Table A1)</td>
+<td><code>00U</code></td>
 </tr>
 </tbody>
 </table>
@@ -4615,7 +4620,9 @@ and archives (<code>.gz</code>, <code>.Z</code>, <code>.zip</code>, <code>.bz2</
 Decompress them first (for Hatanaka, <code>crx2rnx</code>). A receiver directory holding only
 compressed files fails the check below.</p>
 <p>Check a site before processing it; the check finds the files exactly as a run does and
-also lists the files a run would pass over:</p>
+also lists the files a run would pass over, and each receiver's days without files
+from the site's first to its last day with files (or <code>--start</code> to <code>--end</code>), as ranges
+such as <code>2025254 to 2025256</code>:</p>
 <div class="highlight"><pre><span></span><code>canvodpy<span class="w"> </span>config<span class="w"> </span>validate<span class="w"> </span>--site<span class="w"> </span>&lt;site&gt;
 </code></pre></div>
 <hr />
@@ -4630,6 +4637,9 @@ for example <abbr title="Receiver Independent Exchange Format — standard ASCII
 <span class="w">        </span><span class="nt">recipe</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">my_site_reference</span>
 </code></pre></div>
 <p>The recipe gives each file a canonical name without renaming it on disk.
+<abbr title="Receiver Independent Exchange Format — standard ASCII format for GNSS observations, defined by IGS (Navipedia: RINEX)">RINEX</abbr> navigation files (<code>nav_directory</code>, for the broadcast ephemeris) need
+canonical names: canvod-filemap has no recipes for navigation files yet
+(<a href="../../readers/ephemeris-sources/#broadcast-ephemeris-from-rinex-navigation-files">Ephemeris sources</a>).
 Naming recipes need an optional extension; see
 <a href="../../../guides/extensions/">Optional extensions</a>.</p>
 <p>A recipe can also be read from a URL, so that every machine uses the same

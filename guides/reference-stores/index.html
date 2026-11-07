@@ -590,7 +590,7 @@
   <span class="md-ellipsis">
     
   
-  What's new in v1.0.0
+  What's new
 
     
   </span>
@@ -4304,7 +4304,7 @@ exactly what differs from the base.</p>
 <td><code>default</code></td>
 <td>both receivers of every site of the test data: Rosalia (<abbr title="Receiver Independent Exchange Format — standard ASCII format for GNSS observations, defined by IGS (Navipedia: RINEX)">RINEX</abbr> v3.04, <abbr title="Septentrio Binary Format — proprietary binary telemetry from Septentrio receivers; embeds satellite geometry">SBF</abbr>, NMEA), MOFLUX (<abbr title="Receiver Independent Exchange Format — standard ASCII format for GNSS observations, defined by IGS (Navipedia: RINEX)">RINEX</abbr> v2.11), ExampleSite (stripped <abbr title="Receiver Independent Exchange Format — standard ASCII format for GNSS observations, defined by IGS (Navipedia: RINEX)">RINEX</abbr> v3.05), Hainich (NMEA)</td>
 <td>2025-001; Hainich 2026-001</td>
-<td>final <abbr title="Standard Product 3 — precise satellite orbit (position ± ~2 cm) file format, produced by IGS analysis centres (Navipedia: SP3)">SP3</abbr>/<abbr title="Clock — precise satellite and station clock correction file (30 s intervals), companion to SP3 orbits">CLK</abbr> from the test data, no preprocessing, <abbr title="Signal-to-Noise Ratio — carrier power relative to noise floor, in dB-Hz. Key observable for GNSS transmissometry. (Navipedia: GNSS Measurements)">SNR</abbr> only, <abbr title="Vegetation Optical Depth — dimensionless measure of microwave attenuation through vegetation canopy (τ = −ln(T)·cos θ)">VOD</abbr> of each receiver pair, the SIDs of each site (below)</td>
+<td>final <abbr title="Standard Product 3 — precise satellite orbit file format, produced by IGS analysis centres (Navipedia: SP3)">SP3</abbr>/<abbr title="Clock — precise satellite and station clock correction file (30 s intervals), companion to SP3 orbits">CLK</abbr> from the test data, no preprocessing, <abbr title="Signal-to-Noise Ratio — carrier power relative to noise floor, in dB-Hz. Key observable for GNSS transmissometry. (Navipedia: GNSS Measurements)">SNR</abbr> only, <abbr title="Vegetation Optical Depth — dimensionless measure of microwave attenuation through vegetation canopy (τ = −ln(T)·cos θ)">VOD</abbr> of each receiver pair, the SIDs of each site (below)</td>
 </tr>
 <tr>
 <td><code>sbf-broadcast</code></td>
@@ -4369,20 +4369,28 @@ difference. The reference stores it compares with:</p>
 <li>a folder of zips (<code>just reference-pack</code>, below).</li>
 </ul>
 <p>The folder must hold every profile: the check runs them all.</p>
-<p>The published stores were built by canVODpy at commit <code>bd2e6c7b</code> from
-the test data at commit <code>f0764c4</code>; the card of the dataset lists the
-profiles and the zips. The <abbr title="Digital Object Identifier — persistent identifier for publications, datasets, and software">DOI</abbr> of the dataset,
+<p>The published stores were built by canVODpy at commit <code>df576f1c</code>
+from the test data at commit <code>d4ab73e</code>; the
+card of the dataset lists the profiles and the zips. The <abbr title="Digital Object Identifier — persistent identifier for publications, datasets, and software">DOI</abbr> of the dataset,
 <a href="https://doi.org/10.57967/hf/11189">doi:10.57967/hf/11189</a>, names its
-earlier commit <code>ef448847</code>; the pinned commit is <code>1dea9a15</code>.</p>
+earlier commit <code>ef448847</code>; the pinned commit is <code>cdaa2018</code>.</p>
 <p>For the <code>default</code> profile, a build and a check each take three to four
 minutes; the <abbr title="Septentrio Binary Format — proprietary binary telemetry from Septentrio receivers; embeds satellite geometry">SBF</abbr> day takes the longest. The <code>sbf-broadcast</code> profile
 takes one and a half minutes, the <code>gridded</code> profile three to four
 minutes. Two builds of the same code compare with an empty report: the
 run is deterministic.</p>
+<p><abbr title="Continuous Integration — automated build and test on every commit">CI</abbr> runs <code>just reference-check</code> on Linux for every pull request and every
+push to <code>main</code> that changes the package sources, <code>canvodpy</code>'s source,
+<code>uv.lock</code>, the profiles or the build script (workflow
+<code>reference_check.yml</code>). Pull requests that change only docs skip it. On a
+difference, the job fails and uploads the report as the artifact
+<code>reference-check-report</code>.</p>
 <h2 id="tolerances">Tolerances<a class="headerlink" href="#tolerances" title="Permanent link">&para;</a></h2>
 <p>Integer and flag variables, coordinates, groups, and every attribute
 except the ones that change with every run (times, ids, the software
-version; <code>VOLATILE_ATTRIBUTES</code>) must match exactly. Float variables are compared within one
+version; <code>VOLATILE_ATTRIBUTES</code>) must match exactly. The receiver
+positions are the one exception: they match within 5e-5 m
+(<code>ATTRIBUTE_TOLERANCES</code>). Float variables are compared within one
 absolute tolerance per variable, derived from the finest resolution any
 format records. The table, with the derivation and its sources, is in
 the <a href="../../packages/store/overview/">store overview</a>; the code holds it

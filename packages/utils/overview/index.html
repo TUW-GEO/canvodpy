@@ -595,7 +595,7 @@
   <span class="md-ellipsis">
     
   
-  What's new in v1.0.0
+  What's new
 
     
   </span>
@@ -4296,7 +4296,8 @@ packages share:</p>
 <li>the run identifier and the timing of the processing stages, which go
   into the logs.</li>
 </ul>
-<p>It depends on <code>pydantic</code> and <code>structlog</code> only. The settings live in
+<p>It depends on <code>pydantic</code>, <code>structlog</code> and <code>psutil</code> (for the CPU affinity
+of worker processes) only. The settings live in
 <a href="../../config/overview/">canvod-config</a>, and the <code>canvodpy</code> package holds
 the <a href="../../../api/cli/">command line</a>.</p>
 <hr />

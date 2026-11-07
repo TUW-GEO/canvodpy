@@ -595,7 +595,7 @@
   <span class="md-ellipsis">
     
   
-  What's new in v1.0.0
+  What's new
 
     
   </span>
@@ -4312,7 +4312,7 @@ the workers read one unit, the next unit is prepared, and while its days
 go to <abbr title="Vegetation Optical Depth — dimensionless measure of microwave attenuation through vegetation canopy (τ = −ln(T)·cos θ)">VOD</abbr>, the workers read the next unit.</p>
 <div class="highlight"><pre><span></span><code> days of one unit
         │
-        ▼   one thread per day
+        ▼   one task per day, in the worker processes
  1. Prepare: orbit and clock data, receiver positions
         │
         ▼   one task per group of files, in date order
@@ -4327,9 +4327,12 @@ go to <abbr title="Vegetation Optical Depth — dimensionless measure of microwa
 <ol>
 <li><strong>Prepare.</strong> Each day of the unit gets its orbit and clock data,
    downloaded and interpolated or taken from the cache, and the receiver
-   positions. Up to four days of a unit are prepared at the same time,
-   one thread per day, so that the download server gets at most four
-   requests at once. A day whose orbit and clock files are not out yet is
+   positions. Each day is prepared by one of the worker processes, up to
+   four days of a unit at the same time, so that the download server
+   gets at most four requests at once. Reading the orbit and clock files
+   and interpolating them is Python code that runs one thread at a time
+   within a process (Python's global interpreter lock), so threads of the
+   main process could prepare only one day at a time. A day whose orbit and clock files are not out yet is
    left out of the unit and stays open for the next run; the other days
    go on.</li>
 <li><strong>Read and write.</strong> A task for the worker processes holds the files
@@ -4386,7 +4389,9 @@ missing orbit or clock file, is reported as failed for each receiver.</p>
 <p>The workers are a reusable process pool of
 <a href="https://loky.readthedocs.io/"><abbr title="Reusable Process Pool Executor - based on Python's native concurrent.futures">loky</abbr></a>, a dependency of canVODpy. They start
 with the first unit and stay for the next units, so Python and the
-scientific libraries are loaded once per worker, not once per day.</p>
+scientific libraries are loaded once per worker, not once per day. All
+of a run's work in processes goes to this one pool: preparing the days,
+reading the files, and computing the <abbr title="Vegetation Optical Depth — dimensionless measure of microwave attenuation through vegetation canopy (τ = −ln(T)·cos θ)">VOD</abbr>.</p>
 <p>Before the first file is read, the run prepares the first unit. On a
 first run this includes downloading the orbit and clock files, so the
 first minutes of a run can look idle.</p>
@@ -4483,14 +4488,17 @@ holds two things:</p>
   days in flight. Since the run goes one unit ahead, that is two units of
   days.</li>
 <li><strong>The workers:</strong> each holds Python and its libraries, about 0.3 GB,
-  plus its largest task. A task reads the files of one receiver that
-  share an epoch chunk, one after the other, and holds their data until
-  it writes them. A reference receiver paired with several canopy
-  receivers counts once for each pairing.</li>
+  plus the largest of its tasks. A file task reads the files of one
+  receiver that share an epoch chunk, one after the other, and holds
+  their data until it writes them. A reference receiver paired with
+  several canopy receivers counts once for each pairing. The same
+  workers prepare the days (orbit and clock data, receiver positions)
+  and compute the <abbr title="Vegetation Optical Depth — dimensionless measure of microwave attenuation through vegetation canopy (τ = −ln(T)·cos θ)">VOD</abbr> of a canopy and its reference receiver for one
+  day, which can need more than a file task.</li>
 </ul>
 <p>Before it reads a file, the run estimates both from the size of the
 files. The workers come first:</p>
-<div class="highlight"><pre><span></span><code>workers = min(worker cap, (budget - main process with one day) / largest task)
+<div class="highlight"><pre><span></span><code>workers = min(worker cap, (budget - main process with one day) / largest worker task)
 </code></pre></div>
 <p>The worker cap is <code>n_max_threads</code> with <code>manual</code> (or <code>--workers</code>), and
 the CPU cores minus two with <code>auto</code>. A unit then gets as many days as
@@ -4520,10 +4528,15 @@ memory it needs.</p>
 </tr>
 </tbody>
 </table>
-<p>The estimates come from factors measured on the test data, with a
-margin: reading a file needs about 45 times its size for <abbr title="Receiver Independent Exchange Format — standard ASCII format for GNSS observations, defined by IGS (Navipedia: RINEX)">RINEX</abbr> v3, 100
+<p>The estimates come from factors measured on the test data and on a
+90-day run of <abbr title="Receiver Independent Exchange Format — standard ASCII format for GNSS observations, defined by IGS (Navipedia: RINEX)">RINEX</abbr> v3 days, with a margin: reading a file needs about 45 times its size for <abbr title="Receiver Independent Exchange Format — standard ASCII format for GNSS observations, defined by IGS (Navipedia: RINEX)">RINEX</abbr> v3, 100
 times for <abbr title="Receiver Independent Exchange Format — standard ASCII format for GNSS observations, defined by IGS (Navipedia: RINEX)">RINEX</abbr> v2, 25 times for <abbr title="Septentrio Binary Format — proprietary binary telemetry from Septentrio receivers; embeds satellite geometry">SBF</abbr> and 15 times for NMEA, and a task
-holds about 1.6 times the size of its files once read. For each day in
+holds about 1.6 times the size of its files once read. Preparing a day
+needs about 0.6 GB for the orbit and clock data plus 1.3 times the
+day's data, and the <abbr title="Vegetation Optical Depth — dimensionless measure of microwave attenuation through vegetation canopy (τ = −ln(T)·cos θ)">VOD</abbr> of a canopy and its reference receiver for one
+day 3.5 times the data of the two, each counted as for the main process
+below. A worker runs many tasks one after the other and holds memory from
+earlier tasks, so each task is counted on top of 0.9 GB. For each day in
 flight, the main process holds about the size of the day's files for
 <abbr title="Receiver Independent Exchange Format — standard ASCII format for GNSS observations, defined by IGS (Navipedia: RINEX)">RINEX</abbr> v3, 2.5 times for <abbr title="Receiver Independent Exchange Format — standard ASCII format for GNSS observations, defined by IGS (Navipedia: RINEX)">RINEX</abbr> v2 and NMEA (small files) and a quarter
 for <abbr title="Septentrio Binary Format — proprietary binary telemetry from Septentrio receivers; embeds satellite geometry">SBF</abbr>, whose files hold much that a run doesn't keep. These were
@@ -4533,13 +4546,16 @@ measured keeping only <code>SNR</code>; keeping more observables
 its sizes to the log (<code>memory_budget</code>): the workers, the days per unit
 (<code>unit_days</code>) and what set them (<code>unit_limit</code>: <code>memory</code>,
 <code>max_unit_days</code>, <code>days_to_run</code>, or the deprecated <code>days_per_batch</code>),
-the tasks per day and per worker, as a warning when the budget lowered
+the tasks per day and per worker, the estimated peak of a worker and
+the task that sets it (<code>worker_peak_gb</code>, <code>worker_peak_task</code>: <code>read</code>,
+<code>prepare</code> or <code>vod</code>), as a warning when the budget lowered
 the workers or the days per unit. After
 each task, the worker writes its memory before the task and its peak
 during the task (<code>worker_memory_peak</code>), so you can check the estimates
 on your data and set the budget. The <abbr title="Vegetation Optical Depth — dimensionless measure of microwave attenuation through vegetation canopy (τ = −ln(T)·cos θ)">VOD</abbr> phase's tasks log the same
 event, with <code>task</code> set to <code>compute_vod_into_fork</code> and <code>input_mb</code> 0,
-since they read from the <abbr title="Global Navigation Satellite System — umbrella term for GPS, Galileo, GLONASS, BeiDou, etc. (Navipedia: GNSS)">GNSS</abbr> store, not from files.</p>
+since they read from the <abbr title="Global Navigation Satellite System — umbrella term for GPS, Galileo, GLONASS, BeiDou, etc. (Navipedia: GNSS)">GNSS</abbr> store, not from files. Preparing a day
+logs it too, with <code>task</code> set to <code>_prepare_day</code> and <code>input_mb</code> 0.</p>
 <p>The run also writes the memory use of the machine to the log before each
 unit (<code>memory_stats</code>). Every run also writes memory, CPU, and disk use
 every 30 seconds (<code>resource_sample</code>) to the log; the run history keeps

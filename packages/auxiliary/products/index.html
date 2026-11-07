@@ -595,7 +595,7 @@
   <span class="md-ellipsis">
     
   
-  What's new in v1.0.0
+  What's new
 
     
   </span>
@@ -4288,7 +4288,7 @@
 
 
 <h1 id="product-registry">Product registry<a class="headerlink" href="#product-registry" title="Permanent link">&para;</a></h1>
-<p>The product registry provides declarative configuration for 23 final and rapid <abbr title="Standard Product 3 — precise satellite orbit (position ± ~2 cm) file format, produced by IGS analysis centres (Navipedia: SP3)">SP3</abbr>/<abbr title="Clock — precise satellite and station clock correction file (30 s intervals), companion to SP3 orbits">CLK</abbr> products from 14 analysis centers (agency codes). Products are defined in TOML; no hardcoded URLs in the processing code. Every product was checked against the file listings of ESA GSSC and NASA <abbr title="Crustal Dynamics Data Information System — NASA archive for GNSS orbits, clocks, and observation data">CDDIS</abbr> (2025-001 and 2026-244, checked 2026-10-05); <code>just check-products</code> repeats the check (see <a href="#checking-the-registry">Checking the registry</a>).</p>
+<p>The product registry provides declarative configuration for 23 final and rapid <abbr title="Standard Product 3 — precise satellite orbit file format, produced by IGS analysis centres (Navipedia: SP3)">SP3</abbr>/<abbr title="Clock — precise satellite and station clock correction file (30 s intervals), companion to SP3 orbits">CLK</abbr> products from 14 analysis centers (agency codes). Products are defined in TOML; no hardcoded URLs in the processing code. Every product was checked against the file listings of ESA GSSC and NASA <abbr title="Crustal Dynamics Data Information System — NASA archive for GNSS orbits, clocks, and observation data">CDDIS</abbr> (2025-001 and 2026-244, checked 2026-10-05); <code>just check-products</code> repeats the check (see <a href="#checking-the-registry">Checking the registry</a>).</p>
 <hr />
 <h2 id="product-types">Product types<a class="headerlink" href="#product-types" title="Permanent link">&para;</a></h2>
 <div class="grid cards">
@@ -4338,10 +4338,12 @@ are issued several times a day, are partly predicted, and their file names
 carry the issue hour. The settings reject <code>product_type: ultra-rapid</code>.</p>
 <hr />
 <h2 id="available-products">Available products<a class="headerlink" href="#available-products" title="Permanent link">&para;</a></h2>
-<p>Systems: G <abbr title="Global Positioning System — US satellite navigation constellation, 31 SVs in 6 orbital planes (Navipedia: GPS)">GPS</abbr>, R <abbr title="GLObal NAvigation Satellite System — Russian constellation using FDMA and CDMA signals (Navipedia: GLONASS)">GLONASS</abbr>, E <abbr title="European Global Navigation Satellite System — 30 SVs, dual-frequency civilian design (Navipedia: Galileo)">Galileo</abbr>, C <abbr title="BeiDou Navigation Satellite System — Chinese constellation with regional and global services (Navipedia: BeiDou)">BeiDou</abbr>, J <abbr title="Quasi-Zenith Satellite System — Japanese regional augmentation optimised for urban canyons (Navipedia: QZSS)">QZSS</abbr>, read from the <abbr title="Standard Product 3 — precise satellite orbit (position ± ~2 cm) file format, produced by IGS analysis centres (Navipedia: SP3)">SP3</abbr>
+<p>Systems: G <abbr title="Global Positioning System — US satellite navigation constellation, 31 SVs in 6 orbital planes (Navipedia: GPS)">GPS</abbr>, R <abbr title="GLObal NAvigation Satellite System — Russian constellation using FDMA and CDMA signals (Navipedia: GLONASS)">GLONASS</abbr>, E <abbr title="European Global Navigation Satellite System — 30 SVs, dual-frequency civilian design (Navipedia: Galileo)">Galileo</abbr>, C <abbr title="BeiDou Navigation Satellite System — Chinese constellation with regional and global services (Navipedia: BeiDou)">BeiDou</abbr>, J <abbr title="Quasi-Zenith Satellite System — Japanese regional augmentation optimised for urban canyons (Navipedia: QZSS)">QZSS</abbr>, read from the <abbr title="Standard Product 3 — precise satellite orbit file format, produced by IGS analysis centres (Navipedia: SP3)">SP3</abbr>
 header of 2026-09-01. A run drops the observations of satellites the product
-has no orbits for (warning <code>sids_dropped_no_ephemeris</code>, once per file), so those
-signals get no <abbr title="Vegetation Optical Depth — dimensionless measure of microwave attenuation through vegetation canopy (τ = −ln(T)·cos θ)">VOD</abbr>: choose a product that covers the systems of your
+has no orbits for (warning <code>sids_dropped_no_ephemeris</code>, once per file, and
+<a href="../../../guides/diagnostics/#satellites-without-a-position">Satellites without a position</a>
+per receiver-day), so those signals get no <abbr title="Vegetation Optical Depth — dimensionless measure of microwave attenuation through vegetation canopy (τ = −ln(T)·cos θ)">VOD</abbr>: choose a product that
+covers the systems of your
 <a href="../../../guides/configuration/">signal selection</a>, or narrow the selection.</p>
 <table>
 <thead>
@@ -4447,7 +4449,7 @@ download if the configured product does not exist or has no clocks while
 <div class="admonition note">
 <p class="admonition-title">Several samplings per product</p>
 <p>Agencies have changed the sampling of their files over the years (for example ESA
-rapid: 15 min <abbr title="Standard Product 3 — precise satellite orbit (position ± ~2 cm) file format, produced by IGS analysis centres (Navipedia: SP3)">SP3</abbr> and 5 min <abbr title="Clock — precise satellite and station clock correction file (30 s intervals), companion to SP3 orbits">CLK</abbr> in 2025, 5 min <abbr title="Standard Product 3 — precise satellite orbit (position ± ~2 cm) file format, produced by IGS analysis centres (Navipedia: SP3)">SP3</abbr> and 30 s <abbr title="Clock — precise satellite and station clock correction file (30 s intervals), companion to SP3 orbits">CLK</abbr> in 2026).
+rapid: 15 min <abbr title="Standard Product 3 — precise satellite orbit file format, produced by IGS analysis centres (Navipedia: SP3)">SP3</abbr> and 5 min <abbr title="Clock — precise satellite and station clock correction file (30 s intervals), companion to SP3 orbits">CLK</abbr> in 2025, 5 min <abbr title="Standard Product 3 — precise satellite orbit file format, produced by IGS analysis centres (Navipedia: SP3)">SP3</abbr> and 30 s <abbr title="Clock — precise satellite and station clock correction file (30 s intervals), companion to SP3 orbits">CLK</abbr> in 2026).
 The registry lists every sampling a product has been published with, and
 the readers try them in that order, locally and then on each server. The
 sampling of the file used is recorded in the <code>sampling_rate</code> attribute
@@ -4522,7 +4524,7 @@ provider (see <a href="../overview/">canvod-auxiliary</a>).</p>
 just<span class="w"> </span>check-products<span class="w"> </span><span class="m">2025001</span><span class="w"> </span><span class="m">2026244</span><span class="w">    </span><span class="c1"># chosen days (YYYYDOY)</span>
 </code></pre></div>
 <p>The recipe lists each server's <abbr title="Global Positioning System — US satellite navigation constellation, 31 SVs in 6 orbital planes (Navipedia: GPS)">GPS</abbr>-week directory once per day and looks up
-every product's <abbr title="Standard Product 3 — precise satellite orbit (position ± ~2 cm) file format, produced by IGS analysis centres (Navipedia: SP3)">SP3</abbr> file, and <abbr title="Clock — precise satellite and station clock correction file (30 s intervals), companion to SP3 orbits">CLK</abbr> file if it has clocks, under each of its
+every product's <abbr title="Standard Product 3 — precise satellite orbit file format, produced by IGS analysis centres (Navipedia: SP3)">SP3</abbr> file, and <abbr title="Clock — precise satellite and station clock correction file (30 s intervals), companion to SP3 orbits">CLK</abbr> file if it has clocks, under each of its
 samplings. It prints the file found per product and day, or, for a missing
 product, the files of that product the servers do have, and exits with 1 if
 any product is missing. NASA <abbr title="Crustal Dynamics Data Information System — NASA archive for GNSS orbits, clocks, and observation data">CDDIS</abbr> is checked when the settings hold
