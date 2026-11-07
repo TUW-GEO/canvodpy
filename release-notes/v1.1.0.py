@@ -130,6 +130,8 @@ def _(mo):
     `FANA01INK_R_20250010000_15M_00U_AA.nav`. canvod-filemap has no naming
     recipes for navigation files yet, so files with other names must be
     renamed or linked under their canonical names.
+
+    Pull request: [#624](https://github.com/TUW-GEO/canvodpy/pull/624).
     """)
     return
 
