@@ -6,7 +6,7 @@
 ### Feat
 
 - **auxiliary**: keep the Hermite orbit interpolation as sp3_interpolation: hermite (df576f1c6)
-- **config**: nav_recipe for navigation files with their own names (7ce490bdb)
+- **config**: nav_recipe for navigation files with their own names; until canvod-filemap has the file type nav, a run with it stops with an error (#624) (7ce490bdb)
 - **canvodpy**: cache the broadcast orbits in the shared aux cache (#573) (97dc86155)
 - **canvodpy**: say when a shared-position reference's nav_directory is not read (d27e60866)
 - **canvodpy**: shared-position references use the canopy's navigation files (5e495140b)
