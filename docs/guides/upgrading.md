@@ -327,7 +327,8 @@ All of these are replaced by one entry point: `canvodpy run`, or
   commit, for stores that are published
   ([Settings](settings.md#processing-metadata-record_machine)). It is
   true by default, so nothing changes for you.
-- **Demo data**: `canvodpy.demo_data()` downloads the demo day; the
-  [notebooks](https://canvodpy.eu/notebooks/) use it.
+- **Demo data**: `canvodpy.demo_data(kind)` downloads one kind of demo
+  data, for example `demo_data("rinex")` the RINEX files of the demo day;
+  the [notebooks](https://canvodpy.eu/notebooks/) use it.
 
 The full list is in the [changelog](https://github.com/TUW-GEO/canvodpy/blob/main/CHANGELOG.md).
