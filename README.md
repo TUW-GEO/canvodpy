@@ -21,7 +21,7 @@
 | canvodpy/src/canvodpy/cli/logs.py                                               |      118 |        7 |     94% |41, 56-58, 125-126, 203 |
 | canvodpy/src/canvodpy/cli/options.py                                            |       44 |        0 |    100% |           |
 | canvodpy/src/canvodpy/cli/perf\_dashboard.py                                    |       28 |       19 |     32% |     53-81 |
-| canvodpy/src/canvodpy/cli/run.py                                                |      290 |       50 |     83% |94-96, 108-137, 148-149, 249, 305-311, 315-320, 327-329, 460-489, 504, 541, 599, 604, 824-829, 852-853, 883 |
+| canvodpy/src/canvodpy/cli/run.py                                                |      291 |       39 |     87% |94-96, 151-152, 252, 308-314, 318-323, 330-332, 463-492, 507, 544, 602, 607, 827-832, 855-856, 886 |
 | canvodpy/src/canvodpy/cli/stac.py                                               |       36 |        0 |    100% |           |
 | canvodpy/src/canvodpy/cli/store.py                                              |      767 |       87 |     89% |48-51, 99-100, 182, 198-199, 207-208, 284-287, 326-328, 387-390, 405, 423, 432, 442, 516, 551, 596-602, 619-622, 624-632, 648-651, 653-654, 750-754, 789-793, 839, 842-844, 1059-1064, 1067-1071, 1083, 1139-1142, 1164, 1172-1176, 1180, 1187-1193, 1252-1254, 1302, 1428-1431, 1546-1547, 1625-1628, 1642-1643, 1672-1673, 1678-1680, 1704-1709, 1727, 1766, 1830, 1836-1837, 1888, 1894-1895 |
 | canvodpy/src/canvodpy/cli/theme.py                                              |       56 |        1 |     98% |       281 |
@@ -249,7 +249,7 @@
 | packages/canvod-viz/src/canvod/viz/widgets/hemisphere\_widgets.py               |       27 |        0 |    100% |           |
 | packages/canvod-vod/src/canvod/vod/\_\_init\_\_.py                              |        4 |        0 |    100% |           |
 | packages/canvod-vod/src/canvod/vod/calculator.py                                |       76 |        8 |     89% |55, 77, 121, 128-135 |
-| **TOTAL**                                                                       | **30543** | **8431** | **72%** |           |
+| **TOTAL**                                                                       | **30544** | **8420** | **72%** |           |
 
 
 ## Setup coverage badge
