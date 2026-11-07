@@ -3,15 +3,19 @@ name: CI
 # The checks that gate a pull request, summed up by one job, `ci-ok`
 # (ADR 0024, #632). A pull request that changes only docs skips the
 # expensive jobs (scripts/ci_changes.py says which files are docs); any
-# other pull request, every push to main and every run started by hand
-# runs everything, except that a pull request runs the S3 tests only when
-# it changes store code. `ci-ok` passes when every job passed or was skipped
+# other pull request, every push to main, the weekly run and every run
+# started by hand runs everything, except that a pull request runs the S3
+# tests only when it changes store code. The workflows it calls have no
+# trigger of their own, so a push gives one run, and a branch without a
+# pull request none. `ci-ok` passes when every job passed or was skipped
 # on purpose, and fails otherwise.
 
 on:
     pull_request:
     push:
         branches: [main]
+    schedule:
+        - cron: '0 6 * * 1' # Weekly on Monday at 06:00 UTC: external links go stale without a change here
     workflow_dispatch: # a full run, started by hand
 
 permissions: read-all
@@ -56,9 +60,10 @@ jobs:
         uses: ./.github/workflows/docs_quality.yml
         permissions:
             contents: read
-            issues: write # declared by the weekly link check; unused here
+            issues: write # the weekly run opens an issue for failed external links
         with:
-            offline_links: true
+            # External links in the weekly run only (docs_quality.yml).
+            offline_links: ${{ github.event_name != 'schedule' }}
 
     # Only an explicit 'false' skips anything: an empty output runs everything.
     platform-tests:

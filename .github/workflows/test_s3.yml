@@ -22,10 +22,7 @@ name: S3 Tests
 # The emulator is for tests only, not a recommendation for production.
 
 on:
-    push:
-        branches: [main]
-    pull_request:
-    workflow_call: # from ci.yml, only when store code changed
+    workflow_call: # from ci.yml, its only trigger; only when store code changed
 
 permissions: read-all
 
