@@ -152,9 +152,8 @@
               </button>
             
             
-  canVODpy v1.0.0 is out:
+  canVODpy v1.1.0 is out:
   <a href="../../whats-new/">see what's new</a>
-  and <a href="../upgrading/">how to migrate from 0.x</a>
 
           </div>
           
@@ -4959,8 +4958,7 @@ automatic archival and <abbr title="Digital Object Identifier — persistent ide
 <div class="highlight"><pre><span></span><code>just<span class="w"> </span>release<span class="w"> </span>canvod-store<span class="o">=</span><span class="m">1</span>.1.0<span class="w"> </span><span class="nv">canvodpy</span><span class="o">=</span><span class="m">1</span>.1.0<span class="w">   </span><span class="c1"># release commit on release/v1.1.0: open a PR, merge it</span>
 <span class="c1"># then, on the merged main:</span>
 just<span class="w"> </span>tag-release
-git<span class="w"> </span>push<span class="w"> </span>origin<span class="w"> </span>v1.1.0<span class="w">   </span><span class="c1"># on its own: it starts the draft release</span>
-git<span class="w"> </span>push<span class="w"> </span>origin<span class="w"> </span>canvod-store-v1.1.0
+just<span class="w"> </span>push-release-tags<span class="w">   </span><span class="c1"># v1.1.0 on its own: it starts the draft release</span>
 </code></pre></div>
 <p>Only the canvodpy tag (<code>v1.1.0</code>) creates a GitHub release, so Zenodo
 archives one version per canvodpy release; package tags get none.</p>
@@ -5017,7 +5015,7 @@ Get one at <a href="https://orcid.org/register">orcid.org/register</a>; it links
 <h2 id="step-3-create-the-first-release">Step 3. Create the first release<a class="headerlink" href="#step-3-create-the-first-release" title="Permanent link">&para;</a></h2>
 <h3 id="option-a-test-with-a-beta-release">Option A. Test with a beta release<a class="headerlink" href="#option-a-test-with-a-beta-release" title="Permanent link">&para;</a></h3>
 <div class="highlight"><pre><span></span><code>git<span class="w"> </span>tag<span class="w"> </span>-a<span class="w"> </span>v0.1.0b2<span class="w"> </span>-m<span class="w"> </span><span class="s2">"Test Zenodo DOI creation"</span>
-git<span class="w"> </span>push<span class="w"> </span>origin<span class="w"> </span>v0.1.0b2
+git<span class="w"> </span>push<span class="w"> </span>--no-follow-tags<span class="w"> </span>origin<span class="w"> </span>v0.1.0b2
 </code></pre></div>
 <ul>
 <li>Zenodo creates <abbr title="Digital Object Identifier — persistent identifier for publications, datasets, and software">DOI</abbr></li>
@@ -5027,8 +5025,7 @@ git<span class="w"> </span>push<span class="w"> </span>origin<span class="w"> </
 <div class="highlight"><pre><span></span><code>just<span class="w"> </span>release<span class="w"> </span><span class="nv">canvodpy</span><span class="o">=</span><span class="m">0</span>.1.0<span class="w"> </span>canvod-readers<span class="o">=</span><span class="m">0</span>.1.0<span class="w"> </span>...<span class="w">   </span><span class="c1"># open a PR, merge it</span>
 <span class="c1"># then, on the merged main:</span>
 just<span class="w"> </span>tag-release
-git<span class="w"> </span>push<span class="w"> </span>origin<span class="w"> </span>v0.1.0<span class="w">   </span><span class="c1"># on its own: it starts the draft release</span>
-git<span class="w"> </span>push<span class="w"> </span>origin<span class="w"> </span>canvod-readers-v0.1.0<span class="w"> </span>...
+just<span class="w"> </span>push-release-tags<span class="w">   </span><span class="c1"># v0.1.0 on its own: it starts the draft release</span>
 </code></pre></div>
 <ul>
 <li>Creates the GitHub release; <abbr title="Python Package Index — public Python package repository">PyPI</abbr> follows with <code>gh workflow run publish_pypi.yml --ref v0.1.0</code></li>

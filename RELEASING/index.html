@@ -152,9 +152,8 @@
               </button>
             
             
-  canVODpy v1.0.0 is out:
+  canVODpy v1.1.0 is out:
   <a href="../whats-new/">see what's new</a>
-  and <a href="../guides/upgrading/">how to migrate from 0.x</a>
 
           </div>
           
@@ -4592,6 +4591,9 @@ stable release. The first stable release (<code>1.0.0</code>) changed it from
 </li>
 <li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>What's new.</strong> <a href="../whats-new/">What's new</a> describes the release
       and links the release notebook.</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Banner</strong> (minor and major releases, not pre-releases). The banner on every docs page
+      (<code>overrides/main.html</code>, block <code>announce</code>) names the release and links
+      What's new.</li>
 <li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Upgrade guide</strong> (major releases), linked as described under
       <a href="#release-types">Release types</a>.</li>
 <li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Deprecations</strong> stay in every 1.x release; v2.0.0 removes them.</li>
@@ -4633,10 +4635,13 @@ judge, ✗ failed. It exits 1 if any check failed. It checks:</p>
 <li>Every demo notebook pins the last release, as above.</li>
 <li>For a minor or major release: the release notebook is on <code>HEAD</code>, pins
   the new version, and is linked from <code>release-notes/README.md</code> and
-  <code>docs/whats-new.md</code> on <code>HEAD</code>. ⚠ lists the pull requests since the last
-  release, merged or squashed on GitHub, with a feature, fix or deprecation among
-  their commits that the notebook doesn't name by number (<code>#123</code>):
-  compare them with the notebook.</li>
+  <code>docs/whats-new.md</code> on <code>HEAD</code>.</li>
+<li>For a minor or major release that is not a pre-release: the docs banner
+  names the release.</li>
+<li>⚠ lists the pull requests since the last release, merged or squashed on
+  GitHub, with a feature, fix or deprecation among their commits that the
+  notebook doesn't name by number (<code>#123</code>): compare them with the
+  notebook.</li>
 </ul>
 <p>It doesn't judge whether the release notebook and What's new describe
 every change users notice; that stays your call.</p>
@@ -4681,17 +4686,21 @@ branch, so the tags are created only now, on <code>main</code>:</p>
 <div class="highlight"><pre><span></span><code>git<span class="w"> </span>switch<span class="w"> </span>main
 git<span class="w"> </span>pull<span class="w"> </span>origin<span class="w"> </span>main
 just<span class="w"> </span>tag-release
-git<span class="w"> </span>push<span class="w"> </span>origin<span class="w"> </span>v1.1.0
-git<span class="w"> </span>push<span class="w"> </span>origin<span class="w"> </span>canvod-store-v1.1.0<span class="w"> </span>canvod-grids-v1.0.1
+just<span class="w"> </span>push-release-tags
 </code></pre></div>
 <p><code>just tag-release</code> creates an annotated tag for every package version that
-has no tag yet, and prints the push commands; it does not push.</p>
-<p>Push the canvodpy tag on its own, before the package tags. GitHub starts no
+has no tag yet; it does not push. <code>just push-release-tags</code> pushes the
+release tags of the merged commit that GitHub doesn't have yet:</p>
+<div class="highlight"><pre><span></span><code>git<span class="w"> </span>push<span class="w"> </span>--no-follow-tags<span class="w"> </span>origin<span class="w"> </span>v1.1.0
+git<span class="w"> </span>push<span class="w"> </span>--no-follow-tags<span class="w"> </span>origin<span class="w"> </span>canvod-store-v1.1.0<span class="w"> </span>canvod-grids-v1.0.1
+</code></pre></div>
+<p>The canvodpy tag goes on its own, before the package tags. GitHub starts no
 workflow for tags when
 <a href="https://docs.github.com/en/actions/reference/workflows-and-actions/events-that-trigger-workflows#push">more than three tags are pushed at once</a>,
 so a canvodpy tag pushed together with the package tags gets no draft
 release. The package tags start no workflow, so they can go in one push,
-however many there are.</p>
+however many there are. <code>--no-follow-tags</code> keeps git from adding the other
+annotated tags of the commit to the first push (<code>push.followTags</code>).</p>
 <h3 id="4-publish-the-draft-release">4. Publish the draft release<a class="headerlink" href="#4-publish-the-draft-release" title="Permanent link">&para;</a></h3>
 <p>The <code>.github/workflows/release.yml</code> workflow detects the canvodpy tag
 (<code>v1.1.0</code>) and creates a <strong>draft</strong> release whose notes are canvodpy's
@@ -4710,6 +4719,9 @@ the
 (the Run workflow button; choose the tag) or:</p>
 <div class="highlight"><pre><span></span><code>gh<span class="w"> </span>workflow<span class="w"> </span>run<span class="w"> </span>publish_pypi.yml<span class="w"> </span>--ref<span class="w"> </span>v1.1.0
 </code></pre></div>
+<p>The run waits for approval: the <code>pypi</code> environment requires a reviewer.
+Open the run in the Actions tab, choose <strong>Review deployments</strong>, tick
+<code>pypi</code> and approve.</p>
 <p>It first checks the locked dependencies against known vulnerabilities
 (<code>just audit</code>) and stops if it finds one. Then it builds and uploads exactly
 the packages whose release tag points at that
@@ -4808,15 +4820,10 @@ instead. A tag that exists only locally can be deleted with
 and that <code>CHANGELOG.md</code> has a section <code>## v1.1.0 (...)</code>.
 (<abbr title="Python Package Index — public Python package repository">PyPI</abbr> publishing never triggers from a tag push at all; see step 5.)
 If no run started, the canvodpy tag was pushed in one push of more
-than three tags (step 3). Create the draft with the notes the workflow
-would use, from the tagged <code>CHANGELOG.md</code>:</p>
-<div class="highlight"><pre><span></span><code>git<span class="w"> </span>show<span class="w"> </span>v1.1.0:CHANGELOG.md<span class="w"> </span><span class="p">|</span><span class="w"> </span>awk<span class="w"> </span>-v<span class="w"> </span><span class="nv">tag</span><span class="o">=</span>v1.1.0<span class="w"> </span><span class="s1">'</span>
-<span class="s1">  $0 ~ "^## " tag " " { found = 1; next }</span>
-<span class="s1">  found &amp;&amp; /^## / { exit }</span>
-<span class="s1">  found { print }</span>
-<span class="s1">'</span><span class="w"> </span>&gt;<span class="w"> </span>release-notes.md
-gh<span class="w"> </span>release<span class="w"> </span>create<span class="w"> </span>v1.1.0<span class="w"> </span>--title<span class="w"> </span><span class="s2">"canvodpy v1.1.0"</span><span class="w"> </span><span class="se">\</span>
-<span class="w">  </span>--notes-file<span class="w"> </span>release-notes.md<span class="w"> </span>--draft<span class="w"> </span>--verify-tag
+than three tags (step 3), for example by a <code>git push</code> without
+<code>--no-follow-tags</code>. Run the workflow by hand on the tag; it makes the
+same draft:</p>
+<div class="highlight"><pre><span></span><code>gh<span class="w"> </span>workflow<span class="w"> </span>run<span class="w"> </span>release.yml<span class="w"> </span>-f<span class="w"> </span><span class="nv">tag</span><span class="o">=</span>v1.1.0
 </code></pre></div>
 </details>
 <details class="failure">
