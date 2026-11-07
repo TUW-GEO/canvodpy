@@ -1,0 +1,66 @@
+name: CI
+
+# The checks that gate a pull request, summed up by one job, `ci-ok`
+# (ADR 0024, #632). A pull request that changes only docs skips the
+# expensive jobs (scripts/ci_changes.py says which files are docs); any
+# other pull request, every push to main and every run started by hand
+# runs everything. `ci-ok` passes when every job passed or was skipped
+# on purpose, and fails otherwise.
+
+on:
+    pull_request:
+    push:
+        branches: [main]
+    workflow_dispatch: # a full run, started by hand
+
+permissions: read-all
+
+# A new commit on a pull request cancels the run of the commit before.
+# Runs on main get a group of their own each, so none is cancelled.
+concurrency:
+    group: ci-${{ github.event_name == 'pull_request' && github.ref || github.run_id }}
+    cancel-in-progress: true
+
+env:
+    FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: 'true'
+
+jobs:
+    changes:
+        runs-on: ubuntu-latest
+        outputs:
+            # Not a pull request: the classification is skipped, full run.
+            full: ${{ github.event_name != 'pull_request' || steps.classify.outputs.full }}
+        steps:
+            - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+              if: github.event_name == 'pull_request'
+              with:
+                  fetch-depth: 0 # the merge base of the pull request
+                  persist-credentials: false
+            - name: Classify the changed files
+              id: classify
+              if: github.event_name == 'pull_request'
+              env:
+                  BASE_SHA: ${{ github.event.pull_request.base.sha }}
+                  HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+              run: python3 scripts/ci_changes.py "$BASE_SHA" "$HEAD_SHA"
+
+    code-quality:
+        needs: [changes]
+        uses: ./.github/workflows/code_quality.yml
+        with:
+            docs_only: ${{ needs.changes.outputs.full == 'false' }}
+
+    # Only an explicit 'false' skips anything: an empty output runs everything.
+    platform-tests:
+        needs: [changes]
+        if: needs.changes.outputs.full != 'false'
+        uses: ./.github/workflows/test_platforms.yml
+
+    ci-ok:
+        if: always()
+        needs: [changes, code-quality, platform-tests]
+        runs-on: ubuntu-latest
+        steps:
+            - name: Fail when a job failed or was cancelled
+              if: contains(needs.*.result, 'failure') || contains(needs.*.result, 'cancelled')
+              run: exit 1

@@ -6,6 +6,13 @@ on:
     pull_request:
     schedule:
         - cron: '0 6 * * 1' # Weekly on Monday at 06:00 UTC
+    workflow_call: # from ci.yml
+        inputs:
+            docs_only:
+                # True skips the type check, the package build, and the
+                # package-import check. Null (run by its own trigger) runs them.
+                type: boolean
+                default: false
 
 permissions: read-all
 
@@ -26,6 +33,7 @@ jobs:
               run: just check-lock
 
     build:
+        if: ${{ !inputs.docs_only }}
         runs-on: ubuntu-latest
         steps:
             - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -67,6 +75,7 @@ jobs:
               run: just check-format-only
 
     type_consistency:
+        if: ${{ !inputs.docs_only }}
         runs-on: ubuntu-latest
         needs: [lock_file]
         steps:
@@ -80,6 +89,7 @@ jobs:
               run: just check-types
 
     package_imports:
+        if: ${{ !inputs.docs_only }}
         runs-on: ubuntu-latest
         needs: [lock_file]
         steps:
