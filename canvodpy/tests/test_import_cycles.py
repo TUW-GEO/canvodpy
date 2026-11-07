@@ -3,8 +3,7 @@
 An import cycle forces imports into functions to work at all, and hides
 which module depends on which. Imports for type annotations only (under
 ``if TYPE_CHECKING:``) don't run and are not counted. Importing a module
-also runs its package's ``__init__``, which the graph leaves out: keep
-those files free of imports from below them.
+also runs its package's ``__init__``; those edges are not in the graph.
 """
 
 from __future__ import annotations
