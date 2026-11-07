@@ -28,9 +28,9 @@
 | canvodpy/src/canvodpy/cli/vod.py                                                |       62 |       49 |     21% |27-31, 83-109, 114-121, 127-129, 168-204, 208 |
 | canvodpy/src/canvodpy/demo.py                                                   |      138 |        9 |     93% |169, 212-214, 318-321, 339, 347 |
 | canvodpy/src/canvodpy/diagnostics/\_\_init\_\_.py                               |        2 |        2 |      0% |       6-8 |
-| canvodpy/src/canvodpy/diagnostics/sbf\_timing\_diagnostics\_new\_api.py         |      100 |      100 |      0% |    13-229 |
-| canvodpy/src/canvodpy/diagnostics/timing\_diagnostics\_new\_api.py              |       99 |       99 |      0% |    13-232 |
-| canvodpy/src/canvodpy/diagnostics/timing\_diagnostics\_script.py                |      101 |      101 |      0% |     3-225 |
+| canvodpy/src/canvodpy/diagnostics/sbf\_timing\_diagnostics\_new\_api.py         |       96 |       96 |      0% |    13-225 |
+| canvodpy/src/canvodpy/diagnostics/timing\_diagnostics\_new\_api.py              |       93 |       93 |      0% |    13-215 |
+| canvodpy/src/canvodpy/diagnostics/timing\_diagnostics\_script.py                |       97 |       97 |      0% |     3-208 |
 | canvodpy/src/canvodpy/factories.py                                              |      153 |       11 |     93% |266, 288-289, 295-299, 330, 342, 353, 357-358, 483 |
 | canvodpy/src/canvodpy/fluent.py                                                 |      182 |       71 |     61% |77-97, 189-191, 232-236, 245-246, 260, 279-291, 313-351, 365-375, 388-400, 413-415, 477-480 |
 | canvodpy/src/canvodpy/functional.py                                             |      105 |        0 |    100% |           |
@@ -49,7 +49,7 @@
 | canvodpy/src/canvodpy/orchestrator/matcher.py                                   |       48 |        8 |     83% |    94-102 |
 | canvodpy/src/canvodpy/orchestrator/memory\_budget.py                            |       93 |        1 |     99% |       187 |
 | canvodpy/src/canvodpy/orchestrator/pipeline.py                                  |     1057 |      212 |     80% |175-176, 204-215, 281, 303-304, 306, 314-317, 319-320, 333-335, 454-455, 834, 845, 953-970, 1216-1225, 1259, 1273, 1297-1299, 1329-1409, 1433, 1462-1463, 1499-1510, 1519, 1549, 1646-1672, 1684, 1694, 1799, 1856-1864, 1875-1880, 2031, 2074-2082, 2085-2089, 2091-2092, 2121, 2137-2273, 2320, 2466, 2536, 2543, 2611-2619, 2643-2648, 2677-2679, 2747, 2763-2770, 2786, 2904-2905, 2964-2965, 2991, 3003-3007, 3021-3024, 3041-3042, 3045, 3050, 3140-3149, 3178-3199 |
-| canvodpy/src/canvodpy/orchestrator/processor.py                                 |     2053 |      844 |     59% |161-165, 253-254, 366-367, 416-435, 447-449, 467-472, 495, 559-574, 822, 955-978, 988-995, 1005-1013, 1034-1059, 1078-1102, 1118-1140, 1163, 1320-1416, 1446-1450, 1508-1512, 1650, 1661-1666, 1674, 1719-1732, 1756-1762, 1770, 1778, 1848-1854, 1936-1966, 1978-2003, 2025, 2066-2078, 2117, 2133-2140, 2154-2158, 2177, 2193-2200, 2249-2359, 2456, 2544-2547, 2580-2718, 2746-2747, 2765, 2826-2827, 2839, 2861-2866, 3141-3142, 3160-3173, 3191-3198, 3223-3224, 3335, 3411-3416, 3583, 3601, 3645, 3648, 3670, 3715, 3773-3779, 3803, 3892, 4061, 4118, 4120, 4148, 4229-4234, 4247, 4299, 4375-4376, 4444, 4566, 4570, 4602-4622, 4659-4671, 4749-4753, 4823-4825, 4837-4838, 4893-4894, 4900-4913, 4932-4957, 4990-4991, 5069-5075, 5115, 5159-5161, 5198-5213, 5249-5379, 5419-5424, 5427, 5436-5445, 5456, 5507-5515, 5532, 5536-5542, 5545-5546, 5569, 5576-5603, 5657-5704, 5772-6155, 6177-6212, 6242-6333, 6336, 6369, 6372, 6388-6519, 6555-6683, 6687-6753 |
+| canvodpy/src/canvodpy/orchestrator/processor.py                                 |     2016 |      808 |     60% |161-165, 253-254, 366-367, 416-435, 447-449, 467-472, 495, 559-574, 822, 955-978, 988-995, 1005-1013, 1034-1059, 1078-1102, 1118-1140, 1163, 1320-1416, 1446-1450, 1508-1512, 1650, 1661-1666, 1674, 1719-1732, 1756-1762, 1770, 1778, 1848-1854, 1936-1966, 1978-2003, 2025, 2066-2078, 2117, 2133-2140, 2154-2158, 2177, 2193-2200, 2249-2359, 2456, 2544-2547, 2580-2718, 2746-2747, 2765, 2826-2827, 2839, 2861-2866, 3141-3142, 3160-3173, 3191-3198, 3223-3224, 3335, 3411-3416, 3583, 3601, 3645, 3648, 3670, 3715, 3773-3779, 3803, 3892, 4061, 4118, 4120, 4148, 4229-4234, 4247, 4299, 4375-4376, 4444, 4566, 4570, 4602-4622, 4659-4671, 4749-4753, 4823-4825, 4837-4838, 4893-4894, 4900-4913, 4932-4957, 4990-4991, 5069-5075, 5115, 5159-5161, 5198-5213, 5249-5379, 5419-5424, 5427, 5436-5445, 5456, 5507-5515, 5532, 5536-5542, 5545-5546, 5569, 5576-5603, 5657-5704, 5772-6155, 6177-6212, 6242-6333, 6336, 6369, 6372, 6388-6519, 6555-6683 |
 | canvodpy/src/canvodpy/orchestrator/resources.py                                 |      160 |       17 |     89% |35-36, 200-201, 227, 245-248, 257-258, 283-284, 366-367, 393-394 |
 | canvodpy/src/canvodpy/orchestrator/run\_dates.py                                |       11 |        0 |    100% |           |
 | canvodpy/src/canvodpy/orchestrator/store\_retry.py                              |       51 |        8 |     84% |68, 91-102, 175 |
@@ -159,7 +159,7 @@
 | packages/canvod-readers/src/canvod/readers/base.py                              |      170 |       38 |     78% |80, 85, 191-198, 224, 228-230, 234-245, 251-258, 265-267, 320, 402-404, 494, 563, 578 |
 | packages/canvod-readers/src/canvod/readers/builder.py                           |       63 |        0 |    100% |           |
 | packages/canvod-readers/src/canvod/readers/gnss\_specs/\_\_init\_\_.py          |        3 |        0 |    100% |           |
-| packages/canvod-readers/src/canvod/readers/gnss\_specs/bands.py                 |      127 |       98 |     23% |166-416, 420-426 |
+| packages/canvod-readers/src/canvod/readers/gnss\_specs/bands.py                 |      120 |       92 |     23% |   166-416 |
 | packages/canvod-readers/src/canvod/readers/gnss\_specs/constants.py             |       13 |        0 |    100% |           |
 | packages/canvod-readers/src/canvod/readers/gnss\_specs/constellations.py        |      118 |       13 |     89% |105-123, 476-477, 708-710 |
 | packages/canvod-readers/src/canvod/readers/gnss\_specs/exceptions.py            |       20 |        3 |     85% |59, 105, 167 |
@@ -177,7 +177,7 @@
 | packages/canvod-readers/src/canvod/readers/nmea/\_\_init\_\_.py                 |        2 |        0 |    100% |           |
 | packages/canvod-readers/src/canvod/readers/nmea/exceptions.py                   |       10 |        0 |    100% |           |
 | packages/canvod-readers/src/canvod/readers/nmea/v4\_00.py                       |      387 |       51 |     87% |74-75, 184, 192, 197, 204, 258-259, 265, 272-273, 311, 319-320, 409-410, 414-416, 420-421, 491-492, 519, 523, 527, 531-535, 539, 543-547, 553, 587-588, 611, 641-643, 737, 742-743, 798-799, 824-825 |
-| packages/canvod-readers/src/canvod/readers/preprocessing.py                     |      164 |        8 |     95% |164, 168-176, 182, 250, 319, 331 |
+| packages/canvod-readers/src/canvod/readers/preprocessing.py                     |      164 |        8 |     95% |164, 168-176, 182, 250, 326, 331 |
 | packages/canvod-readers/src/canvod/readers/rinex/\_\_init\_\_.py                |        4 |        0 |    100% |           |
 | packages/canvod-readers/src/canvod/readers/rinex/nav.py                         |       87 |        5 |     94% |233, 240, 248, 250-251 |
 | packages/canvod-readers/src/canvod/readers/rinex/v2\_11.py                      |      733 |      579 |     21% |174-175, 178-180, 184-187, 202-208, 216-218, 279-281, 291-299, 307-501, 506, 509, 515-516, 532-555, 560-563, 627-638, 699-704, 708, 713, 716, 724, 730-742, 746, 752, 756-770, 774-776, 780, 784-788, 810-849, 876-888, 905-924, 950-991, 1012-1111, 1131, 1145-1154, 1158, 1162-1180, 1196-1487, 1521-1574, 1582-1598, 1603-1616, 1619-1662, 1692-1714, 1739-1744 |
@@ -249,7 +249,7 @@
 | packages/canvod-viz/src/canvod/viz/widgets/hemisphere\_widgets.py               |       27 |        0 |    100% |           |
 | packages/canvod-vod/src/canvod/vod/\_\_init\_\_.py                              |        4 |        0 |    100% |           |
 | packages/canvod-vod/src/canvod/vod/calculator.py                                |       76 |        8 |     89% |55, 77, 121, 128-135 |
-| **TOTAL**                                                                       | **30544** | **8420** | **72%** |           |
+| **TOTAL**                                                                       | **30486** | **8364** | **73%** |           |
 
 
 ## Setup coverage badge
