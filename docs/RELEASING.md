@@ -13,7 +13,7 @@ checklist for all of them.
 | Repository | What a release changes there |
 |---|---|
 | [canvodpy](https://github.com/TUW-GEO/canvodpy) | versions, changelogs, tags, GitHub release, PyPI, the docs site |
-| [canvodpy-test-data](https://github.com/TUW-GEO/canvodpy-test-data) | nothing; canvodpy's pointer must be its current `main` |
+| [canvodpy-test-data](https://github.com/TUW-GEO/canvodpy-test-data) | a release of its own when its `main` has moved past its last tag (version, tag, GitHub release, Zenodo); canvodpy's pointer must be its current, tagged `main` |
 | [canvodpy-demo](https://github.com/TUW-GEO/canvodpy-demo) | the canvodpy pins in the notebook headers, after PyPI has the release |
 | [canvodpy-extensions](https://github.com/TUW-GEO/canvodpy-extensions) | its own releases, per package, after canvodpy's ([its release guide](https://github.com/TUW-GEO/canvodpy-extensions/blob/main/docs/releasing.md)) |
 
@@ -63,7 +63,20 @@ Each item is a pull request of its own, merged before the release commit.
       increment they call for.
 - [ ] **Test data.** canvodpy's pointer
       (`packages/canvod-readers/tests/test_data`) is the current `main` of
-      canvodpy-test-data, and that commit has a tag.
+      canvodpy-test-data, and that commit has a tag. When the `main` of
+      canvodpy-test-data has moved past its last tag, release the test
+      data first:
+      1. In canvodpy-test-data, a pull request sets the next version in
+         `.zenodo.json` (`"version"`) and `CITATION.cff` (`version`,
+         `date-released`): a minor version for changed or added data, a
+         patch for metadata only. The concept DOI stays.
+      2. After the merge, the user tags the merge commit `vX.Y.Z` and makes
+         a GitHub release of it; its notes list what was added and
+         changed. Zenodo archives the release as a new version of the
+         record; check that the record has the new version.
+      3. In canvodpy, a pull request moves the pointer to that commit. It
+         may merge before the tag exists; `just release-check` fails
+         until the tag is there.
 - [ ] **Demo.** canvodpy's pointer (`demo`) is the current `main` of
       canvodpy-demo. Every notebook there pins the last release in its
       script header: `canvodpy==` and every `canvod-*==` at the versions
@@ -122,8 +135,8 @@ judge, ✗ failed. It exits 1 if any check failed. It checks:
   description starts with "deprecate" (`refactor(config): deprecate ...`);
   commits of the types `docs`, `test`, `ci`, `chore`, `build` and `style`
   change no behavior and never count as one.
-- Both submodule pointers are their repository's `main`; ⚠ when the
-  test-data commit has no tag.
+- Both submodule pointers are their repository's `main`, and the
+  test-data commit has a tag.
 - Every demo notebook pins the last release, as above.
 - For a minor or major release: the release notebook is on `HEAD`, pins
   the new version, and is linked from `release-notes/README.md` and

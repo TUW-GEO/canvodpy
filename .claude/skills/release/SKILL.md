@@ -32,7 +32,9 @@ An agent never merges, approves, pushes `main` or tags, or force-pushes
 3. For every ✗: fix it in a pull request of its own (in canvodpy-demo or
    canvodpy-test-data where the line says so), wait for the merge, run
    the check again. For every ⚠: show it and ask. Don't continue while a
-   ✗ is left.
+   ✗ is left. A ✗ for an untagged test-data commit means the test data
+   needs a release of its own: follow RELEASING.md's Test data item; the
+   tag and the GitHub release are the user's.
 4. Go through the items of RELEASING.md's Before list that the check can't
    judge (the release notebook and What's new describe the changes users
    notice; an upgrade guide for a major release). Ask the user to confirm
