@@ -1,6 +1,20 @@
 # Changelog
 
 <!-- insertion marker -->
+## canvod-preflight-v1.1.0 (2026-11-07)
+
+### Feat
+
+- **preflight**: name navigation files with type nav and sampling 00U (98c140a76)
+
+### Other
+
+- **preflight**: use the FAN/INK persona for navigation file names (294571f24)
+- end the authors line with the licence (bbc0dd886)
+- name the authors without a copyright claim (709349710)
+- restore the Apache placeholder in the LICENSE appendix (dcf035fd7)
+- drop the copyright line and symbol (9035910a7)
+
 ## canvod-preflight-v1.0.0 (2026-10-24)
 
 ### Feat

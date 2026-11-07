@@ -1,6 +1,29 @@
 # Changelog
 
 <!-- insertion marker -->
+## canvod-store-metadata-v1.1.0 (2026-11-07)
+
+### Feat
+
+- **auxiliary**: keep the Hermite orbit interpolation as sp3_interpolation: hermite (df576f1c6)
+- **config**: broadcast stores record no precise product (#574) (3471b2fb8)
+
+### Fix
+
+- **discovery**: point the missing canvod-filemap hint at PyPI (98aba868c)
+
+### Refactor
+
+- **config**: one map of renamed ephemeris sources, used everywhere (9134210d3)
+- **config**: deprecate ephemeris source final, use precise (e98cc5541)
+
+### Other
+
+- end the authors line with the licence (bbc0dd886)
+- name the authors without a copyright claim (709349710)
+- restore the Apache placeholder in the LICENSE appendix (dcf035fd7)
+- drop the copyright line and symbol (9035910a7)
+
 ## canvod-store-metadata-v1.0.0 (2026-10-24)
 
 ### BREAKING CHANGES

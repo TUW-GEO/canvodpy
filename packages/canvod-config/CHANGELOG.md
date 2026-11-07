@@ -1,6 +1,48 @@
 # Changelog
 
 <!-- insertion marker -->
+## canvod-config-v1.1.0 (2026-11-07)
+
+### Feat
+
+- **auxiliary**: keep the Hermite orbit interpolation as sp3_interpolation: hermite (df576f1c6)
+- **config**: nav_recipe for navigation files with their own names; until canvod-filemap has the file type nav, a run with it stops with an error (#624) (7ce490bdb)
+- **canvodpy**: cache the broadcast orbits in the shared aux cache (#573) (97dc86155)
+- **canvodpy**: say when a shared-position reference's nav_directory is not read (d27e60866)
+- **canvodpy**: shared-position references use the canopy's navigation files (5e495140b)
+- **canvodpy**: broadcast runs of RINEX files take the receiver's navigation files (b2988409c)
+- **config**: nav_directory for the broadcast ephemeris of RINEX files (de569bf14)
+- **config**: broadcast stores record no precise product (#574) (3471b2fb8)
+
+### Fix
+
+- **config**: refuse ':' in site and recipe names when fetching recipes (#539) (faeb408c3)
+- **config**: refuse site names with \ or a leading dot when fetching recipes (#539) (7ce5a6ff8)
+- **config**: fetch the recipes an overlay names with settings from a link (#539) (073d0eb4a)
+- **orchestrator**: name the agency aux store per site and sampling interval (#576) (f6b0f8132)
+- **config**: check the broadcast ephemeris per site, not for the whole settings file (7ec890b89)
+- **auxiliary**: interpolate orbits with a polynomial of degree 10 (#563) (bcb6b808b)
+- **canvodpy**: review of the broadcast ephemeris of RINEX files (84dd8b9cf)
+- **auxiliary**: read JPL and IAC clock files, from_file reads its product (ccc35aed3)
+
+### Refactor
+
+- **config**: one map of renamed ephemeris sources, used everywhere (9134210d3)
+- **config**: deprecate ephemeris source final, use precise (e98cc5541)
+- **store**: deprecate _to_icechunk_throttled, use _to_icechunk (33a9d2040)
+
+### Other
+
+- **discovery**: navigation files need canonical names until filemap reads them (#110) (4718b732a)
+- **config**: load_config from a checkout subdirectory with own settings (#527) (deb73d1ed)
+- **auxiliary**: where the orbit velocities come from; old broadcast stores accept either method (66ff098cd)
+- name v1.1.0, write down which version a change goes into (#575) (b7d5bae46)
+- explain the precise and the broadcast ephemeris (#575) (2979c1f6d)
+- end the authors line with the licence (bbc0dd886)
+- name the authors without a copyright claim (709349710)
+- restore the Apache placeholder in the LICENSE appendix (dcf035fd7)
+- drop the copyright line and symbol (9035910a7)
+
 ## canvod-config-v1.0.0 (2026-10-24)
 
 ### BREAKING CHANGES

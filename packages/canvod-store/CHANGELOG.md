@@ -1,6 +1,35 @@
 # Changelog
 
 <!-- insertion marker -->
+## canvod-store-v1.1.0 (2026-11-07)
+
+### Feat
+
+- **auxiliary**: keep the Hermite orbit interpolation as sp3_interpolation: hermite (df576f1c6)
+- **canvodpy**: name satellites observed without a position (#571) (a8c71c9bc)
+
+### Fix
+
+- **store**: compare receiver positions within the RINEX resolution (b24ae7529)
+- **auxiliary**: interpolate orbits with a polynomial of degree 10 (#563) (bcb6b808b)
+
+### Perf
+
+- **orchestrator**: prepare each day in the worker pool (#433) (b5461e103)
+
+### Refactor
+
+- **store**: deprecate _to_icechunk_throttled, use _to_icechunk (33a9d2040)
+
+### Other
+
+- **store**: cite RINEX 3.04 Table A2 for APPROX POSITION XYZ (1a2a69397)
+- **store**: compare with the day 0 snapshot without an on-disk store (#527) (63ff6387b)
+- end the authors line with the licence (bbc0dd886)
+- name the authors without a copyright claim (709349710)
+- restore the Apache placeholder in the LICENSE appendix (dcf035fd7)
+- drop the copyright line and symbol (9035910a7)
+
 ## canvod-store-v1.0.0 (2026-10-24)
 
 ### BREAKING CHANGES

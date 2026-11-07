@@ -186,7 +186,7 @@ wheels = [
 
 [[package]]
 name = "canvod-auxiliary"
-version = "1.0.0"
+version = "1.1.0"
 source = { editable = "packages/canvod-auxiliary" }
 dependencies = [
     { name = "canvod-config" },
@@ -245,7 +245,7 @@ dev = [
 
 [[package]]
 name = "canvod-config"
-version = "1.0.0"
+version = "1.1.0"
 source = { editable = "packages/canvod-config" }
 dependencies = [
     { name = "canvod-utils" },
@@ -370,7 +370,7 @@ dev = [
 
 [[package]]
 name = "canvod-preflight"
-version = "1.0.0"
+version = "1.1.0"
 source = { editable = "packages/canvod-preflight" }
 dependencies = [
     { name = "canvod-utils" },
@@ -389,7 +389,7 @@ requires-dist = [
 
 [[package]]
 name = "canvod-readers"
-version = "1.0.0"
+version = "1.1.0"
 source = { editable = "packages/canvod-readers" }
 dependencies = [
     { name = "canvod-config" },
@@ -444,7 +444,7 @@ dev = [
 
 [[package]]
 name = "canvod-store"
-version = "1.0.0"
+version = "1.1.0"
 source = { editable = "packages/canvod-store" }
 dependencies = [
     { name = "canvod-auxiliary" },
@@ -501,7 +501,7 @@ dev = [
 
 [[package]]
 name = "canvod-store-metadata"
-version = "1.0.0"
+version = "1.1.0"
 source = { editable = "packages/canvod-store-metadata" }
 dependencies = [
     { name = "canvod-config" },
@@ -634,7 +634,7 @@ dev = [
 
 [[package]]
 name = "canvodpy"
-version = "1.0.0"
+version = "1.1.0"
 source = { editable = "canvodpy" }
 dependencies = [
     { name = "altair" },
