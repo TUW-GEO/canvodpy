@@ -2,7 +2,9 @@
 
 An import cycle forces imports into functions to work at all, and hides
 which module depends on which. Imports for type annotations only (under
-``if TYPE_CHECKING:``) don't run and are not counted.
+``if TYPE_CHECKING:``) don't run and are not counted. Importing a module
+also runs its package's ``__init__``, which the graph leaves out: keep
+those files free of imports from below them.
 """
 
 from __future__ import annotations
@@ -33,8 +35,14 @@ def _imported(tree: ast.AST) -> set[str]:
             for sub in node.orelse:
                 names |= _imported(ast.Module(body=[sub], type_ignores=[]))
             continue
-        if isinstance(node, ast.ImportFrom) and node.level == 0 and node.module:
-            names.add(node.module)
+        if isinstance(node, ast.ImportFrom):
+            # canvodpy imports by absolute names only; a relative import
+            # would need the importing module's package to resolve.
+            assert node.level == 0, f"relative import of {node.module!r}"
+            if node.module:
+                names.add(node.module)
+                # ``from package import module`` imports that module.
+                names.update(f"{node.module}.{alias.name}" for alias in node.names)
         elif isinstance(node, ast.Import):
             names.update(alias.name for alias in node.names)
         names |= _imported(node)
@@ -101,7 +109,17 @@ def test_type_checking_imports_are_not_counted():
         "def f():\n"
         "    from canvodpy.vod_phase import units\n"
     )
-    assert _imported(tree) == {"typing", "canvodpy.vod_phase"}
+    assert _imported(tree) == {
+        "typing",
+        "typing.TYPE_CHECKING",
+        "canvodpy.vod_phase",
+        "canvodpy.vod_phase.units",
+    }
+
+
+def test_a_module_imported_from_its_package_is_counted():
+    tree = ast.parse("from canvodpy.orchestrator import processor\n")
+    assert "canvodpy.orchestrator.processor" in _imported(tree)
 
 
 def test_canvodpy_has_no_import_cycle():
