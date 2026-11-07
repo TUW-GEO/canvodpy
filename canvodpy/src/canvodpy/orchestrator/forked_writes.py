@@ -40,6 +40,12 @@ from canvod.store.day_blocks import (
 )
 from canvod.store.store import cleanse_dataset_attrs, normalize_encodings
 from canvod.store_metadata.layout import LayoutError
+from canvodpy.orchestrator.file_worker import (
+    _warn_if_epoch_count_differs_from_name,
+    _warn_if_name_disagrees_with_data,
+    preprocess_reference_with_hermite_aux_fanout,
+    preprocess_with_hermite_aux,
+)
 
 #: Log-book actions of a file a fork wrote, or the writer thread wrote.
 WRITTEN, OVERWRITTEN, SKIPPED = "written", "overwritten", "skipped"
@@ -194,11 +200,6 @@ def chunk_groups[K, C: Hashable](
 
 def _read(file_task: tuple, groups: Sequence[str]) -> tuple[Path, dict, dict]:
     """Read one file as the run's task would: its dataset per group and aux."""
-    from canvodpy.orchestrator.processor import (
-        preprocess_reference_with_hermite_aux_fanout,
-        preprocess_with_hermite_aux,
-    )
-
     args, is_fanout = file_task[:-1], file_task[-1]
     if is_fanout:
         fname, by_group, aux, _ = preprocess_reference_with_hermite_aux_fanout(*args)
@@ -217,11 +218,6 @@ def write_files_into_fork(fork: ForkSession, task: ForkTask) -> ForkResult:
     returned for the writer thread to write (``FileNumbers.deferred``). A
     file that fails is logged and listed in ``ForkResult.failed``.
     """
-    from canvodpy.orchestrator.processor import (
-        _warn_if_epoch_count_differs_from_name,
-        _warn_if_name_disagrees_with_data,
-    )
-
     log = structlog.get_logger(__name__)
     result = ForkResult(task=task, fork=fork)
     parts: dict[str, list[tuple[Path, xr.Dataset]]] = {g: [] for g in task.groups}

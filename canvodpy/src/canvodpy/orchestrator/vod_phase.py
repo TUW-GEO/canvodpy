@@ -59,6 +59,7 @@ from canvod.store.store import (
 from canvod.store_metadata.layout import LayoutError
 from canvod.utils.tools import get_version_from_pyproject
 from canvodpy.orchestrator.resources import run_measured
+from canvodpy.vod_calculation import compute_vod
 
 _DAY = np.timedelta64(1, "D")
 _NS = np.timedelta64(1, "ns")
@@ -181,8 +182,6 @@ def compute_vod_into_fork(fork: ForkSession | None, task: VodTask) -> VodDayResu
     VOD group (the block is emptied first). Without a block, the result is
     returned for the commit to write.
     """
-    from canvodpy.vod_computer import compute_vod
-
     t_start = time.perf_counter()
     pair = task.pair
     result = VodDayResult(task=task, fork=fork)

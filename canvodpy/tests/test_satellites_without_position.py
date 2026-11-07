@@ -18,8 +18,8 @@ import pytest
 import xarray as xr
 import zarr
 from canvodpy.cli.run import _print_satellites_without_position
+from canvodpy.orchestrator.file_worker import satellites_without_position
 from canvodpy.orchestrator.pipeline import _sum_no_position
-from canvodpy.orchestrator.processor import satellites_without_position
 from canvodpy.run_history import RunHistory
 from test_broadcast_rinex_run import DAY, NAV, RECEIVERS, _run, _settings
 

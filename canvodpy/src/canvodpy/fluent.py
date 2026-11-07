@@ -224,7 +224,7 @@ class FluentWorkflow:
         log = self.log.bind(date=date)
 
         from canvod.config import load_config
-        from canvodpy.orchestrator.processor import SOURCE_FORMAT_ATTR
+        from canvodpy.orchestrator.file_worker import SOURCE_FORMAT_ATTR
         from canvodpy.workflows.tasks import _day_files, _resolve_date
 
         reader_format = _READER_FILE_FORMATS.get(self._reader_name)

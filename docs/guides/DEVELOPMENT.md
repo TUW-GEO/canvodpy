@@ -188,9 +188,9 @@ with stage_timer("icechunk.write", group=group_name, size_mb=size_mb):
 When one block has several sequential checkpoints, each a dashboard stage
 of its own, measure them yourself and emit each with
 `record_stage_timing(stage, seconds, ...)` (see `_preprocess_file` in
-`processor.py`). Checkpoints that are not dashboard stages belong in one
+`orchestrator/file_worker.py`). Checkpoints that are not dashboard stages belong in one
 specific, well-named event with their own rich context (see
-`_preprocess_aux_data` in `processor.py`), which is more useful
+`_preprocess_aux_data` in `orchestrator/processor.py`), which is more useful
 than forcing everything through one generic name.
 
 Only the main process adds stages to the `run_summary`; stages timed in a
