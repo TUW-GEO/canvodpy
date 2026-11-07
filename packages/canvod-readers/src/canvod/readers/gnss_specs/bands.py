@@ -414,13 +414,3 @@ class Bands(BaseModel):
         if savepath:
             fig.savefig(savepath, dpi=300, bbox_inches="tight", facecolor="black")
         return fig, (ax1, ax2)
-
-
-if __name__ == "__main__":
-    bands = Bands()
-    print(bands.BAND_PROPERTIES)
-    print(bands.SYSTEM_BANDS)
-    print(bands.OVERLAPPING_GROUPS)
-    fig, ax = bands.plot_bands(savepath="gnss_bands.png")
-
-    plt.show()

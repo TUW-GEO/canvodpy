@@ -143,10 +143,6 @@ def diagnose_processing_new_api(
     all_receivers = sorted(site.active_receivers.keys())
     timing_log = TimingLogger(expected_receivers=all_receivers)
 
-    counter = 0
-    garbage_collect = 0
-    days_since_rechunk = 0
-
     # Main processing loop using NEW API
     # Context manager ensures orchestrator resources are released on exit
     with site.pipeline(keep_vars=keep_vars, dry_run=False) as pipeline:
@@ -202,25 +198,11 @@ def diagnose_processing_new_api(
                     total_time=total_time,
                 )
 
-                days_since_rechunk += 1
-
             except Exception as e:
                 print(f"\n✗ Failed {date_key}: {e}")
                 import traceback
 
                 traceback.print_exc()
-
-            finally:
-                counter += 1
-                garbage_collect += 1
-
-            # Garbage collection every 5 days
-            # if garbage_collect % 5 == 0:
-            #     print("\n💤 Pausing for 60s before garbage collection...")
-            #     time.sleep(60)
-            #     print("\n🗑️  Running garbage collection...")
-            #     gc.collect()
-            #     print("✓ Garbage collection done")
 
     print(f"\n{'=' * 80}")
     print(f"End time: {datetime.now()}")
@@ -228,14 +210,6 @@ def diagnose_processing_new_api(
 
 
 if __name__ == "__main__":
-    # Process everything
+    # Times every day of the site. To time part of it, pass start_from and
+    # end_at, each a day as a YYYYDOY string.
     diagnose_processing_new_api()
-
-    # Start from a specific date
-    # diagnose_processing_new_api(start_from="2025224", end_at="2025224")
-
-    # Process a specific range
-    # diagnose_processing_new_api(start_from="2025278", end_at="2025280")
-
-    # Process specific test range (Oct 26, 2025)
-    # diagnose_processing_new_api(start_from="2025299", end_at="2025300")

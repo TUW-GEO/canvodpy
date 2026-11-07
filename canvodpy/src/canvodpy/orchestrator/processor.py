@@ -11,7 +11,7 @@ from collections.abc import Callable, Generator, Iterable, Mapping, Sequence
 from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor, as_completed
 from concurrent.futures.process import BrokenProcessPool
 from dataclasses import dataclass, field
-from datetime import UTC, datetime
+from datetime import datetime
 from datetime import time as dt_time
 from pathlib import Path
 from typing import Any
@@ -65,7 +65,7 @@ from canvod.config.models import (
 )
 from canvod.config.models.sites import RINEX_READER_FORMATS
 from canvod.ops import preprocess_files
-from canvod.readers import DataDirMatcher, MatchedDirs
+from canvod.readers import MatchedDirs
 from canvod.readers.gnss_specs.exceptions import NmeaError, RinexError
 from canvod.store import GnssResearchSite, scoped_zarr_concurrency
 from canvod.store.day_blocks import (
@@ -6681,73 +6681,3 @@ class DistributedRinexDataProcessor(RinexDataProcessor):
             )
 
             yield daily_dataset
-
-
-if __name__ == "__main__":
-    print(f"stared main block at {datetime.now(UTC)}")
-    cfg = load_config()
-
-    matcher = DataDirMatcher(
-        root=Path("."),
-        reference_pattern=Path("01_reference/01_GNSS/01_raw"),
-        canopy_pattern=Path("02_canopy/01_GNSS/01_raw"),
-    )
-
-    site = GnssResearchSite(site_name="ExampleSite")
-
-    stats = {"processed": 0, "skipped": 0, "failed": 0}
-
-    for md in matcher:
-        yyyydoy_str = md.yyyydoy.to_str()
-
-        if yyyydoy_str != "2024258":
-            continue
-
-        try:
-            print(f"instantiating processor for {yyyydoy_str}: {datetime.now(UTC)}")
-            # Create processor first to check completeness
-            processor = RinexDataProcessor(
-                matched_data_dirs=md, site=site, n_max_workers=12, config=cfg
-            )
-
-            # Check if should skip
-            if processor._gnss_store_strategy in ["skip", "unsafe_append"]:
-                should_skip, coverage = processor.should_skip_day()
-
-                if should_skip:
-                    print(f"✓ Skipping {yyyydoy_str} - already complete:")
-                    for receiver_type, info in coverage.items():
-                        print(
-                            f"  {receiver_type}: {info['epochs']}/"
-                            f"{info['expected']} ({info['percent']:.1f}%)"
-                        )
-                    stats["skipped"] += 1
-                    continue
-                else:
-                    print(f"⚠ Processing {yyyydoy_str} - incomplete coverage:")
-                    for receiver_type, info in coverage.items():
-                        if info["exists"]:
-                            print(
-                                f"  {receiver_type}: {info['epochs']}/"
-                                f"{info['expected']} ({info['percent']:.1f}%)"
-                            )
-                        else:
-                            print(f"  {receiver_type}: No data")
-
-            # Process data
-            print(
-                f"about to call parsed_rinex_data_gen for {yyyydoy_str}: "
-                f"{datetime.now(UTC)}"
-            )
-            data_generator = processor.parsed_rinex_data_gen()
-            print(f"calling next for canopy: {datetime.now(UTC)}")
-            canopy_ds = next(data_generator)
-            print(f"calling next for reference: {datetime.now(UTC)}")
-            reference_ds = next(data_generator)
-
-            stats["processed"] += 1
-            print(f"✓ Processed {yyyydoy_str}")
-
-        except (OSError, RuntimeError, ValueError) as e:
-            print(f"✗ Failed {yyyydoy_str}: {e}")
-            stats["failed"] += 1

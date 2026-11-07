@@ -1,62 +1,27 @@
-#!/usr/bin/env python
-"""Test that pint warnings are resolved."""
+"""canvod-auxiliary and canvod-readers share pint's application registry.
 
-import multiprocessing as mp
-import warnings
+Both define ``dBHz`` in it; each must leave a definition the other made
+alone (pint raises ``RedefinitionError`` on a second definition). Checked
+in a fresh interpreter, as in a worker process.
+"""
 
-
-def test_import():
-    """Import modules that use pint and check for warnings."""
-    # Capture warnings
-    with warnings.catch_warnings(record=True) as w:
-        warnings.simplefilter("always")
-
-        # Import modules that define units
-
-        # Check for pint warnings
-        pint_warnings = [
-            warning
-            for warning in w
-            if "Redefining" in str(warning.message) and "dB" in str(warning.message)
-        ]
-
-        assert not pint_warnings, (
-            f"Found {len(pint_warnings)} pint warnings: "
-            + ", ".join(str(w.message) for w in pint_warnings)
-        )
+import subprocess
+import sys
 
 
-def worker(i):
-    """Worker function to test multiprocessing."""
-    import warnings
+def test_both_unit_modules_import_together():
+    code = (
+        "import canvod.auxiliary._internal.units as a\n"
+        "import canvod.readers.gnss_specs.constants as r\n"
+        "assert a.UREG is r.UREG\n"
+        "print(a.UREG.Quantity(1, 'dBHz').units)\n"
+    )
+    result = subprocess.run(
+        [sys.executable, "-c", code],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
 
-    with warnings.catch_warnings(record=True) as w:
-        warnings.simplefilter("always")
-
-        pint_warnings = [
-            warning
-            for warning in w
-            if "Redefining" in str(warning.message) and "dB" in str(warning.message)
-        ]
-
-        return len(pint_warnings)
-
-
-if __name__ == "__main__":
-    print("Testing pint unit definitions...\n")
-
-    # Test main process
-    main_ok = test_import()
-
-    # Test multiprocessing
-    print("\nTesting multiprocessing workers...")
-    with mp.Pool(4) as pool:
-        results = pool.map(worker, range(4))
-
-    total_warnings = sum(results)
-    if total_warnings == 0:
-        print(f"✅ No pint warnings in {len(results)} worker processes")
-        print("\n🎉 All tests passed! Pint warnings are fixed.")
-    else:
-        print(f"❌ Found {total_warnings} pint warnings across workers")
-        print("\n⚠️  Tests failed.")
+    assert result.returncode == 0, result.stderr
+    assert result.stdout.strip() == "dBHz"

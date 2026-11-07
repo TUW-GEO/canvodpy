@@ -125,9 +125,7 @@ def diagnose_processing(
     all_receivers = sorted(site.active_receivers.keys())
     timing_log = TimingLogger(expected_receivers=all_receivers)
 
-    counter = 0
     garbage_collect = 0
-    days_since_rechunk = 0
 
     # Main processing loop
     # Context manager ensures orchestrator resources are released on exit
@@ -182,8 +180,6 @@ def diagnose_processing(
                     total_time=total_time,
                 )
 
-                days_since_rechunk += 1
-
             except Exception as e:
                 print(f"\n✗ Failed {date_key}: {e}")
                 import traceback
@@ -191,16 +187,7 @@ def diagnose_processing(
                 traceback.print_exc()
 
             finally:
-                counter += 1
                 garbage_collect += 1
-
-                # Rechunking logic commented out (as in original)
-                # if days_since_rechunk >= 2:
-                #     print(f"\n{'='*80}")
-                #     print("🔄 RECHUNKING STORE (every 2 days)")
-                #     print(f"{'='*80}\n")
-                #     # Rechunking logic would go here
-                #     days_since_rechunk = 0
 
             # Garbage collection every 5 days
             if garbage_collect % 5 == 0:
@@ -210,25 +197,12 @@ def diagnose_processing(
                 gc.collect()
                 print("✓ Garbage collection done")
 
-        # Optional: Stop after N days for diagnostics
-        # if counter == 30:
-        #     print(f"\n🛑 Reached 30 days of processing, stopping for diagnostics.")
-        #     break
-
     print(f"\n{'=' * 80}")
     print(f"End time: {datetime.now()}")
     print(f"{'=' * 80}\n")
 
 
 if __name__ == "__main__":
-    # Process everything
-    diagnose_processing()  # tart_from="20250806")
-
-    # Start from a specific date
-    # diagnose_processing(start_from="2024183")  # July 1, 2024
-
-    # Process a specific range
-    # diagnose_processing(start_from="2025278", end_at="2025280")
-
-    # Process specific test range (Oct 26, 2025)
-    # diagnose_processing(start_from="2025299", end_at="2025300")
+    # Times every day of the site. To time part of it, pass start_from and
+    # end_at, each a day as a YYYYDOY string.
+    diagnose_processing()
