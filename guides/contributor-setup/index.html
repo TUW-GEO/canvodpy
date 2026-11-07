@@ -5841,7 +5841,7 @@ a genuine code quality issue.</p>
 <tbody>
 <tr>
 <td><strong>Code Quality</strong></td>
-<td>Every push and PR, weekly</td>
+<td>Push to <code>main</code>, every pull request, weekly</td>
 <td>Checks lockfile consistency, runs <abbr title="Fast Python linter and formatter written in Rust — replaces flake8, black, isort">ruff</abbr> linting, checks formatting, runs type checking with ty, checks the agent instruction files</td>
 </tr>
 <tr>
@@ -5851,12 +5851,12 @@ a genuine code quality issue.</p>
 </tr>
 <tr>
 <td><strong>Platform Tests</strong></td>
-<td>Every push and PR, weekly</td>
+<td>Push to <code>main</code>, every pull request, weekly</td>
 <td>Runs the test suite on Linux, macOS, and Windows with Python 3.14</td>
 </tr>
 <tr>
 <td><strong>S3 Tests</strong></td>
-<td>Every push and PR</td>
+<td>Push to <code>main</code>, every pull request</td>
 <td>Runs the tests of stores on S3 against an S3 emulator (RustFS) on Linux; elsewhere these tests are skipped</td>
 </tr>
 <tr>
