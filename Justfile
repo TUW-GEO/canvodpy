@@ -513,6 +513,14 @@ release +VERSIONS: test
 tag-release:
     uv run --script scripts/release.py tag
 
+# Run after tag-release, on the merged release commit on main: pushes its
+# release tags that origin lacks, canvodpy's tag on its own first (more than
+# three tags in one push start no workflow), with --no-follow-tags.
+# push the release tags (v1.1.0 first, then the package tags)
+[group('build and release')]
+push-release-tags:
+    uv run --script scripts/release.py push
+
 # ============================================================================
 # Build & Publish Recipes
 # ============================================================================
