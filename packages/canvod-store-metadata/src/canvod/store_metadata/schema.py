@@ -29,6 +29,25 @@ from pydantic_core import PydanticCustomError
 
 from .identity import STORE_TYPES
 
+
+def _set_field(data: dict[str, Any], key: str, value: Any) -> Any:
+    """Set the dotted ``key`` in ``data`` to ``value``; return the old value.
+
+    A section on the way that is missing or unset (``None``, e.g. a
+    receiver's ``antenna``) is created empty; the model check that follows
+    refuses it if it cannot be.
+    """
+    *parents, leaf = key.split(".")
+    target = data
+    for part in parents:
+        if target.get(part) is None:
+            target[part] = {}
+        target = target[part]
+    old = target.get(leaf)
+    target[leaf] = value
+    return old
+
+
 # ── Rules from the standards ────────────────────────────────────────────────
 #
 # A field that follows a standard (SPDX, ORCID, ...) is checked by its

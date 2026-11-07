@@ -187,6 +187,17 @@ def _store_with_recipe(tmp_path: Path, recipe: str) -> Path:
     return store
 
 
+def _fake_recipe_sha256(monkeypatch) -> None:
+    """A made-up recipe sha256 where the metadata is collected and checked."""
+    from canvod.store_metadata import collectors, io
+
+    def fake(site, recipe):
+        return "0" * 64
+
+    monkeypatch.setattr(collectors, "recipe_sha256_of", fake)
+    monkeypatch.setattr(io, "recipe_sha256_of", fake)
+
+
 def test_the_store_records_the_sha256_of_a_local_recipe(tmp_path, monkeypatch):
     pytest.importorskip("canvod.filemap.recipe_files")
     import hashlib
@@ -219,10 +230,8 @@ def test_show_prints_the_sha256_of_the_recipe(tmp_path, monkeypatch):
 
 
 def test_a_store_keeps_only_the_file_name_of_a_recipe_url(tmp_path, monkeypatch):
-    from canvod.store_metadata import collectors
-
     # No download: the recipe's sha256 is made up.
-    monkeypatch.setattr(collectors, "recipe_sha256_of", lambda site, recipe: "0" * 64)
+    _fake_recipe_sha256(monkeypatch)
     url = f"https://raw.githubusercontent.com/acc/recipes/main/{SITE}/rx.yaml"
     store = _store_with_recipe(tmp_path, url)
 
@@ -320,10 +329,9 @@ def test_an_s3_url_not_at_the_site_layout_is_refused(store):
 
 
 def test_a_store_that_recorded_a_whole_recipe_url_still_matches(tmp_path, monkeypatch):
-    from canvod.store_metadata import collectors
     from canvod.store_metadata.io import check_recipes
 
-    monkeypatch.setattr(collectors, "recipe_sha256_of", lambda site, recipe: "0" * 64)
+    _fake_recipe_sha256(monkeypatch)
     url = f"https://raw.githubusercontent.com/acc/recipes/main/{SITE}/rx.yaml"
     store = _store_with_recipe(tmp_path, url)
     repository = read_repository_metadata(store)

@@ -14,12 +14,18 @@ from typing import Any
 import icechunk
 import structlog
 import zarr
-from canvod.config.store_names import OLD_GNSS_STORE_NAME, STORE_TYPE_KINDS
+from canvod.config.store_names import OLD_GNSS_STORE_NAME
 from canvod.utils.tools import deprecated
 from filelock import FileLock, Timeout
 from pydantic import ValidationError
 from zarr import errors as zarr_errors
 
+from .collectors import collect_metadata, recipe_sha256_of
+from .content import (
+    CONTENT_SETTINGS_FIELD,
+    check_content_settings,
+    is_settings_object,
+)
 from .icechunk_logs import apply_icechunk_log_filter
 from .identity import check_store_folder
 from .layout import DAY_BLOCK_INDEX_ATTR, is_day_block_group
@@ -31,14 +37,27 @@ from .location import (
     store_exists,
     store_location,
 )
+from .location import (
+    store_command as store_command,
+)
 from .schema import (
     _METADATA_KEY,
     Amendment,
     RepositoryMetadata,
     StoreMetadata,
+    _set_field,
     describe_rule_breaks,
     rule_breaks,
 )
+from .snapshot import (
+    REPOSITORY_METADATA_ATTR,
+    combined_metadata,
+    commit_metadata,
+    lockfile_stored,
+    prepare_commit,
+)
+from .summary import receiver_groups
+from .summary_state import forget_summary_state, summary_state
 
 apply_icechunk_log_filter()
 
@@ -242,8 +261,6 @@ def commit_with_rebase(
                 f"  {SITE_MIGRATE_COMMAND} SITE"
             )
             raise ValueError(msg)
-        from .snapshot import prepare_commit
-        from .summary_state import forget_summary_state, summary_state
 
         if config is None:
             from canvod.config import load_config
@@ -464,7 +481,6 @@ def store_lockfile(
         Snapshot ID of the new commit; ``None`` if the text was stored
         already, or no lockfile is in use.
     """
-    from .snapshot import commit_metadata, lockfile_stored, prepare_commit
 
     _, texts = commit_metadata(
         repository, config, store_path, datetime.now(UTC).isoformat()
@@ -501,11 +517,6 @@ def _check_content_at_tip(
     store that has content settings: a store without them is refused when
     the run starts (:func:`ensure_store_metadata`).
     """
-    from .content import (
-        CONTENT_SETTINGS_FIELD,
-        check_content_settings,
-        is_settings_object,
-    )
 
     if not is_settings_object(config) or not repository.get(CONTENT_SETTINGS_FIELD):
         return
@@ -555,8 +566,6 @@ def rewrite_manifests(
         repository = repo.get_metadata()
         metadata = None
         if repository:
-            from .snapshot import commit_metadata
-
             if config is None:
                 from canvod.config import load_config
 
@@ -625,8 +634,6 @@ def write_metadata(
         )
         raise ValueError(msg) from exc
 
-    from .snapshot import REPOSITORY_METADATA_ATTR
-
     with commit_lock(store_path):
         repo = open_repository(store_path)
         existing = repo.get_metadata()
@@ -688,7 +695,6 @@ def read_metadata(
     KeyError
         If no metadata found in store.
     """
-    from .snapshot import REPOSITORY_METADATA_ATTR, combined_metadata
 
     repo = open_repository(store_path)
     session = (
@@ -721,24 +727,6 @@ def apply_updates(metadata: StoreMetadata, updates: dict[str, Any]) -> StoreMeta
     Keys such as ``"temporal.updated"`` address nested fields.
     """
     return _apply_updates(metadata, updates)
-
-
-def _set_field(data: dict[str, Any], key: str, value: Any) -> Any:
-    """Set the dotted ``key`` in ``data`` to ``value``; return the old value.
-
-    A section on the way that is missing or unset (``None``, e.g. a
-    receiver's ``antenna``) is created empty; the model check that follows
-    refuses it if it cannot be.
-    """
-    *parents, leaf = key.split(".")
-    target = data
-    for part in parents:
-        if target.get(part) is None:
-            target[part] = {}
-        target = target[part]
-    old = target.get(leaf)
-    target[leaf] = value
-    return old
 
 
 def _apply_updates(metadata: StoreMetadata, updates: dict[str, Any]) -> StoreMetadata:
@@ -874,12 +862,6 @@ def check_who(who: str | None) -> str:
         )
         raise ValueError(msg)
     return who.strip()
-
-
-def store_command(command: str, site_name: str, store_type: str) -> str:
-    """A ``canvodpy store`` command line for one site's store."""
-    kind = STORE_TYPE_KINDS.get(store_type, store_type)
-    return f"canvodpy store {command} {site_name} --store {kind}"
 
 
 def _written_before_metadata(repo: icechunk.Repository) -> bool:
@@ -1071,8 +1053,6 @@ def ensure_store_metadata(
         If the settings differ from the store's content settings, or the
         store has none (names the migrate command).
     """
-    from .collectors import collect_metadata
-    from .content import check_content_settings
 
     names = list(names)
 
@@ -1140,7 +1120,6 @@ def _not_listed(names: Iterable[str], listed: Mapping[str, Any]) -> list[str]:
     A reference receiver is stored once per listed canopy receiver it is
     paired with (see :func:`~canvod.store_metadata.summary.receiver_groups`).
     """
-    from .summary import receiver_groups
 
     groups = set().union(
         *receiver_groups(
@@ -1240,8 +1219,6 @@ def current_recipes(
         If a recipe is not found, so its sha256 is unknown.
     """
     from canvod.utils.remote_file import recorded_name
-
-    from .collectors import recipe_sha256_of
 
     recipes: dict[str, tuple[str | None, str | None]] = {}
     for name, receiver_config in site_config.receivers.items():
