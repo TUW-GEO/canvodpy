@@ -143,9 +143,6 @@ def diagnose_processing_new_api(
     all_receivers = sorted(site.active_receivers.keys())
     timing_log = TimingLogger(expected_receivers=all_receivers)
 
-    counter = 0
-    days_since_rechunk = 0
-
     # Main processing loop using NEW API
     # Context manager ensures orchestrator resources are released on exit
     with site.pipeline(keep_vars=keep_vars, dry_run=False) as pipeline:
@@ -201,16 +198,11 @@ def diagnose_processing_new_api(
                     total_time=total_time,
                 )
 
-                days_since_rechunk += 1
-
             except Exception as e:
                 print(f"\n✗ Failed {date_key}: {e}")
                 import traceback
 
                 traceback.print_exc()
-
-            finally:
-                counter += 1
 
     print(f"\n{'=' * 80}")
     print(f"End time: {datetime.now()}")

@@ -125,9 +125,7 @@ def diagnose_processing(
     all_receivers = sorted(site.active_receivers.keys())
     timing_log = TimingLogger(expected_receivers=all_receivers)
 
-    counter = 0
     garbage_collect = 0
-    days_since_rechunk = 0
 
     # Main processing loop
     # Context manager ensures orchestrator resources are released on exit
@@ -182,8 +180,6 @@ def diagnose_processing(
                     total_time=total_time,
                 )
 
-                days_since_rechunk += 1
-
             except Exception as e:
                 print(f"\n✗ Failed {date_key}: {e}")
                 import traceback
@@ -191,7 +187,6 @@ def diagnose_processing(
                 traceback.print_exc()
 
             finally:
-                counter += 1
                 garbage_collect += 1
 
             # Garbage collection every 5 days
