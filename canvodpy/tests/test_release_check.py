@@ -46,6 +46,15 @@ def _commit(root: Path, message: str) -> str:
     return _git(root, "rev-parse", "HEAD")
 
 
+def banner(version: str) -> str:
+    """The docs template with a banner that announces ``version``."""
+    return (
+        '{% extends "base.html" %}\n\n{% block announce %}\n'
+        f'  canVODpy {version} is out: <a href="whats-new/">see what\'s new</a>\n'
+        "{% endblock %}\n"
+    )
+
+
 def notebook(pins: list[str]) -> str:
     """A marimo notebook whose script header pins ``pins``."""
     lines = "\n".join(f'#   "{pin}",' for pin in [*pins, "marimo>=0.23.9"])
@@ -191,6 +200,7 @@ def repo(tmp_path: Path) -> Repo:
         "# What's new in v1.1.0\n\n"
         "[Release notebook](https://github.com/TUW-GEO/canvodpy/blob/main/release-notes/v1.1.0.py)\n",
     )
+    _write(root, "overrides/main.html", banner("v1.1.0"))
     repo.commit("feat(store): broadcast ephemeris (#100)")
     _git(
         root,
@@ -327,6 +337,40 @@ def test_a_patch_release_needs_no_notebook(repo: Repo, capsys) -> None:
     assert _line(out, "✓", "patch release; the commits since v1.1.0 call for a patch")
     assert _line(out, "✓", "Patch release: no release notebook needed")
     assert "release-notes/v1.1.1.py" not in out
+
+
+def test_the_banner_names_the_release(repo: Repo, capsys) -> None:
+    code, out = repo.check("1.1.0", capsys)
+    assert code == 0
+    assert _line(out, "✓", "The docs banner (overrides/main.html) names v1.1.0")
+
+
+def test_a_banner_of_the_last_release_fails(repo: Repo, capsys) -> None:
+    _write(repo.root, "overrides/main.html", banner("v1.0.0"))
+    repo.commit("docs: banner")
+    code, out = repo.check("1.1.0", capsys)
+    assert code == 1
+    assert _line(out, "✗", "doesn't name v1.1.0")
+
+
+def test_a_banner_of_a_longer_version_fails(repo: Repo, capsys) -> None:
+    _write(repo.root, "overrides/main.html", banner("v1.1.01"))
+    repo.commit("docs: banner")
+    code, out = repo.check("1.1.0", capsys)
+    assert code == 1
+    assert _line(out, "✗", "doesn't name v1.1.0")
+
+
+def test_a_pre_release_leaves_the_banner_alone(repo: Repo, capsys) -> None:
+    _, out = repo.check("1.1.0rc1", capsys)
+    assert _line(out, "✓", "Pre-release: the docs banner")
+
+
+def test_a_patch_release_leaves_the_banner_alone(repo: Repo, capsys) -> None:
+    _write(repo.root, "overrides/main.html", banner("v1.0.0"))
+    repo.commit("fix(store): a fix")
+    _, out = repo.check("1.0.1", capsys)
+    assert "docs banner" not in out
 
 
 def test_a_missing_release_notebook_fails(repo: Repo, capsys) -> None:

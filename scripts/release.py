@@ -25,6 +25,11 @@ Commands
     On the merged release commit: creates the annotated tags of every package
     whose version has no tag yet (``canvod-store-v1.1.0``; ``v1.1.0`` for
     canvodpy). Does not push.
+``push``
+    On the merged release commit: pushes its release tags that origin lacks,
+    canvodpy's on its own first (more than three tags in one push start no
+    workflow, so the draft release would not appear), with
+    ``--no-follow-tags``.
 ``check VERSION``
     Read-only: checks that the repository is ready for ``prepare`` of
     canvodpy ``VERSION`` (main and CI, the version and its increment, the
@@ -43,6 +48,7 @@ Before per-package versions, all packages were released together under
 from __future__ import annotations
 
 import datetime as dt
+import os
 import re
 import subprocess
 import sys
@@ -124,8 +130,24 @@ def _packages(root: Path = ROOT) -> dict[str, Package]:
     return found
 
 
+def _git_env(root: Path) -> dict[str, str]:
+    """The environment of git: the project's virtual environment first on PATH.
+
+    ``git switch`` and ``git commit`` run the pre-commit hooks, which look for
+    ``pre-commit`` on PATH when the Python they were installed with is gone;
+    without it on PATH the hook fails and so does the git command.
+    """
+    env = dict(os.environ)
+    for scripts in (root / ".venv" / "bin", root / ".venv" / "Scripts"):
+        if scripts.is_dir():
+            env["PATH"] = f"{scripts}{os.pathsep}{env.get('PATH', '')}"
+    return env
+
+
 def _git(*args: str, root: Path = ROOT) -> str:
-    result = subprocess.run(["git", *args], cwd=root, capture_output=True, text=True)
+    result = subprocess.run(
+        ["git", *args], cwd=root, capture_output=True, text=True, env=_git_env(root)
+    )
     if result.returncode != 0:
         raise SystemExit(
             f"git {' '.join(args)} failed:\n{result.stdout}{result.stderr}"
@@ -380,8 +402,8 @@ def _range_problems(
     return problems
 
 
-def _push_commands(tags: list[str]) -> list[str]:
-    """The pushes for the release tags: canvodpy's tag on its own, first.
+def _push_groups(tags: list[str]) -> list[list[str]]:
+    """The release tags in pushes: canvodpy's tag on its own, first.
 
     GitHub creates no push event for tags when more than three tags are
     pushed at once, so a canvodpy tag pushed with the package tags never
@@ -390,9 +412,17 @@ def _push_commands(tags: list[str]) -> list[str]:
     # canvodpy's tags are "v<version>", the packages' "<name>-v<version>".
     umbrella = [name for name in tags if name[:1] == "v" and name[1:2].isdigit()]
     others = [name for name in tags if name not in umbrella]
-    return [
-        f"git push origin {' '.join(group)}" for group in (umbrella, others) if group
-    ]
+    return [group for group in (umbrella, others) if group]
+
+
+#: Without it, git pushes every annotated tag on the pushed commits when the
+#: repository sets push.followTags, all in one push.
+PUSH_TAGS = ("push", "--no-follow-tags", "origin")
+
+
+def _push_commands(tags: list[str]) -> list[str]:
+    """The ``git push`` commands of :func:`_push_groups`."""
+    return [f"git {' '.join(PUSH_TAGS)} {' '.join(g)}" for g in _push_groups(tags)]
 
 
 KINDS = ("patch", "minor", "major")
@@ -518,8 +548,9 @@ def prepare(packages: dict[str, Package], args: list[str]) -> int:
     print("  2. Push the branch and open a pull request; a maintainer merges it")
     print("  3. A maintainer tags the merged commit on main and pushes the tags:")
     print("       git switch main && git pull origin main && just tag-release")
+    print("       just push-release-tags   # does:")
     for command in _push_commands(tags):
-        print(f"       {command}")
+        print(f"         {command}")
     print("  4. GitHub Actions drafts the GitHub release of the canvodpy tag")
     print("  5. PyPI is separate and manual:")
     print(
@@ -533,16 +564,16 @@ def prepare(packages: dict[str, Package], args: list[str]) -> int:
     return 0
 
 
-def tag(packages: dict[str, Package]) -> int:
-    if _git("status", "--porcelain", "--untracked-files=no"):
+def tag(packages: dict[str, Package], root: Path = ROOT) -> int:
+    if _git("status", "--porcelain", "--untracked-files=no", root=root):
         print("The working tree has uncommitted changes; tag a clean checkout of main.")
         return 1
     created = []
     for pkg in packages.values():
         name = pkg.tag(pkg.version)
-        if _git("tag", "--list", name):
+        if _git("tag", "--list", name, root=root):
             continue
-        _git("tag", "-a", name, "-m", f"Release {pkg.name} {pkg.version}")
+        _git("tag", "-a", name, "-m", f"Release {pkg.name} {pkg.version}", root=root)
         created.append(name)
     if not created:
         print("Every package version is tagged already.")
@@ -550,23 +581,59 @@ def tag(packages: dict[str, Package]) -> int:
     print("Created (not pushed):")
     for name in created:
         print(f"  {name}")
-    print("\nPush them, canvodpy's tag on its own:")
+    print("\nPush them with: just push-release-tags. It does:")
     for command in _push_commands(created):
         print(f"  {command}")
     return 0
 
 
-def tagged(packages: dict[str, Package]) -> int:
-    """Print the packages whose release tag points at HEAD (for publishing)."""
-    head = _git("rev-parse", "HEAD")
-    names = []
+def _tags_at_head(packages: dict[str, Package], root: Path = ROOT) -> dict[str, str]:
+    """Package name to its release tag, for the release tags that point at HEAD."""
+    head = _git("rev-parse", "HEAD", root=root)
+    found = {}
     for pkg in packages.values():
         tag_name = pkg.tag(pkg.version)
         if (
-            _git("tag", "--list", tag_name)
-            and _git("rev-list", "-n", "1", tag_name) == head
+            _git("tag", "--list", tag_name, root=root)
+            and _git("rev-list", "-n", "1", tag_name, root=root) == head
         ):
-            names.append(pkg.name)
+            found[pkg.name] = tag_name
+    return found
+
+
+def push(packages: dict[str, Package], root: Path = ROOT) -> int:
+    """Push the release tags at HEAD that origin lacks, canvodpy's first."""
+    _git("fetch", "--quiet", "origin", "main", root=root)
+    if _git("rev-parse", "HEAD", root=root) != _git(
+        "rev-parse", "origin/main", root=root
+    ):
+        print("HEAD is not origin/main: push the tags of the merged release commit.")
+        return 1
+    tags = list(_tags_at_head(packages, root).values())
+    if not tags:
+        print("No release tag points at HEAD: run just tag-release first.")
+        return 1
+    listed = _git("ls-remote", "--tags", "origin", root=root).splitlines()
+    on_origin = {
+        line.split("refs/tags/", 1)[1] for line in listed if "refs/tags/" in line
+    }
+    missing = [name for name in tags if name not in on_origin]
+    if not missing:
+        print("Every release tag at HEAD is on origin already.")
+        return 0
+    for group in _push_groups(missing):
+        print(f"git {' '.join(PUSH_TAGS)} {' '.join(group)}")
+        _git(*PUSH_TAGS, *group, root=root)
+    print(
+        "\nPushed. The canvodpy tag drafts the GitHub release "
+        "(.github/workflows/release.yml); review and publish it."
+    )
+    return 0
+
+
+def tagged(packages: dict[str, Package], root: Path = ROOT) -> int:
+    """Print the packages whose release tag points at HEAD (for publishing)."""
+    names = list(_tags_at_head(packages, root))
     if not names:
         print("No package's release tag points at this commit.", file=sys.stderr)
         return 1
@@ -997,6 +1064,27 @@ def _check_release_notebook(root: Path, new: Version) -> list[Check]:
     return checks
 
 
+#: The docs template whose announce block is the banner on every docs page.
+BANNER = "overrides/main.html"
+ANNOUNCE = re.compile(r"(?s)\{% block announce %\}(?P<text>.*?)\{% endblock %\}")
+
+
+def _check_banner(root: Path, new: Version) -> Check:
+    """The docs banner of a minor or major release names it."""
+    if new.is_prerelease:
+        return Check(PASS, f"Pre-release: the docs banner ({BANNER}) is not checked")
+    match = ANNOUNCE.search(_show(root, BANNER) or "")
+    if match is None:
+        return Check(PASS, f"{BANNER} has no banner")
+    if re.search(rf"\bv{re.escape(str(new))}\b", match["text"]):
+        return Check(PASS, f"The docs banner ({BANNER}) names v{new}")
+    return Check(
+        FAIL,
+        f"The docs banner ({BANNER}, block announce) on HEAD doesn't name v{new}: "
+        "change it in a pull request.",
+    )
+
+
 def _notable_pull_requests(root: Path, last: Version) -> list[str]:
     """``#number subject`` of the merged pull requests since ``last`` with a
     feature, fix or deprecation, merged or squashed."""
@@ -1074,6 +1162,7 @@ def check(version: str, root: Path = ROOT, remote: Remote | None = None) -> int:
     ]
     if last is None or _increment(last, new) > 0:
         checks += _check_release_notebook(root, new)
+        checks.append(_check_banner(root, new))
         checks.append(_check_merged_prs(root, last, new))
     else:
         checks.append(Check(PASS, "Patch release: no release notebook needed"))
@@ -1091,15 +1180,17 @@ def check(version: str, root: Path = ROOT, remote: Remote | None = None) -> int:
 def main(argv: list[str], root: Path = ROOT, remote: Remote | None = None) -> int:
     if argv[:1] == ["check"] and len(argv) == 2:
         return check(argv[1], root=root, remote=remote)
-    packages = _packages()
+    packages = _packages(root)
     if argv[:1] == ["status"]:
         return status(packages)
     if argv[:1] == ["prepare"] and len(argv) > 1:
         return prepare(packages, argv[1:])
     if argv == ["tag"]:
-        return tag(packages)
+        return tag(packages, root)
+    if argv == ["push"]:
+        return push(packages, root)
     if argv == ["tagged"]:
-        return tagged(packages)
+        return tagged(packages, root)
     print(__doc__)
     return 2
 

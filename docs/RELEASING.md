@@ -96,6 +96,9 @@ Each item is a pull request of its own, merged before the release commit.
     - The draft release links it when it is in the tagged commit.
 - [ ] **What's new.** [What's new](whats-new.md) describes the release
       and links the release notebook.
+- [ ] **Banner** (minor and major releases, not pre-releases). The banner on every docs page
+      (`overrides/main.html`, block `announce`) names the release and links
+      What's new.
 - [ ] **Upgrade guide** (major releases), linked as described under
       [Release types](#release-types).
 - [ ] **Deprecations** stay in every 1.x release; v2.0.0 removes them.
@@ -140,10 +143,13 @@ judge, ✗ failed. It exits 1 if any check failed. It checks:
 - Every demo notebook pins the last release, as above.
 - For a minor or major release: the release notebook is on `HEAD`, pins
   the new version, and is linked from `release-notes/README.md` and
-  `docs/whats-new.md` on `HEAD`. ⚠ lists the pull requests since the last
-  release, merged or squashed on GitHub, with a feature, fix or deprecation among
-  their commits that the notebook doesn't name by number (`#123`):
-  compare them with the notebook.
+  `docs/whats-new.md` on `HEAD`.
+- For a minor or major release that is not a pre-release: the docs banner
+  names the release.
+- ⚠ lists the pull requests since the last release, merged or squashed on
+  GitHub, with a feature, fix or deprecation among their commits that the
+  notebook doesn't name by number (`#123`): compare them with the
+  notebook.
 
 It doesn't judge whether the release notebook and What's new describe
 every change users notice; that stays your call.
@@ -205,19 +211,25 @@ branch, so the tags are created only now, on `main`:
 git switch main
 git pull origin main
 just tag-release
-git push origin v1.1.0
-git push origin canvod-store-v1.1.0 canvod-grids-v1.0.1
+just push-release-tags
 ```
 
 `just tag-release` creates an annotated tag for every package version that
-has no tag yet, and prints the push commands; it does not push.
+has no tag yet; it does not push. `just push-release-tags` pushes the
+release tags of the merged commit that GitHub doesn't have yet:
 
-Push the canvodpy tag on its own, before the package tags. GitHub starts no
+```bash
+git push --no-follow-tags origin v1.1.0
+git push --no-follow-tags origin canvod-store-v1.1.0 canvod-grids-v1.0.1
+```
+
+The canvodpy tag goes on its own, before the package tags. GitHub starts no
 workflow for tags when
 [more than three tags are pushed at once](https://docs.github.com/en/actions/reference/workflows-and-actions/events-that-trigger-workflows#push),
 so a canvodpy tag pushed together with the package tags gets no draft
 release. The package tags start no workflow, so they can go in one push,
-however many there are.
+however many there are. `--no-follow-tags` keeps git from adding the other
+annotated tags of the commit to the first push (`push.followTags`).
 
 ### 4. Publish the draft release
 
@@ -244,6 +256,10 @@ the
 ```bash
 gh workflow run publish_pypi.yml --ref v1.1.0
 ```
+
+The run waits for approval: the `pypi` environment requires a reviewer.
+Open the run in the Actions tab, choose **Review deployments**, tick
+`pypi` and approve.
 
 It first checks the locked dependencies against known vulnerabilities
 (`just audit`) and stops if it finds one. Then it builds and uploads exactly
@@ -344,17 +360,12 @@ Once PyPI has the release:
     and that `CHANGELOG.md` has a section `## v1.1.0 (...)`.
     (PyPI publishing never triggers from a tag push at all; see step 5.)
     If no run started, the canvodpy tag was pushed in one push of more
-    than three tags (step 3). Create the draft with the notes the workflow
-    would use, from the tagged `CHANGELOG.md`:
+    than three tags (step 3), for example by a `git push` without
+    `--no-follow-tags`. Run the workflow by hand on the tag; it makes the
+    same draft:
 
     ```bash
-    git show v1.1.0:CHANGELOG.md | awk -v tag=v1.1.0 '
-      $0 ~ "^## " tag " " { found = 1; next }
-      found && /^## / { exit }
-      found { print }
-    ' > release-notes.md
-    gh release create v1.1.0 --title "canvodpy v1.1.0" \
-      --notes-file release-notes.md --draft --verify-tag
+    gh workflow run release.yml -f tag=v1.1.0
     ```
 
 ??? failure "Tag is not allowed to deploy due to environment protection rules"

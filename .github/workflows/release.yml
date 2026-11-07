@@ -1,5 +1,7 @@
 # GitHub Release Workflow
 # Automatically creates a draft release when a canvodpy tag is pushed.
+# When the push started no workflow (more than three tags in one push), run
+# it by hand on the tag: gh workflow run release.yml -f tag=v1.1.0
 # Package tags (canvod-store-v1.1.0) get no GitHub release of their own:
 # canvodpy's release lists the package versions it pins.
 # https://docs.github.com/en/actions/using-workflows
@@ -11,6 +13,12 @@ on:
     tags:
       - "v*.*.*"           # canvodpy: v1.0.0, also pre-releases as Python
                            # writes them (v1.1.0a1, v1.1.0b1, v1.1.0rc1)
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "canvodpy tag that has no draft release yet (v1.1.0)"
+        required: true
+        type: string
 
 permissions: read-all
 
@@ -20,24 +28,35 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write  # Required to create releases
+    env:
+      # The pushed tag, or the one given to a run by hand.
+      TAG: ${{ inputs.tag || github.ref_name }}
 
     steps:
+      - name: Check the tag
+        run: |
+          if ! [[ "${TAG}" =~ ^v[0-9]+\.[0-9]+\.[0-9]+((a|b|rc)[0-9]+)?$ ]]; then
+            echo "${TAG} is not a canvodpy release tag (v1.1.0, v1.1.0rc1)" >&2
+            exit 1
+          fi
+
       - name: Checkout repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
+          ref: refs/tags/${{ env.TAG }}
           fetch-depth: 1  # CHANGELOG.md of the tagged commit
 
       - name: Release notes from canvodpy's CHANGELOG section
         run: |
           # The section scripts/release.py wrote for this tag: from its
           # "## <tag> (date)" heading to the next "## " heading.
-          awk -v tag="${GITHUB_REF_NAME}" '
+          awk -v tag="${TAG}" '
             $0 ~ "^## " tag " " { found = 1; next }
             found && /^## / { exit }
             found { print }
           ' CHANGELOG.md > release-notes.md
           if [ ! -s release-notes.md ]; then
-            echo "CHANGELOG.md has no section for ${GITHUB_REF_NAME}" >&2
+            echo "CHANGELOG.md has no section for ${TAG}" >&2
             exit 1
           fi
           cat release-notes.md
@@ -46,7 +65,7 @@ jobs:
         # Minor and major releases have one (docs/RELEASING.md, step 3); a
         # patch release usually not, and then the notes get no link.
         run: |
-          notebook="release-notes/${GITHUB_REF_NAME}.py"
+          notebook="release-notes/${TAG}.py"
           if [ -f "${notebook}" ]; then
             {
               echo
@@ -59,7 +78,7 @@ jobs:
       - name: Extract version from tag
         id: version
         run: |
-          VERSION=${GITHUB_REF#refs/tags/v}
+          VERSION=${TAG#v}
           echo "version=$VERSION" >> $GITHUB_OUTPUT
           echo "Version: $VERSION"
 
@@ -68,15 +87,15 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           # Determine if this is a pre-release
-          if echo "${{ github.ref_name }}" | grep -qE '[0-9](a|b|rc)[0-9]+$'; then
+          if echo "${TAG}" | grep -qE '[0-9](a|b|rc)[0-9]+$'; then
             PRERELEASE="--prerelease"
           else
             PRERELEASE=""
           fi
 
-          gh release create ${{ github.ref_name }} \
+          gh release create "${TAG}" \
             --repo ${{ github.repository }} \
-            --title "canvodpy ${{ github.ref_name }}" \
+            --title "canvodpy ${TAG}" \
             --notes-file release-notes.md \
             --draft \
             $PRERELEASE \
@@ -84,6 +103,6 @@ jobs:
 
       - name: Summary
         run: |
-          echo "✅ Draft release created: ${{ github.ref_name }}"
+          echo "✅ Draft release created: ${TAG}"
           echo "📝 Review at: https://github.com/${{ github.repository }}/releases"
           echo "🚀 Publish the release manually when ready"

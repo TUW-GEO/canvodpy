@@ -232,10 +232,9 @@ gh pr create --title "bump: canvodpy 1.1.0 (canvod-grids 1.0.1, canvod-store 1.1
 # merged once CI passes, then on main:
 git switch main && git pull origin main
 just tag-release
-git push origin v1.1.0   # on its own: it starts the draft release
-git push origin canvod-grids-v1.0.1 canvod-store-v1.1.0
+just push-release-tags   # v1.1.0 on its own (it starts the draft release), then the package tags
 # draft release v1.1.0 appears: review, publish
-gh workflow run publish_pypi.yml --ref v1.1.0
+gh workflow run publish_pypi.yml --ref v1.1.0   # approve the pypi environment in the run
 ```
 
 Users then install `uv add canvodpy==1.1.0` (the whole tested mix) or
