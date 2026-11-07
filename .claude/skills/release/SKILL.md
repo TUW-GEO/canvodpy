@@ -17,7 +17,7 @@ uploads are public and permanent.
 |---|---|---|
 | Versions | run `just release-status`, show it, propose increments by the versioning rule (fix: patch; feature, setting or deprecation: minor; removal or store format: major) | chooses the packages and versions |
 | Merges | push a feature branch, open the PR | reviews and merges |
-| Tags | print `just tag-release` and the push commands | creates and pushes the tags |
+| Tags | print `just tag-release` and `just push-release-tags` | creates and pushes the tags |
 | Draft release | check that it exists and links the release notebook | publishes it |
 | PyPI | print `gh workflow run publish_pypi.yml --ref vX.Y.Z` | runs it, approves the `pypi` environment |
 
@@ -46,7 +46,8 @@ An agent never merges, approves, pushes `main` or tags, or force-pushes
    the user chose. Show `git show --stat`, push `release/vX.Y.Z`, open the
    PR. Wait for the user's merge.
 6. Tags, draft release and PyPI: the gates above, in RELEASING.md's order
-   (the canvodpy tag pushed on its own).
+   (`just push-release-tags` pushes the canvodpy tag on its own; if no
+   draft appears, the user runs `gh workflow run release.yml -f tag=vX.Y.Z`).
 7. The extensions, canvodpy first: for each extension package the user
    wants released, follow the `release-package` skill of
    canvodpy-extensions. Its release notebook
