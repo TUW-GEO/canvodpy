@@ -1,12 +1,7 @@
 name: Platform Tests
 
 on:
-    push:
-        branches: [main]
-    pull_request:
-    schedule:
-        - cron: '0 6 * * 1'  # Weekly on Monday at 06:00 UTC
-    workflow_call: # from ci.yml
+    workflow_call: # from ci.yml, its only trigger
         inputs:
             # The Ubuntu job measures the coverage, uploads it to Coveralls
             # and writes the coverage comment on the pull request.

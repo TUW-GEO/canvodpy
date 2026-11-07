@@ -1,16 +1,12 @@
 name: Docs Quality
 
 on:
-    push:
-        branches: [main]
-    pull_request:
-    schedule:
-        - cron: '0 6 * * 1' # Weekly on Monday at 06:00 UTC: links go stale without a change here
     workflow_dispatch: # the full link check, started by hand
     workflow_call: # from ci.yml
         inputs:
-            # ci.yml checks the links between our pages only, even when it
-            # runs by hand: an outside server must not fail `ci-ok`.
+            # ci.yml checks the links between our pages only, except in its
+            # weekly run: an outside server must not fail a pull request or
+            # a run by hand.
             offline_links:
                 type: boolean
                 default: false
@@ -61,17 +57,18 @@ jobs:
 
     links:
         # lychee on the built site and README.md (settings in lychee.toml).
-        # Pushes and pull requests check the links between our pages and
+        # Pull requests and pushes check the links between our pages and
         # their anchors only (--offline): an outside server that is down for
         # an hour must not fail a pull request (pangeo.io, #394). The weekly
-        # run, or one started by hand, also checks the external links and
-        # opens an issue when one fails.
+        # run of ci.yml, or a run of this workflow by hand, also checks the
+        # external links (links go stale without a change here) and opens
+        # an issue when one fails.
         runs-on: ubuntu-latest
         permissions:
             contents: read
             issues: write
         env:
-            FULL: ${{ !inputs.offline_links && (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch') }}
+            FULL: ${{ !inputs.offline_links }}
         steps:
             - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
             - uses: ./.github/actions/setup

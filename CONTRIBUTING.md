@@ -149,16 +149,22 @@ just reference-check           # Compare with the reference stores (needs the te
 
 ## Continuous integration
 
-Every push and pull request runs these checks on GitHub Actions:
+Every pull request and every push to `main` runs one workflow on GitHub
+Actions, **CI**, which sums up its checks in one check, `ci-ok`. A pull
+request that changes only docs skips the type check, the package build,
+the package-import check and the platform tests; one that changes no
+store code skips the S3 tests
+([ADR 0024](docs/adr/0024-ci-runs-what-a-change-needs.md)). CI runs:
 
 - **Python Code Quality:** checks that `uv.lock` is up to date and runs ruff
   (lint and format) and ty (types). It also builds and imports every package
   with only its declared dependencies and checks the paths named in
   `AGENTS.md` files and skills.
-- **Test with coverage:** pytest with coverage, uploaded to
-  [Coveralls](https://coveralls.io/github/TUW-GEO/canvodpy) and posted as a
+- **Platform Tests:** the test suite on Linux, Windows, and macOS. The Linux
+  job measures the coverage, uploads it to
+  [Coveralls](https://coveralls.io/github/TUW-GEO/canvodpy) and posts it as a
   comment on the pull request.
-- **Platform Tests:** the test suite on Linux, Windows, and macOS.
+- **S3 Tests:** the tests of stores on S3, against an S3 emulator.
 - **Docs Quality:** a language check (Vale) of the changed pages and root
   files, and a link check (lychee) of the built site.
 - **Reference stores:** on a change of the package sources or `uv.lock`,

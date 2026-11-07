@@ -41,7 +41,7 @@ The badge requires filling out criteria in these categories:
 #### Quality (17 criteria)
 - [x] Coding standards (ruff, PEP 8)
 - [x] Automated test suite (pytest on Linux, macOS and Windows)
-- [x] Code coverage (test_coverage.yml workflow)
+- [x] Code coverage (Linux job of test_platforms.yml, Coveralls)
 - [x] Build reproducibility (uv.lock, pinned dependencies)
 - [x] Continuous integration (GitHub Actions, `.github/workflows/`)
 
@@ -82,7 +82,7 @@ Based on canvodpy's current state:
 - ✅ Coding standards (ruff with 50+ rule sets, PEP 8 compliant)
 - ✅ Type checking (ty with type budget enforcement)
 - ✅ Test suite (pytest on Linux, macOS and Windows, with coverage)
-- ✅ Test coverage (test_coverage.yml)
+- ✅ Test coverage (Linux job of test_platforms.yml, Coveralls)
 - ✅ CI/CD (GitHub Actions: tests, coverage, code quality, CodeQL, docs quality, FAIR, releases)
 - ✅ Reproducible builds (uv.lock with pinned dependencies)
 - ✅ Pre-commit hooks (ruff, ty, conventional commits)

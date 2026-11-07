@@ -1,16 +1,11 @@
 name: Python Code Quality
 
 on:
-    push:
-        branches: [main]
-    pull_request:
-    schedule:
-        - cron: '0 6 * * 1' # Weekly on Monday at 06:00 UTC
-    workflow_call: # from ci.yml
+    workflow_call: # from ci.yml, its only trigger
         inputs:
             docs_only:
                 # True skips the type check, the package build, and the
-                # package-import check. Null (run by its own trigger) runs them.
+                # package-import check.
                 type: boolean
                 default: false
 

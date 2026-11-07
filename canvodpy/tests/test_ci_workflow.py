@@ -4,7 +4,9 @@
 job and fail when any of them failed or was cancelled. The expensive
 jobs run unless the ``changes`` job found a docs-only pull request, the
 S3 tests only when it found a change to store code (#634); pushes to
-``main`` and runs by hand always run everything.
+``main``, the weekly run and runs by hand always run everything. The
+called workflows have no trigger of their own (#636), so a push gives one
+run.
 """
 
 from pathlib import Path
@@ -35,9 +37,25 @@ def _needs(job: dict) -> set[str]:
     return {needs} if isinstance(needs, str) else set(needs)
 
 
+#: The workflows ci.yml calls, with the triggers they keep besides it.
+CALLED = {
+    "code_quality.yml": set(),
+    "docs_quality.yml": {"workflow_dispatch"},  # the full link check by hand
+    "test_platforms.yml": set(),
+    "test_s3.yml": set(),
+}
+
+
 def test_triggers():
-    assert set(CI["on"]) == {"pull_request", "push", "workflow_dispatch"}
+    assert set(CI["on"]) == {"pull_request", "push", "schedule", "workflow_dispatch"}
     assert CI["on"]["push"]["branches"] == ["main"]
+    assert len(CI["on"]["schedule"]) == 1
+
+
+def test_called_workflows_have_no_trigger_of_their_own():
+    for name, extra in CALLED.items():
+        assert set(_load(name)["on"]) == {"workflow_call"} | extra, name
+    assert not (WORKFLOWS / "test_coverage.yml").exists()
 
 
 def test_ci_ok_needs_every_job_and_always_runs():
@@ -72,19 +90,17 @@ def test_s3_tests_only_for_store_changes():
     assert "changes" in _needs(job)
     assert job["if"] == "needs.changes.outputs.s3 != 'false'"
     assert job["uses"] == "./.github/workflows/test_s3.yml"
-    assert "workflow_call" in _load("test_s3.yml")["on"]
 
 
-def test_docs_quality_always_runs_with_the_offline_link_check():
+def test_docs_quality_always_runs_external_links_weekly_only():
     job = JOBS["docs-quality"]
     assert "if" not in job
     assert job["uses"] == "./.github/workflows/docs_quality.yml"
-    assert job["with"]["offline_links"] is True
-    # The weekly run keeps the external link check; a run by hand of ci.yml
-    # must not fail on an outside server.
+    # A pull request, a push or a run by hand of ci.yml must not fail on an
+    # outside server; the weekly run checks the external links.
+    assert job["with"]["offline_links"] == "${{ github.event_name != 'schedule' }}"
     called = _load("docs_quality.yml")
-    assert "workflow_call" in called["on"]
-    assert "!inputs.offline_links" in called["jobs"]["links"]["env"]["FULL"]
+    assert called["jobs"]["links"]["env"]["FULL"] == "${{ !inputs.offline_links }}"
 
 
 def test_platform_tests_report_the_coverage_on_ubuntu():
@@ -106,11 +122,9 @@ def test_code_quality_skips_its_expensive_jobs_on_docs_only():
     assert job["with"]["docs_only"] == "${{ needs.changes.outputs.full == 'false' }}"
 
     called = _load("code_quality.yml")
-    assert "workflow_call" in called["on"]
     expensive = {"type_consistency", "build", "package_imports"}
     for name, step in called["jobs"].items():
         if name in expensive:
-            # Started by its own trigger, the input is null: it runs.
             assert step["if"] == "${{ !inputs.docs_only }}", name
         else:
             assert "if" not in step, name
@@ -121,10 +135,5 @@ def test_concurrency_cancels_only_pull_request_runs():
     assert "github.event_name == 'pull_request'" in group
     assert "github.run_id" in group
     assert CI["concurrency"]["cancel-in-progress"] is True
-    for name in (
-        "code_quality.yml",
-        "docs_quality.yml",
-        "test_platforms.yml",
-        "test_s3.yml",
-    ):
+    for name in CALLED:
         assert "concurrency" not in _load(name), name

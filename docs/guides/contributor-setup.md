@@ -732,18 +732,17 @@ git commit --no-verify -m "fix(store): emergency hotfix"
 
 ## 15. Continuous integration and test coverage
 
-Every push to a branch and every pull request triggers automated checks on GitHub Actions. These are the same checks that run locally via `just check` and `just test`, but they execute in a clean environment to ensure reproducibility.
+Every pull request and every push to `main` triggers automated checks on GitHub Actions; a branch without a pull request runs none. These are the same checks that run locally via `just check` and `just test`, but they execute in a clean environment to ensure reproducibility.
 
 ### CI pipelines
 
 | Workflow               | Trigger                    | What it does                                                                                                                           |
 | ---------------------- | -------------------------- | -------------------------------------------------------------------------------------------------------------------------------------- |
-| **CI**                 | Push to `main`, every pull request, or started by hand | Calls Code Quality, Docs Quality, Platform Tests, and S3 Tests and sums them up in one check, `ci-ok`; the Ubuntu platform job also reports the coverage. A pull request that changes only docs skips the type check, the package build, the package-import check, and the platform tests; one that changes no store code skips the S3 tests ([ADR 0024](../adr/0024-ci-runs-what-a-change-needs.md)) |
-| **Code Quality**       | Push to `main`, every pull request, weekly | Checks lockfile consistency, runs ruff linting, checks formatting, runs type checking with ty, checks the agent instruction files       |
-| **Test with Coverage** | Push to `main`, all pull requests, weekly | Runs `uv run pytest` (coverage is on by default in `pyproject.toml`), uploads results to Coveralls, posts a coverage summary comment on the PR |
-| **Platform Tests**     | Push to `main`, every pull request, weekly | Runs the test suite on Linux, macOS, and Windows with Python 3.14                                                                       |
-| **S3 Tests**           | Push to `main`, every pull request | Runs the tests of stores on S3 against an S3 emulator (RustFS) on Linux; elsewhere these tests are skipped                              |
-| **Docs Quality**       | Push to `main`, every pull request, weekly, or started by hand | Checks the language of the docs pages a pull request changes with Vale, and the links of the built site with lychee: links between our pages on every push and pull request, external links too in the weekly run, which opens an issue when one fails |
+| **CI**                 | Push to `main`, every pull request, weekly, or started by hand | Calls Code Quality, Docs Quality, Platform Tests, and S3 Tests and sums them up in one check, `ci-ok`; the Ubuntu platform job also reports the coverage. A pull request that changes only docs skips the type check, the package build, the package-import check, and the platform tests; one that changes no store code skips the S3 tests ([ADR 0024](../adr/0024-ci-runs-what-a-change-needs.md)) |
+| **Code Quality**       | Called by CI | Checks lockfile consistency, runs ruff linting, checks formatting, runs type checking with ty, checks the agent instruction files       |
+| **Platform Tests**     | Called by CI | Runs the test suite on Linux, macOS, and Windows with Python 3.14; on Linux runs `uv run pytest` (coverage is on by default in `pyproject.toml`), uploads the coverage to Coveralls and posts a coverage comment on the pull request                                                                       |
+| **S3 Tests**           | Called by CI | Runs the tests of stores on S3 against an S3 emulator (RustFS) on Linux; elsewhere these tests are skipped                              |
+| **Docs Quality**       | Called by CI, or started by hand | Checks the language of the docs pages a pull request changes with Vale, and the links of the built site with lychee: links between our pages on every push and pull request, external links too in the weekly run and in a run by hand, which open an issue when one fails |
 | **Deploy Docs**        | A published release, or started by hand | Builds and deploys the documentation site                                                                                |
 
 No CI workflow checks out the test-data submodule

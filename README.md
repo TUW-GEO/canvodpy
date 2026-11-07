@@ -5,11 +5,11 @@
   </picture>
 </h1>
 
-[![Platform Tests](https://github.com/TUW-GEO/canvodpy/actions/workflows/test_platforms.yml/badge.svg)](https://github.com/TUW-GEO/canvodpy/actions/workflows/test_platforms.yml)
-[![Code Coverage](https://github.com/TUW-GEO/canvodpy/actions/workflows/test_coverage.yml/badge.svg)](https://github.com/TUW-GEO/canvodpy/actions/workflows/test_coverage.yml)
+[![CI](https://github.com/TUW-GEO/canvodpy/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/TUW-GEO/canvodpy/actions/workflows/ci.yml)
+[![Coverage](https://coveralls.io/repos/github/TUW-GEO/canvodpy/badge.svg?branch=main)](https://coveralls.io/github/TUW-GEO/canvodpy?branch=main)
 [![PyPI](https://img.shields.io/pypi/v/canvodpy.svg)](https://pypi.org/project/canvodpy/)
 [![Python](https://img.shields.io/badge/python-3.14-blue.svg)](https://www.python.org/)
-[![Platforms](https://img.shields.io/badge/platform-Linux%20|%20macOS%20(Apple%20silicon)%20|%20Windows-lightgrey)](https://github.com/TUW-GEO/canvodpy/actions/workflows/test_platforms.yml)
+[![Platforms](https://img.shields.io/badge/platform-Linux%20|%20macOS%20(Apple%20silicon)%20|%20Windows-lightgrey)](https://github.com/TUW-GEO/canvodpy/actions/workflows/ci.yml)
 [![DOI](https://img.shields.io/badge/DOI-10.5281%2Fzenodo.18496233-blue)](https://doi.org/10.5281/zenodo.18496233)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 [![fair-software.eu](https://img.shields.io/badge/fair--software.eu-%E2%97%8F%20%20%E2%97%8F%20%20%E2%97%8F%20%20%E2%97%8F%20%20%E2%97%8F-green)](https://fair-software.eu)

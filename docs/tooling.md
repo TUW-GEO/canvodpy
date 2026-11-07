@@ -356,9 +356,11 @@ All quality checks run automatically:
 
 | Workflow | Runs On | Purpose |
 |----------|---------|---------|
-| `test_platforms.yml` | Push, PR | Multi-platform tests (Linux/macOS on Apple silicon/Windows) |
-| `test_coverage.yml` | Push, PR | Coverage tracking $\rightarrow$ Coveralls |
-| `code_quality.yml` | Push | Linting, formatting, type checking, building every package without the workspace sources (`just check-build`) |
+| `ci.yml` | PR, push to `main`, weekly, manual | Calls the four workflows below and sums them up in one check, `ci-ok`; skips what a change doesn't need ([ADR 0024](adr/0024-ci-runs-what-a-change-needs.md)) |
+| `code_quality.yml` | Called by `ci.yml` | Linting, formatting, type checking, building every package without the workspace sources (`just check-build`) |
+| `docs_quality.yml` | Called by `ci.yml`; manual | Vale on the changed docs pages, the reference pages, the link check of the built site |
+| `test_platforms.yml` | Called by `ci.yml` | Multi-platform tests (Linux/macOS on Apple silicon/Windows); the Linux job reports the coverage to Coveralls |
+| `test_s3.yml` | Called by `ci.yml` | Tests of stores on S3 against an S3 emulator |
 | `dependency_audit.yml` | PR changing `uv.lock`, a `pyproject.toml`, the `Justfile` or the workflow; manual | Locked dependencies against known vulnerabilities (`just audit`, pip-audit); `publish_pypi.yml` runs it before every upload |
 | `codeql.yml` | Push, PR, Weekly | CodeQL security analysis |
 | `fair-software.yml` | Push, PR | FAIR compliance checks |

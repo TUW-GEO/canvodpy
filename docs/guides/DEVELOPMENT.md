@@ -324,13 +324,15 @@ git push origin feature/my-feature
 
 ## Continuous Integration
 
-Every push and PR triggers GitHub Actions workflows:
+Every PR and every push to `main` runs the CI workflow, which calls these
+workflows and sums them up in one check, `ci-ok`:
 
 | Workflow | Checks |
 |----------|--------|
 | **Code Quality** | ruff lint, ruff format, ty type-check, lockfile consistency |
-| **Test with Coverage** | pytest $\rightarrow$ coverage.lcov $\rightarrow$ [Coveralls](https://coveralls.io/github/TUW-GEO/canvodpy) |
-| **Platform Tests** | Multi-OS, multi-Python-version test matrix |
+| **Docs Quality** | Vale on the changed docs pages, the link check of the built site |
+| **Platform Tests** | The tests on Linux, macOS and Windows; on Linux pytest $\rightarrow$ coverage.lcov $\rightarrow$ [Coveralls](https://coveralls.io/github/TUW-GEO/canvodpy) |
+| **S3 Tests** | Tests of stores on S3 against an S3 emulator |
 
 Coverage reports are posted as PR comments and tracked on Coveralls over time. To run coverage locally:
 
