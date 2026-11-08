@@ -8,6 +8,16 @@ import polars as pl
 from matplotlib.patches import Rectangle
 
 
+def _healpix_pixel_area(nside: int) -> float:
+    """The area of one HEALPix pixel [sr].
+
+    HEALPix divides the sphere into ``12 * nside**2`` pixels of equal area
+    (Górski et al. 2005, ApJ 622, 759, section 4), as healpy's
+    ``nside2npix`` and ``nside2pixarea`` compute.
+    """
+    return 4 * np.pi / (12 * nside**2)
+
+
 @dataclass(frozen=True)
 class GridData:
     """Immutable container for hemispherical grid structure.
@@ -84,15 +94,8 @@ class GridData:
 
         # HEALPix
         if self.grid_type == "healpix" and "healpix_nside" in self.grid.columns:
-            try:
-                import healpy as hp  # type: ignore[unresolved-import]
-
-                nside = int(self.grid["healpix_nside"][0])
-                return np.full(
-                    len(self.grid), hp.nside2pixarea(nside), dtype=np.float64
-                )
-            except ImportError:
-                pass
+            nside = int(self.grid["healpix_nside"][0])
+            return np.full(len(self.grid), _healpix_pixel_area(nside), dtype=np.float64)
 
         # Geodesic
         if self.grid_type == "geodesic" and "geodesic_vertices" in self.grid.columns:
@@ -242,15 +245,13 @@ class GridData:
 
         # Add HEALPix-specific info
         if self.grid_type == "healpix" and "healpix_nside" in self.grid.columns:
-            try:
-                import healpy as hp  # type: ignore[unresolved-import]
-
-                nside = int(self.grid["healpix_nside"][0])
-                stats["healpix_nside"] = nside
-                stats["healpix_npix_total"] = hp.nside2npix(nside)
-                stats["healpix_pixel_area_sr"] = hp.nside2pixarea(nside)
-                stats["healpix_resolution_arcmin"] = hp.nside2resol(nside, arcmin=True)
-            except ImportError:
-                pass
+            nside = int(self.grid["healpix_nside"][0])
+            pixel_area = _healpix_pixel_area(nside)
+            stats["healpix_nside"] = nside
+            stats["healpix_npix_total"] = 12 * nside**2
+            stats["healpix_pixel_area_sr"] = pixel_area
+            stats["healpix_resolution_arcmin"] = float(
+                np.degrees(np.sqrt(pixel_area)) * 60
+            )
 
         return stats

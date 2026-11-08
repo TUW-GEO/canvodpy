@@ -245,7 +245,7 @@ class ResourceSampler:
                     except psutil.NoSuchProcess, psutil.AccessDenied:
                         continue
             except Exception:
-                pass
+                logger.debug("resource_sample_children_failed", exc_info=True)
 
             read_mb = write_mb = None
             try:
@@ -255,7 +255,7 @@ class ResourceSampler:
                     write_mb = (io.write_bytes - self._prev_io.write_bytes) / (1024**2)
                 self._prev_io = io
             except Exception:
-                pass
+                logger.debug("resource_sample_disk_io_failed", exc_info=True)
 
             cpu_percent = psutil.cpu_percent(interval=None)
             free_disk = _free_disk(self.disks)
@@ -388,7 +388,4 @@ class PipelineRunLock:
         return self
 
     def __exit__(self, *exc_info: object) -> None:
-        try:
-            self.pid_file.unlink()
-        except FileNotFoundError:
-            pass
+        self.pid_file.unlink(missing_ok=True)

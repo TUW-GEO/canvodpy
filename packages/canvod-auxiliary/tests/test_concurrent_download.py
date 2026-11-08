@@ -49,13 +49,13 @@ def _slow_server(monkeypatch, payload: bytes) -> None:
     monkeypatch.setattr(downloader_module.request, "urlretrieve", urlretrieve)
 
 
-def _download_at_once(destination: Path, url: str) -> list[BaseException]:
-    errors: list[BaseException] = []
+def _download_at_once(destination: Path, url: str) -> list[Exception]:
+    errors: list[Exception] = []
 
     def fetch() -> None:
         try:
             FtpDownloader().download(url, destination)
-        except BaseException as e:  # noqa: BLE001 - collected for the assertion
+        except Exception as e:  # noqa: BLE001 - collected for the assertion
             errors.append(e)
 
     threads = [threading.Thread(target=fetch) for _ in range(THREADS)]

@@ -154,7 +154,7 @@ def get_default_config_dir() -> Path:
         if monorepo_config.exists():
             return monorepo_config
     except RuntimeError:
-        pass
+        pass  # not in a canvodpy checkout: the user's config folder below
 
     xdg_config_home = os.environ.get("XDG_CONFIG_HOME")
     base = Path(xdg_config_home) if xdg_config_home else Path.home() / ".config"

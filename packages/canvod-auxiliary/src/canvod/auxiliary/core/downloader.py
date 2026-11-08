@@ -374,7 +374,7 @@ class FtpDownloader(FileDownloader):
                     if size:
                         total = size
                 except OSError, error_perm:
-                    pass
+                    pass  # the size only sets the progress bar's total
 
                 task = progress.add_task(filename, total=total)
 

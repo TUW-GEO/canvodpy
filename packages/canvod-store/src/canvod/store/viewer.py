@@ -23,10 +23,13 @@ from functools import lru_cache
 from html import escape
 from typing import TYPE_CHECKING, Any, cast
 
+import structlog
 from canvod.store_metadata import RESERVED_GROUP
 
 if TYPE_CHECKING:
     from canvod.store.store import MyIcechunkStore
+
+logger = structlog.get_logger(__name__)
 
 # Maps reader_format config values → human-readable labels for the viewer
 _FORMAT_LABELS: dict[str, str] = {
@@ -383,7 +386,8 @@ class IcechunkStoreViewer:
         Resolution order:
         1. ``source_format`` root attr (set by GNSSReader via orchestrator)
         2. Presence of ``metadata/sbf_obs`` group (legacy detection)
-        3. Default: "RINEX v3.04" for gnss_store, "VOD" for vod_store
+        3. Default: "RINEX v3.04" for gnss_store, "VOD" for vod_store;
+           "unknown" (with a warning) if the store can't be read
         """
         store_type = self.store.store_type
         if store_type == "vod_store":
@@ -405,7 +409,10 @@ class IcechunkStoreViewer:
                         if f"{group_key}/metadata/sbf_obs" in root:
                             return "SBF"
             except Exception:
-                pass
+                logger.warning(
+                    "store_view_incomplete", part="file format", exc_info=True
+                )
+                return "unknown"
             return "RINEX v3.04"
         return store_type
 
@@ -457,7 +464,9 @@ class IcechunkStoreViewer:
                         first_arr = group[arrays[0]]
                         dims_str = f" • shape: {first_arr.shape}"
         except Exception:
-            pass
+            logger.warning(
+                "store_view_incomplete", part=f"shape of {group_name}", exc_info=True
+            )
 
         return f"""
         <div class="group-section">
@@ -491,7 +500,9 @@ class IcechunkStoreViewer:
                 if model_name in root:
                     analysis_names = list(root[model_name].group_keys())
         except Exception:
-            pass
+            logger.warning(
+                "store_view_incomplete", part=f"analyses of {model_name}", exc_info=True
+            )
 
         if not analysis_names:
             return f"""
@@ -555,7 +566,7 @@ class IcechunkStoreViewer:
                     grids_group = root["grids"]
                     grid_names = list(grids_group.group_keys())
         except Exception:
-            pass
+            logger.warning("store_view_incomplete", part="grids", exc_info=True)
 
         if not grid_names:
             return f"""
@@ -616,7 +627,9 @@ class IcechunkStoreViewer:
                 if len(ds.data_vars) > 0:
                     return ds
             except Exception:
-                pass
+                # Not this layout: the polars-based one below, which raises
+                # if the grid isn't there either.
+                logger.debug("grid_not_xarray_layout", grid=name, exc_info=True)
 
             # Fall back to polars-based layout (cells subgroup)
             ds = xr.open_zarr(
@@ -698,7 +711,9 @@ class IcechunkStoreViewer:
             if parts:
                 summary = " · ".join(parts)
         except Exception:
-            pass
+            logger.warning(
+                "store_view_incomplete", part=f"summary of grid {name}", exc_info=True
+            )
 
         badge = f'<span class="dims-info">{escape(summary)}</span>' if summary else ""
 
@@ -896,7 +911,9 @@ class IcechunkStoreViewer:
                         if "grids" in root:
                             n_grids = len(list(root["grids"].group_keys()))
                 except Exception:
-                    pass
+                    logger.warning(
+                        "store_view_incomplete", part="grid count", exc_info=True
+                    )
                 grid_label = "grid" if n_grids == 1 else "grids"
                 badge_parts.append(f"{n_grids} {grid_label}")
 
