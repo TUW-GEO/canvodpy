@@ -9,6 +9,15 @@ import pytest
 from canvodpy.orchestrator.resources import MemoryMonitor
 
 
+def _fail(exc: Exception) -> None:
+    """Raise ``exc`` inside a ``with`` block that is expected to see it.
+
+    A bare ``raise`` there makes code scanners read the lines after the
+    block as unreachable.
+    """
+    raise exc
+
+
 def _mock_vmem(
     available: int = 4 * 1024**3, percent: float = 42.5, total: int = 8 * 1024**3
 ):
@@ -90,7 +99,7 @@ class TestPipelineRunLock:
         pid_file = tmp_path / "run.pid"
         with pytest.raises(ValueError):
             with PipelineRunLock(pid_file):
-                raise ValueError("simulated pipeline crash")
+                _fail(ValueError("simulated pipeline crash"))
         assert is_pipeline_running(pid_file) is False
         assert not pid_file.exists()
 

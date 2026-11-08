@@ -73,7 +73,7 @@ class TestSessionManagement:
 
         # Need to create root group first
         with store.writable_session() as wsession:
-            root = zarr.open(wsession.store, mode="w")
+            zarr.open(wsession.store, mode="w")
             wsession.commit("Initialize root")
 
         with store.readonly_session() as session:

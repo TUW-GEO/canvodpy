@@ -27,7 +27,7 @@ _TESTS_DIR = Path(__file__).parent
 sys.path.insert(0, str(_TESTS_DIR))
 
 from _helpers import (  # noqa: E402
-    _FIXTURES_DIR,
+    FIXTURES_DIR,
     GROUP,
     _array_checksum,
     make_synthetic_dataset,
@@ -114,7 +114,7 @@ def main() -> None:
         testing.write_settings(Path(tmp) / "settings")
         snapshot = build_store(Path(tmp) / "day0_store")
 
-    snapshot_path = _FIXTURES_DIR / "day0_snapshot.json"
+    snapshot_path = FIXTURES_DIR / "day0_snapshot.json"
     snapshot_path.write_text(json.dumps(snapshot, indent=2) + "\n")
 
     print(f"  Snapshot: {snapshot_path}")

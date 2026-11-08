@@ -294,8 +294,6 @@ def test_saving_a_file_index_replaces_the_previous_one(tmp_path):
 
 
 def test_a_corrupt_file_index_reads_as_empty(tmp_path):
-    import sqlite3
-
     root = tmp_path / "data"
     with RunHistory.open(tmp_path) as history:
         history.save_file_index(root, None, _listings())

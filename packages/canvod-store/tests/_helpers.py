@@ -19,7 +19,7 @@ import xarray as xr
 # ---------------------------------------------------------------------------
 
 _TESTS_DIR = Path(__file__).parent
-_FIXTURES_DIR = _TESTS_DIR / "fixtures"
+FIXTURES_DIR = _TESTS_DIR / "fixtures"
 
 TEST_DATA_ROOT = (
     Path(__file__).parents[3]

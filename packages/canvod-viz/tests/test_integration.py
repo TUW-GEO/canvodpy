@@ -14,7 +14,7 @@ import pytest
 
 # Skip all tests if dependencies not available
 pytest.importorskip("matplotlib")
-pytest.importorskip("plotly")
+go = pytest.importorskip("plotly.graph_objects")
 
 # ============================================================================
 # Fixtures
@@ -324,6 +324,7 @@ class TestUnifiedVisualizerOutput:
             save_html=output_file,
         )
 
+        assert isinstance(fig, go.Figure)
         assert output_file.exists()
         assert output_file.stat().st_size > 0
 
@@ -350,6 +351,8 @@ class TestUnifiedVisualizerOutput:
             data=sample_vod_data, save_2d=output_2d, save_3d=output_3d
         )
 
+        assert ax_2d.figure is fig_2d
+        assert isinstance(fig_3d, go.Figure)
         assert output_2d.exists()
         assert output_3d.exists()
         plt.close(fig_2d)

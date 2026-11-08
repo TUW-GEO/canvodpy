@@ -8,7 +8,7 @@ from typing import Any
 import pytest
 import xarray as xr
 from _helpers import (
-    _FIXTURES_DIR,
+    FIXTURES_DIR,
     GROUP,
     RINEX_CANOPY_DIR,
     RINEX_REFERENCE_DIR,
@@ -23,7 +23,7 @@ __all__ = [
     "GROUP",
     "RINEX_CANOPY_DIR",
     "RINEX_REFERENCE_DIR",
-    "_FIXTURES_DIR",
+    "FIXTURES_DIR",
     "_array_checksum",
     "make_synthetic_dataset",
 ]
@@ -74,4 +74,4 @@ def day0_snapshot() -> dict[str, Any]:
     """Load the frozen day 0 snapshot (committed, built by ``build_day0_store.py``)."""
     import json
 
-    return json.loads((_FIXTURES_DIR / "day0_snapshot.json").read_text())
+    return json.loads((FIXTURES_DIR / "day0_snapshot.json").read_text())

@@ -7,7 +7,6 @@ convenience functions, exports, configuration, and subpackage access.
 
 from unittest.mock import MagicMock, patch
 
-import canvodpy.orchestrator.processor  # noqa: F401  # Force-import so module-level load_config binds before patches
 import pytest
 
 
@@ -356,14 +355,14 @@ class TestDeprecatedVodForDay:
         site.vod.compute_bulk.assert_not_called()
 
     def test_top_level_calculate_vod_delegates(self):
-        import canvodpy
+        from canvodpy import calculate_vod
 
         site = self._site()
         with (
             patch("canvodpy.api.Site", return_value=site),
             pytest.warns(FutureWarning) as record,
         ):
-            canvodpy.calculate_vod(
+            calculate_vod(
                 "Fangorn", "canopy_01", "reference_01", "2025001", write_to_store=False
             )
 
@@ -431,29 +430,29 @@ class TestAPIExports:
 
     def test_all_contains_core_api(self):
         """__all__ should export core classes."""
-        import canvodpy
+        from canvodpy import __all__ as exported
 
-        assert "Site" in canvodpy.__all__
-        assert "Pipeline" in canvodpy.__all__
-        assert "process_date" in canvodpy.__all__
-        assert "calculate_vod" in canvodpy.__all__
+        assert "Site" in exported
+        assert "Pipeline" in exported
+        assert "process_date" in exported
+        assert "calculate_vod" in exported
 
     def test_all_contains_factory_api(self):
         """__all__ should export factory classes."""
-        import canvodpy
+        from canvodpy import __all__ as exported
 
-        assert "VODWorkflow" in canvodpy.__all__
-        assert "ReaderFactory" in canvodpy.__all__
-        assert "GridFactory" in canvodpy.__all__
-        assert "VODFactory" in canvodpy.__all__
+        assert "VODWorkflow" in exported
+        assert "ReaderFactory" in exported
+        assert "GridFactory" in exported
+        assert "VODFactory" in exported
 
     def test_all_contains_functional_api(self):
         """__all__ should export functional API."""
-        import canvodpy
+        from canvodpy import __all__ as exported
 
-        assert "read_rinex" in canvodpy.__all__
-        assert "create_grid" in canvodpy.__all__
-        assert "assign_grid_cells" in canvodpy.__all__
+        assert "read_rinex" in exported
+        assert "create_grid" in exported
+        assert "assign_grid_cells" in exported
 
 
 class TestConfigurationCompatibility:
@@ -478,31 +477,28 @@ class TestSubpackageCompatibility:
 
     def test_lazy_import_readers(self):
         """Should lazy import readers."""
-        import canvodpy
+        from canvodpy import readers
 
-        readers = canvodpy.readers
         assert readers is not None
 
     def test_lazy_import_grids(self):
         """Should lazy import grids."""
-        import canvodpy
+        from canvodpy import grids
 
-        grids = canvodpy.grids
         assert grids is not None
 
     def test_lazy_import_vod(self):
         """Should lazy import vod."""
-        import canvodpy
+        from canvodpy import vod
 
-        vod = canvodpy.vod
         assert vod is not None
 
     def test_all_contains_subpackages(self):
         """__all__ should list subpackages."""
-        import canvodpy
+        from canvodpy import __all__ as exported
 
-        assert "readers" in canvodpy.__all__
-        assert "grids" in canvodpy.__all__
-        assert "vod" in canvodpy.__all__
-        assert "viz" in canvodpy.__all__
-        assert "store" in canvodpy.__all__
+        assert "readers" in exported
+        assert "grids" in exported
+        assert "vod" in exported
+        assert "viz" in exported
+        assert "store" in exported

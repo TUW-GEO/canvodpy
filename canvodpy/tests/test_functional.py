@@ -109,6 +109,7 @@ class TestAugmentWithEphemeris:
             )
 
         mock_provider.augment_dataset.assert_called_once()
+        assert result is ds
 
     def test_unknown_source_raises(self):
         from canvodpy.functional import augment_with_ephemeris

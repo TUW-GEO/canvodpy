@@ -30,6 +30,7 @@ from __future__ import annotations
 import hashlib
 from pathlib import Path
 from types import SimpleNamespace
+from typing import Any
 
 import numpy as np
 import pytest
@@ -94,14 +95,21 @@ class _FakeMatchedDataDirs:
 class _TestProcessor(RinexDataProcessor):
     """Minimal RinexDataProcessor stand-in for the batch-write path only."""
 
-    def __init__(self, store: MyIcechunkStore, strategy: str = "skip") -> None:
+    def __init__(
+        self,
+        store: MyIcechunkStore,
+        strategy: str = "skip",
+        *,
+        config: Any = None,
+        matched_data_dirs: Any = None,
+    ) -> None:
         self.site = _FakeSite(store)
-        self.matched_data_dirs = _FakeMatchedDataDirs()
+        self.matched_data_dirs = matched_data_dirs or _FakeMatchedDataDirs()
         self._logger = structlog.get_logger(__name__)
         self._icechunk_log = structlog.get_logger(__name__)
         self._gnss_store_strategy = strategy
         self._keeper_tags_enabled = False
-        self._config = SimpleNamespace(sites=SimpleNamespace(sites={}))
+        self._config = config or SimpleNamespace(sites=SimpleNamespace(sites={}))
         self._reader_name = "rinex3"
 
     def _writes_day_blocks(self) -> bool:
