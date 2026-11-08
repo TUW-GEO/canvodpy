@@ -5,6 +5,7 @@ Tests YYYYDOY class and GPS week conversion functions.
 """
 
 import datetime
+import operator
 from pathlib import Path
 
 import pytest
@@ -76,7 +77,7 @@ class TestYYYYDOY:
         yyyydoy2 = YYYYDOY(year=2024, doy=20)
 
         assert yyyydoy1 < yyyydoy2
-        assert sorted([yyyydoy2, yyyydoy1]) == [yyyydoy1, yyyydoy2]
+        assert operator.lt(yyyydoy2, yyyydoy1) is False
 
     def test_hashable(self):
         """Test that YYYYDOY is hashable."""
