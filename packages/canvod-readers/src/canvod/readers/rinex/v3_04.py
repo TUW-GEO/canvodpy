@@ -2151,8 +2151,6 @@ class Rnxv3Obs(GNSSDataReader):
 
         Parameters
         ----------
-        outname : Path or str, optional
-            If provided, saves dataset to this file path
         keep_data_vars : list of str or None, optional
             Data variables to include in dataset. ``None`` includes all
             available. A run passes the
@@ -2160,6 +2158,11 @@ class Rnxv3Obs(GNSSDataReader):
             validated parser reads and checks only the observation fields
             these variables need, so a malformed field of a left-out
             variable does not drop its epoch.
+
+        Other Parameters
+        ----------------
+        outname : Path or str, optional
+            If provided, saves dataset to this file path
         write_global_attrs : bool, default False
             If True, adds comprehensive global attributes
         pad_global_sid : bool, default True
