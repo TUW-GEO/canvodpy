@@ -50,7 +50,7 @@ import warnings
 from collections.abc import Sequence
 from concurrent.futures import Executor
 from datetime import datetime
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Protocol
 
 import structlog
 
@@ -77,14 +77,37 @@ _DAY_WRITE_DEPRECATED = (
 )
 
 if TYPE_CHECKING:
+    from pathlib import Path
+
     import xarray as xr
 
     from canvod.config.models import ProcessingParams
-    from canvodpy.api import Site
+    from canvod.store import GnssResearchSite, MyIcechunkStore
+
+
+class _VodSite(Protocol):
+    """The members of ``canvodpy.api.Site`` that VOD computation uses.
+
+    A protocol instead of an import of ``Site``: ``api.py`` imports this
+    module, so an import back, even for annotations only, is an import
+    cycle (#657).
+    """
+
+    name: str
+    _site: GnssResearchSite
+
+    @property
+    def vod_analyses(self) -> dict: ...
+
+    @property
+    def gnss_store(self) -> MyIcechunkStore: ...
+
+    @property
+    def vod_store_path(self) -> Path | str: ...
 
 
 def ensure_vod_store_metadata(
-    site: Site, calculator_name: str, analyses: list[str]
+    site: _VodSite, calculator_name: str, analyses: list[str]
 ) -> None:
     """Give a new VOD store its metadata; refuse unlisted VOD analyses.
 
@@ -157,7 +180,7 @@ class VodComputer:
 
     def __init__(
         self,
-        site: Site,
+        site: _VodSite,
         calculator: str = "tau_omega",
         calculator_params: dict | None = None,
         rechunk: dict[str, int] | None = None,

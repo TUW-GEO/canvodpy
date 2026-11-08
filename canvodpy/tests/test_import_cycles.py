@@ -2,8 +2,11 @@
 
 An import cycle forces imports into functions to work at all, and hides
 which module depends on which. Imports for type annotations only (under
-``if TYPE_CHECKING:``) don't run and are not counted. Importing a module
-also runs its package's ``__init__``; those edges are not in the graph.
+``if TYPE_CHECKING:``) count too, as they do for CodeQL: a module that
+needs a higher module's type for an annotation declares a protocol of
+the members it uses instead (``vod_computer._VodSite``). Importing a
+module also runs its package's ``__init__``; those edges are not in the
+graph.
 """
 
 from __future__ import annotations
@@ -19,21 +22,10 @@ def _module_name(path: Path) -> str:
     return name.removesuffix(".__init__")
 
 
-def _is_type_checking(node: ast.If) -> bool:
-    test = node.test
-    return (isinstance(test, ast.Name) and test.id == "TYPE_CHECKING") or (
-        isinstance(test, ast.Attribute) and test.attr == "TYPE_CHECKING"
-    )
-
-
 def _imported(tree: ast.AST) -> set[str]:
-    """Modules imported anywhere in ``tree``, except under TYPE_CHECKING."""
+    """Modules imported anywhere in ``tree``, functions and TYPE_CHECKING too."""
     names: set[str] = set()
     for node in ast.iter_child_nodes(tree):
-        if isinstance(node, ast.If) and _is_type_checking(node):
-            for sub in node.orelse:
-                names |= _imported(ast.Module(body=[sub], type_ignores=[]))
-            continue
         if isinstance(node, ast.ImportFrom):
             # canvodpy imports by absolute names only; a relative import
             # would need the importing module's package to resolve.
@@ -100,7 +92,7 @@ def test_the_cycle_finder_finds_a_cycle():
     assert _cycles(graph) == [["a", "b", "c"]]
 
 
-def test_type_checking_imports_are_not_counted():
+def test_imports_in_functions_and_for_annotations_are_counted():
     tree = ast.parse(
         "from typing import TYPE_CHECKING\n"
         "if TYPE_CHECKING:\n"
@@ -111,6 +103,8 @@ def test_type_checking_imports_are_not_counted():
     assert _imported(tree) == {
         "typing",
         "typing.TYPE_CHECKING",
+        "canvodpy.api",
+        "canvodpy.api.Site",
         "canvodpy.vod_phase",
         "canvodpy.vod_phase.units",
     }
