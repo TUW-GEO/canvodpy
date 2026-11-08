@@ -80,9 +80,9 @@ from canvod.store.prepare import (
 )
 from canvod.store.store import StoredOverlapError, _with_run_id
 from canvod.store.time_encoding import with_time_units
-from canvod.store_metadata.io import commit_lock, commit_with_rebase, store_command
+from canvod.store_metadata.io import commit_lock, commit_with_rebase
 from canvod.store_metadata.layout import LayoutError, is_day_block_group
-from canvod.store_metadata.location import store_exists
+from canvod.store_metadata.location import store_command, store_exists
 from canvod.utils.logging import (
     get_run_id,
     record_stage_timing,
@@ -5120,7 +5120,6 @@ class RinexDataProcessor:
         if keep_vars is None:
             keep_vars = self._config.processing.params.keep_gnss_observables
 
-        pipeline_start = time.perf_counter()
         self._logger.info(
             "rinex_pipeline_started",
             receivers=len(normalized_configs),
@@ -5842,7 +5841,7 @@ class DistributedRinexDataProcessor(RinexDataProcessor):
 
         # Merge all remote sessions
         session.merge(*remote_sessions)
-        _snapshot_id = commit_with_rebase(
+        commit_with_rebase(
             session,
             _with_run_id(f"[v{version}] Cooperative write for {receiver_name}"),
             store_path=self.site.gnss_store.store_path,

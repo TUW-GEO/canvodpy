@@ -112,8 +112,6 @@ def parse_sampling_interval_from_filename(filename: str) -> float | None:
         data-frequency field or its unit is C or U (the caller then reads
         the interval from the data).
     """
-    import re
-
     parts = Path(filename).stem.split("_")
     if len(parts) >= 5:
         m = re.match(r"^(\d+)([SMHDZC])$", parts[4])

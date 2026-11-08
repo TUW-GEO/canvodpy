@@ -50,7 +50,7 @@ import warnings
 from collections.abc import Sequence
 from concurrent.futures import Executor
 from datetime import datetime
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Protocol
 
 import structlog
 
@@ -77,14 +77,40 @@ _DAY_WRITE_DEPRECATED = (
 )
 
 if TYPE_CHECKING:
+    from pathlib import Path
+
     import xarray as xr
 
     from canvod.config.models import ProcessingParams
-    from canvodpy.api import Site
+    from canvod.store import GnssResearchSite, MyIcechunkStore
+
+
+class _VodSite(Protocol):
+    """The members of ``canvodpy.api.Site`` that VOD computation uses.
+
+    A protocol instead of an import of ``Site``: ``api.py`` imports this
+    module, so an import back, even for annotations only, is an import
+    cycle (#657).
+    """
+
+    name: str
+    _site: GnssResearchSite
+
+    @property
+    def vod_analyses(self) -> dict:
+        """The configured VOD analysis pairs."""
+
+    @property
+    def gnss_store(self) -> MyIcechunkStore:
+        """The site's GNSS store."""
+
+    @property
+    def vod_store_path(self) -> Path | str:
+        """Where the site's VOD store is."""
 
 
 def ensure_vod_store_metadata(
-    site: Site, calculator_name: str, analyses: list[str]
+    site: _VodSite, calculator_name: str, analyses: list[str]
 ) -> None:
     """Give a new VOD store its metadata; refuse unlisted VOD analyses.
 
@@ -157,7 +183,7 @@ class VodComputer:
 
     def __init__(
         self,
-        site: Site,
+        site: _VodSite,
         calculator: str = "tau_omega",
         calculator_params: dict | None = None,
         rechunk: dict[str, int] | None = None,
@@ -852,8 +878,8 @@ class VodComputer:
             block for ``day``.
         """
         from canvod.store.day_blocks import day_blocks, holds_day_blocks
-        from canvod.store_metadata.io import store_command
         from canvod.store_metadata.layout import LayoutError
+        from canvod.store_metadata.location import store_command
 
         analysis_cfg = self._get_analysis_config(analysis_name)
         groups = (analysis_cfg.canopy_receiver, analysis_cfg.reference_store_group)

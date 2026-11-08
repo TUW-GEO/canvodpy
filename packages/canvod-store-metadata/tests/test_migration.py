@@ -16,7 +16,6 @@ from canvod.store_metadata import (
     read_metadata,
     validate_all,
 )
-from canvod.store_metadata.io import _set_field
 from canvod.store_metadata.schema import (
     ConfigSnapshot,
     Creator,
@@ -29,6 +28,7 @@ from canvod.store_metadata.schema import (
     StoreIdentity,
     StoreMetadata,
     TemporalExtent,
+    _set_field,
 )
 
 #: Two epochs of SNR, with attributes as older versions wrote them.

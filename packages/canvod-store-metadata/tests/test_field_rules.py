@@ -18,8 +18,7 @@ from canvod.store_metadata import (
     validate_all,
     write_metadata,
 )
-from canvod.store_metadata.io import _set_field
-from canvod.store_metadata.schema import MetadataRuleWarning, StoreMetadata
+from canvod.store_metadata.schema import MetadataRuleWarning, StoreMetadata, _set_field
 from canvod.store_metadata.snapshot import SNAPSHOT_SUMMARY_ATTR
 from canvod.store_metadata.testing import (
     give_test_metadata,

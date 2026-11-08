@@ -49,8 +49,9 @@ other package is a library this one composes.
   `orchestrator/vod_phase.py` → `vod_calculation.py`, and
   `orchestrator/processor.py` → `orchestrator/forked_writes.py` →
   `orchestrator/file_worker.py`. A lower module never imports a higher one,
-  not even inside a function; move the shared code down instead. Imports
-  for annotations only (`if TYPE_CHECKING:`) are the exception.
+  not even inside a function or for annotations only (`if TYPE_CHECKING:`;
+  CodeQL counts those too); move the shared code down instead, or declare
+  a protocol of the members used (`_VodSite` in `vod_computer.py`).
   `tests/test_import_cycles.py` checks this.
 
 ## Before changing public API
