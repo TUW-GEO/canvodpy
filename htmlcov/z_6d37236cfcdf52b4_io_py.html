@@ -65,7 +65,7 @@
             <a id="nextFileLink" class="nav" href="z_6d37236cfcdf52b4_layout_py.html">&#xbb; next</a>
             &nbsp; &nbsp; &nbsp;
             <a class="nav" href="https://coverage.readthedocs.io/en/7.17.0">coverage.py v7.17.0</a>,
-            created at 2026-11-08 21:29 +0000
+            created at 2026-11-08 21:30 +0000
         </p>
         <aside class="hidden">
             <button type="button" class="button_next_chunk" data-shortcut="j"></button>
@@ -970,20 +970,20 @@
     <p class="pln"><span class="n"><a id="t888" href="#t888">888</a></span><span class="t"><span class="str">    ``collect`` builds the metadata of a new store (``collect_metadata``);</span>&nbsp;</span><span class="r"></span></p>
     <p class="pln"><span class="n"><a id="t889" href="#t889">889</a></span><span class="t"><span class="str">    it is called only for a store that has none.</span>&nbsp;</span><span class="r"></span></p>
     <p class="pln"><span class="n"><a id="t890" href="#t890">890</a></span><span class="t">&nbsp;</span><span class="r"></span></p>
-    <p class="pln"><span class="n"><a id="t891" href="#t891">891</a></span><span class="t"><span class="str">    Parameters</span>&nbsp;</span><span class="r"></span></p>
-    <p class="pln"><span class="n"><a id="t892" href="#t892">892</a></span><span class="t"><span class="str">    ----------</span>&nbsp;</span><span class="r"></span></p>
-    <p class="pln"><span class="n"><a id="t893" href="#t893">893</a></span><span class="t"><span class="str">    config</span>&nbsp;</span><span class="r"></span></p>
-    <p class="pln"><span class="n"><a id="t894" href="#t894">894</a></span><span class="t"><span class="str">        The repository configuration a new store is created with</span>&nbsp;</span><span class="r"></span></p>
-    <p class="pln"><span class="n"><a id="t895" href="#t895">895</a></span><span class="t"><span class="str">        (:func:`~.location.repository_config`); Icechunk keeps it with the</span>&nbsp;</span><span class="r"></span></p>
-    <p class="pln"><span class="n"><a id="t896" href="#t896">896</a></span><span class="t"><span class="str">        store. ``None`` uses the defaults of the ``processing.icechunk``</span>&nbsp;</span><span class="r"></span></p>
-    <p class="pln"><span class="n"><a id="t897" href="#t897">897</a></span><span class="t"><span class="str">        settings.</span>&nbsp;</span><span class="r"></span></p>
-    <p class="pln"><span class="n"><a id="t898" href="#t898">898</a></span><span class="t">&nbsp;</span><span class="r"></span></p>
-    <p class="pln"><span class="n"><a id="t899" href="#t899">899</a></span><span class="t"><span class="str">    Two runs may create one store at the same time (on S3, which has no</span>&nbsp;</span><span class="r"></span></p>
-    <p class="pln"><span class="n"><a id="t900" href="#t900">900</a></span><span class="t"><span class="str">    commit lock): the run that loses waits up to</span>&nbsp;</span><span class="r"></span></p>
-    <p class="pln"><span class="n"><a id="t901" href="#t901">901</a></span><span class="t"><span class="str">    :data:`CREATION_WAIT_SECONDS` for the other run&#x27;s repository metadata</span>&nbsp;</span><span class="r"></span></p>
-    <p class="pln"><span class="n"><a id="t902" href="#t902">902</a></span><span class="t"><span class="str">    and returns it, so it goes on with the other run&#x27;s store; its own</span>&nbsp;</span><span class="r"></span></p>
-    <p class="pln"><span class="n"><a id="t903" href="#t903">903</a></span><span class="t"><span class="str">    settings are then checked against that store&#x27;s content settings</span>&nbsp;</span><span class="r"></span></p>
-    <p class="pln"><span class="n"><a id="t904" href="#t904">904</a></span><span class="t"><span class="str">    (#358).</span>&nbsp;</span><span class="r"></span></p>
+    <p class="pln"><span class="n"><a id="t891" href="#t891">891</a></span><span class="t"><span class="str">    Two runs may create one store at the same time (on S3, which has no</span>&nbsp;</span><span class="r"></span></p>
+    <p class="pln"><span class="n"><a id="t892" href="#t892">892</a></span><span class="t"><span class="str">    commit lock): the run that loses waits up to</span>&nbsp;</span><span class="r"></span></p>
+    <p class="pln"><span class="n"><a id="t893" href="#t893">893</a></span><span class="t"><span class="str">    :data:`CREATION_WAIT_SECONDS` for the other run&#x27;s repository metadata</span>&nbsp;</span><span class="r"></span></p>
+    <p class="pln"><span class="n"><a id="t894" href="#t894">894</a></span><span class="t"><span class="str">    and returns it, so it goes on with the other run&#x27;s store; its own</span>&nbsp;</span><span class="r"></span></p>
+    <p class="pln"><span class="n"><a id="t895" href="#t895">895</a></span><span class="t"><span class="str">    settings are then checked against that store&#x27;s content settings</span>&nbsp;</span><span class="r"></span></p>
+    <p class="pln"><span class="n"><a id="t896" href="#t896">896</a></span><span class="t"><span class="str">    (#358).</span>&nbsp;</span><span class="r"></span></p>
+    <p class="pln"><span class="n"><a id="t897" href="#t897">897</a></span><span class="t">&nbsp;</span><span class="r"></span></p>
+    <p class="pln"><span class="n"><a id="t898" href="#t898">898</a></span><span class="t"><span class="str">    Parameters</span>&nbsp;</span><span class="r"></span></p>
+    <p class="pln"><span class="n"><a id="t899" href="#t899">899</a></span><span class="t"><span class="str">    ----------</span>&nbsp;</span><span class="r"></span></p>
+    <p class="pln"><span class="n"><a id="t900" href="#t900">900</a></span><span class="t"><span class="str">    config</span>&nbsp;</span><span class="r"></span></p>
+    <p class="pln"><span class="n"><a id="t901" href="#t901">901</a></span><span class="t"><span class="str">        The repository configuration a new store is created with</span>&nbsp;</span><span class="r"></span></p>
+    <p class="pln"><span class="n"><a id="t902" href="#t902">902</a></span><span class="t"><span class="str">        (:func:`~.location.repository_config`); Icechunk keeps it with the</span>&nbsp;</span><span class="r"></span></p>
+    <p class="pln"><span class="n"><a id="t903" href="#t903">903</a></span><span class="t"><span class="str">        store. ``None`` uses the defaults of the ``processing.icechunk``</span>&nbsp;</span><span class="r"></span></p>
+    <p class="pln"><span class="n"><a id="t904" href="#t904">904</a></span><span class="t"><span class="str">        settings.</span>&nbsp;</span><span class="r"></span></p>
     <p class="pln"><span class="n"><a id="t905" href="#t905">905</a></span><span class="t">&nbsp;</span><span class="r"></span></p>
     <p class="pln"><span class="n"><a id="t906" href="#t906">906</a></span><span class="t"><span class="str">    Raises</span>&nbsp;</span><span class="r"></span></p>
     <p class="pln"><span class="n"><a id="t907" href="#t907">907</a></span><span class="t"><span class="str">    ------</span>&nbsp;</span><span class="r"></span></p>
@@ -1358,7 +1358,7 @@
             <a class="nav" href="z_6d37236cfcdf52b4_layout_py.html">&#xbb; next</a>
             &nbsp; &nbsp; &nbsp;
             <a class="nav" href="https://coverage.readthedocs.io/en/7.17.0">coverage.py v7.17.0</a>,
-            created at 2026-11-08 21:29 +0000
+            created at 2026-11-08 21:30 +0000
         </p>
     </div>
 </footer>
