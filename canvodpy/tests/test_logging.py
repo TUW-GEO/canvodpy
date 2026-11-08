@@ -333,16 +333,13 @@ class TestFileLoggingStartsWithTheRun:
 
         (tmp_path / "canvod-settings.yaml").write_text("processing: [not, valid]\n")
         env = {**os.environ, "CANVOD_CONFIG_DIR": str(tmp_path)}
+        code = (
+            "import canvodpy, canvodpy.cli.run\n"
+            "from canvod.config import loader\n"
+            "assert loader._load_config_cached.cache_info().misses == 0\n"
+        )
         result = subprocess.run(
-            [
-                sys.executable,
-                "-W",
-                "error",
-                "-c",
-                "import canvodpy, canvodpy.cli.run\n"
-                "from canvod.config import loader\n"
-                "assert loader._load_config_cached.cache_info().misses == 0\n",
-            ],
+            [sys.executable, "-W", "error", "-c", code],
             cwd=tmp_path,
             env=env,
             capture_output=True,

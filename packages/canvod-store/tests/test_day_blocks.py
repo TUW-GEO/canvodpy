@@ -247,13 +247,16 @@ def test_finding_the_blocks_reads_no_epochs(session, monkeypatch):
 
     _write(session, _file(DAY_1, 0, 10, 5), 5)
     original = module._epoch_array
+    reads = []
 
     class _ShapeOnly:
         def __init__(self, array):
             self.shape = array.shape
+            self._array = array
 
         def __getitem__(self, key):
-            raise AssertionError("the epoch axis was read")
+            reads.append(key)
+            return self._array[key]
 
     monkeypatch.setattr(
         module,
@@ -262,6 +265,7 @@ def test_finding_the_blocks_reads_no_epochs(session, monkeypatch):
     )
 
     assert set(day_blocks(session.store, GROUP)) == {DAY_1}
+    assert reads == [], "the epoch axis was read"
 
 
 def test_a_day_block_group_without_its_block_index_is_refused(session):
