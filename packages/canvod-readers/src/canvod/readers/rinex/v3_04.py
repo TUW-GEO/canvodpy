@@ -856,14 +856,11 @@ class Rnxv3Header(BaseModel):
         """
         header_value = header_dict.get("SIGNAL STRENGTH UNIT", "").strip()
 
-        # Using match statement like original
-        match header_value:
-            case "DBHZ":
-                return UREG.dBHz
-            case "DB":
-                return UREG.dB
-            case _:
-                return header_value if header_value else "dB"
+        if header_value == "DBHZ":
+            return UREG.dBHz
+        if header_value == "DB":
+            return UREG.dB
+        return header_value if header_value else "dB"
 
     @property
     def time_system(self) -> str:
