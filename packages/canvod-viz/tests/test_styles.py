@@ -39,7 +39,6 @@ class TestRSEStyle:
         params = apply_rse_style()
         assert params["figure.dpi"] == 300
         assert plt.rcParams["figure.dpi"] == 300
-        assert params["figure.dpi"] == 300
         # Restore
         plt.rcParams["figure.dpi"] = original_dpi
 
