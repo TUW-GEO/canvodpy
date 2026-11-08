@@ -11,13 +11,13 @@ from pathlib import Path
 import numpy as np
 import structlog
 import xarray as xr
-from canvod.config import load_config
-from canvod.readers import MatchedDirs, Rnxv3Obs
-from canvod.utils.tools import _worker_init, deprecated, get_version_from_pyproject
 from natsort import natsorted
 from tqdm import tqdm
 
+from canvod.config import load_config
+from canvod.readers import MatchedDirs, Rnxv3Obs
 from canvod.store.manager import GnssResearchSite
+from canvod.utils.tools import _worker_init, deprecated, get_version_from_pyproject
 
 _REPLACEMENT = (
     "Use `canvodpy run` or `canvodpy.Site(<site>).pipeline().process_date(<date>)` "
@@ -219,13 +219,6 @@ class IcechunkDataReader:
             f"Initialized Icechunk data reader for {matched_dirs.yyyydoy.to_str()}"
         )
 
-    def _memory_cleanup(self) -> None:
-        """Perform memory cleanup if enabled."""
-        if self.enable_gc:
-            gc.collect()
-            if self.gc_delay > 0:
-                time.sleep(self.gc_delay)
-
     def get_receiver_by_type(self, receiver_type: str) -> list[str]:
         """
         Get list of receiver names by type.
@@ -245,13 +238,6 @@ class IcechunkDataReader:
             for name, config in self._site.active_receivers.items()
             if config["type"] == receiver_type
         ]
-
-    def _get_receiver_name_for_type(self, receiver_type: str) -> str | None:
-        """Get the first configured receiver name for a given type."""
-        for name, config in self._site.active_receivers.items():
-            if config["type"] == receiver_type:
-                return name
-        return None
 
     def _memory_cleanup(self) -> None:
         """Perform memory cleanup if enabled."""

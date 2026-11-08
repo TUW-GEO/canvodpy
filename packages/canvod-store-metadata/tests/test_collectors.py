@@ -7,7 +7,6 @@ from pathlib import Path
 from unittest.mock import MagicMock, patch
 
 import pytest
-from canvod.utils import testing
 
 from canvod.store_metadata import collectors
 from canvod.store_metadata.collectors import (
@@ -22,6 +21,7 @@ from canvod.store_metadata.collectors import (
     collect_spatial,
     missing_store_settings,
 )
+from canvod.utils import testing
 
 
 @pytest.fixture(autouse=True)
@@ -482,7 +482,7 @@ class TestLockfile:
             lambda self: (_ for _ in ()).throw(PermissionError(str(self))),
         )
 
-        with pytest.raises(PermissionError, match="uv.lock"):
+        with pytest.raises(PermissionError, match=r"uv\.lock"):
             collect_environment()
 
 

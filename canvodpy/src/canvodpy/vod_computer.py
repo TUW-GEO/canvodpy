@@ -852,8 +852,8 @@ class VodComputer:
             block for ``day``.
         """
         from canvod.store.day_blocks import day_blocks, holds_day_blocks
-        from canvod.store_metadata.io import store_command
         from canvod.store_metadata.layout import LayoutError
+        from canvod.store_metadata.location import store_command
 
         analysis_cfg = self._get_analysis_config(analysis_name)
         groups = (analysis_cfg.canopy_receiver, analysis_cfg.reference_store_group)

@@ -16,6 +16,7 @@ from typing import TYPE_CHECKING, Any, Protocol
 
 import numpy as np
 import zarr
+
 from canvod.config.models.sites import reference_store_group
 from canvod.utils.tools import directory_size_bytes
 
@@ -57,8 +58,6 @@ _STORED_ACTIONS = {
 }
 # Actions of a VOD log book's rows whose result is part of the stored data.
 _VOD_STORED_ACTIONS = {"write", "append", "overwrite"}
-
-_DAY = np.timedelta64(1, "D")
 
 # A day's cadence (s) and its first and last epoch with data.
 _DaySpan = tuple[float, np.datetime64, np.datetime64]

@@ -14,11 +14,12 @@ from typing import Any
 import icechunk
 import structlog
 import zarr
-from canvod.config.store_names import OLD_GNSS_STORE_NAME
-from canvod.utils.tools import deprecated
 from filelock import FileLock, Timeout
 from pydantic import ValidationError
 from zarr import errors as zarr_errors
+
+from canvod.config.store_names import OLD_GNSS_STORE_NAME
+from canvod.utils.tools import deprecated
 
 from .collectors import collect_metadata, recipe_sha256_of
 from .content import (
@@ -37,9 +38,9 @@ from .location import (
     store_exists,
     store_location,
 )
-from .location import (
-    store_command as store_command,
-)
+
+# Kept for callers that import store_command from here; it lives in location.
+from .location import store_command as store_command
 from .schema import (
     _METADATA_KEY,
     Amendment,
@@ -88,7 +89,7 @@ def wait_after_conflict(retry: int) -> float:
         random part.
     """
     base = CONFLICT_WAIT_SECONDS * 2 ** (retry - 1)
-    seconds = base * (1 + random.random() / 2)  # noqa: S311 (not for security)
+    seconds = base * (1 + random.random() / 2)
     time.sleep(seconds)
     return seconds
 
@@ -261,7 +262,6 @@ def commit_with_rebase(
                 f"  {SITE_MIGRATE_COMMAND} SITE"
             )
             raise ValueError(msg)
-
         if config is None:
             from canvod.config import load_config
 
@@ -481,7 +481,6 @@ def store_lockfile(
         Snapshot ID of the new commit; ``None`` if the text was stored
         already, or no lockfile is in use.
     """
-
     _, texts = commit_metadata(
         repository, config, store_path, datetime.now(UTC).isoformat()
     )
@@ -517,7 +516,6 @@ def _check_content_at_tip(
     store that has content settings: a store without them is refused when
     the run starts (:func:`ensure_store_metadata`).
     """
-
     if not is_settings_object(config) or not repository.get(CONTENT_SETTINGS_FIELD):
         return
     check_content_settings(
@@ -695,7 +693,6 @@ def read_metadata(
     KeyError
         If no metadata found in store.
     """
-
     repo = open_repository(store_path)
     session = (
         repo.readonly_session(snapshot_id=snapshot_id)
@@ -1053,7 +1050,6 @@ def ensure_store_metadata(
         If the settings differ from the store's content settings, or the
         store has none (names the migrate command).
     """
-
     names = list(names)
 
     site_config = config.sites.sites.get(site_name)
@@ -1120,7 +1116,6 @@ def _not_listed(names: Iterable[str], listed: Mapping[str, Any]) -> list[str]:
     A reference receiver is stored once per listed canopy receiver it is
     paired with (see :func:`~canvod.store_metadata.summary.receiver_groups`).
     """
-
     groups = set().union(
         *receiver_groups(
             {name: receiver["type"] for name, receiver in listed.items()}
