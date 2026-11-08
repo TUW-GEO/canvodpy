@@ -14,7 +14,7 @@ itself) whose dims include the append dim.
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Any
+from typing import Self
 
 import numpy as np
 import pytest
@@ -66,11 +66,18 @@ class _RecordingLogger:
 
 
 class _TestProcessor(RinexDataProcessor):
-    """Minimal RinexDataProcessor stand-in for _check_store_vars_consistency only."""
+    """Minimal RinexDataProcessor stand-in for _check_store_vars_consistency only.
 
-    def __init__(self, store: MyIcechunkStore) -> None:
-        self.site = _FakeSite(store)
-        self._logger: Any = _RecordingLogger()
+    Made by ``build``: ``RinexDataProcessor.__init__`` needs a settings file
+    and the auxiliary files.
+    """
+
+    @classmethod
+    def build(cls, store: MyIcechunkStore) -> Self:
+        proc = cls.__new__(cls)
+        proc.site = _FakeSite(store)
+        proc._logger = _RecordingLogger()
+        return proc
 
 
 @pytest.fixture
@@ -84,7 +91,7 @@ def store(tmp_path: Path) -> MyIcechunkStore:
 
 def test_new_group_is_a_noop(store: MyIcechunkStore) -> None:
     """A group that doesn't exist yet has nothing to check."""
-    proc = _TestProcessor(store)
+    proc = _TestProcessor.build(store)
     batch = [(Path("f.rnx"), _make_ds(["S1C"], "h1"))]
 
     with store.writable_session("main") as session:
@@ -96,7 +103,7 @@ def test_new_group_is_a_noop(store: MyIcechunkStore) -> None:
 
 def test_matching_vars_logs_nothing(store: MyIcechunkStore) -> None:
     store.write_initial_group(_make_ds(["S1C", "S2W"], "h0"), "canopy_01")
-    proc = _TestProcessor(store)
+    proc = _TestProcessor.build(store)
     batch = [(Path("f.rnx"), _make_ds(["S1C", "S2W"], "h1"))]
 
     with store.writable_session("main") as session:
@@ -109,7 +116,7 @@ def test_matching_vars_logs_nothing(store: MyIcechunkStore) -> None:
 def test_stale_vars_in_store_warns(store: MyIcechunkStore) -> None:
     """Store has a variable the current batch no longer produces."""
     store.write_initial_group(_make_ds(["S1C", "S2W"], "h0"), "canopy_01")
-    proc = _TestProcessor(store)
+    proc = _TestProcessor.build(store)
     batch = [(Path("f.rnx"), _make_ds(["S1C"], "h1"))]
 
     with store.writable_session("main") as session:
@@ -125,7 +132,7 @@ def test_stale_vars_in_store_warns(store: MyIcechunkStore) -> None:
 def test_new_vars_in_batch_logs_info(store: MyIcechunkStore) -> None:
     """Batch introduces a variable the store doesn't have yet."""
     store.write_initial_group(_make_ds(["S1C"], "h0"), "canopy_01")
-    proc = _TestProcessor(store)
+    proc = _TestProcessor.build(store)
     batch = [(Path("f.rnx"), _make_ds(["S1C", "S5X"], "h1"))]
 
     with store.writable_session("main") as session:
@@ -160,7 +167,7 @@ def test_matches_xr_open_zarr_ground_truth_after_many_appends(
         ds_store = xr.open_zarr(session.store, group="canopy_01", consolidated=False)
         ground_truth = set(ds_store.data_vars)
 
-    proc = _TestProcessor(store)
+    proc = _TestProcessor.build(store)
     batch = [(Path("f.rnx"), _make_ds(["S1C", "S2W"], "hN"))]
     with store.writable_session("main") as session:
         proc._check_store_vars_consistency(session, "canopy_01", batch)

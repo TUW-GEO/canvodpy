@@ -82,7 +82,6 @@ class TestSourceFormat:
     def test_a_new_store_records_the_readers_format_not_its_name(
         self, site_settings, monkeypatch
     ):
-        import canvodpy.fluent
         import canvodpy.workflows.tasks
 
         monkeypatch.setattr(
@@ -91,8 +90,7 @@ class TestSourceFormat:
             lambda *args: {"canopy_01": [SimpleNamespace(path="canopy_01")]},
         )
         monkeypatch.setattr(
-            canvodpy.fluent.ReaderFactory,
-            "create",
+            "canvodpy.fluent.ReaderFactory.create",
             lambda name, fpath: _Rinex2Reader(fpath),
         )
         workflow = FluentWorkflow(

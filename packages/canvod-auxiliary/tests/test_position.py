@@ -209,9 +209,6 @@ class TestComputeSphericalCoordinates:
 
     def test_zenith_satellite(self, ecef_position):
         """Test satellite directly overhead (zenith)."""
-        # Convert receiver to geodetic to get proper up direction
-        lat, lon, alt = ecef_position.to_geodetic()
-
         # Place satellite far above receiver along local vertical.
         # Go way up in ECEF (not perfectly vertical but high enough).
         sat_x = ecef_position.x * 1.5

@@ -57,7 +57,7 @@ def files(monkeypatch) -> dict[str, xr.Dataset]:
 def _seed(gnss_store: MyIcechunkStore, files) -> MyIcechunkStore:
     """Write the first file of the first day, so the group exists."""
     first = _name(0, DAYS[0])
-    _Processor(gnss_store, date_key=DAYS[0])._write_day_blocks(
+    _Processor.for_day(gnss_store, date_key=DAYS[0])._write_day_blocks(
         _inputs(_GROUP, [(Path(first), files[first])])
     )
     return gnss_store
@@ -141,7 +141,7 @@ def _run(
             raise RuntimeError(msg)
         descriptors = _descriptors(range(FILES_PER_DAY), date_key)
         file_map = [(_GROUP, [d[0] for d in descriptors])]
-        return _Processor(gnss_store, date_key=date_key), descriptors, file_map
+        return _Processor.for_day(gnss_store, date_key=date_key), descriptors, file_map
 
     monkeypatch.setattr(pipe, "_prepare_single_date", prepare)
     monkeypatch.setattr(pipeline_module, "_loky_reusable", lambda **_: _Pool())

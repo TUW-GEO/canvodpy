@@ -55,7 +55,7 @@ def _download_at_once(destination: Path, url: str) -> list[Exception]:
     def fetch() -> None:
         try:
             FtpDownloader().download(url, destination)
-        except Exception as e:
+        except Exception as e:  # collected for the assertion
             errors.append(e)
 
     threads = [threading.Thread(target=fetch) for _ in range(THREADS)]

@@ -359,7 +359,6 @@ def test_each_run_sizes_from_the_deprecated_cap_and_records_the_sized_workers(
 ):
     import canvodpy.orchestrator.pipeline as pipeline_module
     from canvodpy.orchestrator.memory_budget import MemoryPlan
-    from canvodpy.orchestrator.pipeline import PipelineOrchestrator
     from canvodpy.run_history import RunHistory, recorded_run
 
     asked = []
@@ -387,7 +386,7 @@ def test_each_run_sizes_from_the_deprecated_cap_and_records_the_sized_workers(
     with (
         recorded_run(site.site_name, log_dir=log_dir, settings={}, workers=4) as run,
         pytest.warns(FutureWarning, match="days_per_batch"),
-        PipelineOrchestrator(
+        pipeline_module.PipelineOrchestrator(
             site=site, n_max_workers=4, days_per_batch=3, config=config, run=run
         ) as orchestrator,
     ):

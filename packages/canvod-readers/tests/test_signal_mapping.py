@@ -182,8 +182,6 @@ class TestBands:
         # Without aggregation
         bands_no_agg = Bands(aggregate_glonass_fdma=False)
         r_bands_no_agg = bands_no_agg.SYSTEM_BANDS["R"]
-        # Without aggregation the FDMA bands keep their own names
-        assert r_bands_agg["1"] == "G1"
         assert r_bands_no_agg["1"] == "G1_FDMA"
         assert r_bands_no_agg["2"] == "G2_FDMA"
 

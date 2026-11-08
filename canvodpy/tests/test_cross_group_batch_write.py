@@ -30,6 +30,7 @@ from __future__ import annotations
 import hashlib
 from pathlib import Path
 from types import SimpleNamespace
+from typing import Any, Self
 
 import numpy as np
 import pytest
@@ -92,17 +93,37 @@ class _FakeMatchedDataDirs:
 
 
 class _TestProcessor(RinexDataProcessor):
-    """Minimal RinexDataProcessor stand-in for the batch-write path only."""
+    """Minimal RinexDataProcessor stand-in for the batch-write path only.
 
-    def __init__(self, store: MyIcechunkStore, strategy: str = "skip") -> None:
-        self.site = _FakeSite(store)
-        self.matched_data_dirs = _FakeMatchedDataDirs()
-        self._logger = structlog.get_logger(__name__)
-        self._icechunk_log = structlog.get_logger(__name__)
-        self._gnss_store_strategy = strategy
-        self._keeper_tags_enabled = False
-        self._config = SimpleNamespace(sites=SimpleNamespace(sites={}))
-        self._reader_name = "rinex3"
+    Made by ``build``: ``RinexDataProcessor.__init__`` needs a settings file
+    and the auxiliary files.
+    """
+
+    @classmethod
+    def build(
+        cls,
+        store: MyIcechunkStore,
+        strategy: str = "skip",
+        *,
+        config: Any = None,
+        matched_data_dirs: Any = None,
+    ) -> Self:
+        proc = cls.__new__(cls)
+        proc.site = _FakeSite(store)
+        proc.matched_data_dirs = (
+            _FakeMatchedDataDirs() if matched_data_dirs is None else matched_data_dirs
+        )
+        proc._logger = structlog.get_logger(__name__)
+        proc._icechunk_log = structlog.get_logger(__name__)
+        proc._gnss_store_strategy = strategy
+        proc._keeper_tags_enabled = False
+        proc._config = (
+            SimpleNamespace(sites=SimpleNamespace(sites={}))
+            if config is None
+            else config
+        )
+        proc._reader_name = "rinex3"
+        return proc
 
     def _writes_day_blocks(self) -> bool:
         """These tests are about stores written by appending; a new store
@@ -149,7 +170,7 @@ def test_case_a_steady_state_writes_to_two_pre_existing_groups(
     store: MyIcechunkStore,
 ) -> None:
     """Two pre-existing groups, write new files to each via the batch path."""
-    proc = _TestProcessor(store)
+    proc = _TestProcessor.build(store)
 
     seed_ref = [(Path("ref_seed.rnx"), _make_ds("ref_seed", slot=0))]
     seed_can = [(Path("can_seed.rnx"), _make_ds("can_seed", slot=0))]
@@ -205,7 +226,7 @@ def test_case_b_new_groups_pre_pass_creates_both_before_any_fork(
     double-counted in the subsequent fork write (§4 reconciliation fix), and
     that this costs exactly two commits (pre-pass + batch), not one.
     """
-    proc = _TestProcessor(store)
+    proc = _TestProcessor.build(store)
     _warm_up_source_format(proc)
     ref_files = [(Path(f"ref_{i}.rnx"), _make_ds(f"ref_{i}", slot=i)) for i in range(3)]
     can_files = [(Path(f"can_{i}.rnx"), _make_ds(f"can_{i}", slot=i)) for i in range(2)]
@@ -255,7 +276,7 @@ def test_case_b_single_file_new_group_needs_no_fork(store: MyIcechunkStore) -> N
     empty-plan-after-trim path (`plans = {... if aug}` filters it out), and
     costs exactly one commit (the pre-pass alone; the fork/merge phase never
     opens a session since `plans` is empty)."""
-    proc = _TestProcessor(store)
+    proc = _TestProcessor.build(store)
     _warm_up_source_format(proc)
     ref_files = [(Path("ref_only.rnx"), _make_ds("ref_only", slot=0))]
 
@@ -285,7 +306,7 @@ def test_case_c_fail_fast_no_partial_merge(
     impossible -- so a failing group must prevent the *whole* batch commit
     from landing, not just itself (dev/cross_group_fork_merge_plan.md §6).
     """
-    proc = _TestProcessor(store)
+    proc = _TestProcessor.build(store)
 
     # Seed two pre-existing groups so this batch only exercises fork writes
     # (not the pre-pass), isolating the fail-fast path under test.
@@ -363,7 +384,7 @@ def test_sbf_obs_lands_with_observations_and_is_not_duplicated(
     written in a separate commit after the data, and each call replaced
     the whole dataset with the current day.
     """
-    proc = _TestProcessor(store)
+    proc = _TestProcessor.build(store)
     proc._config = _SbfConfig(store_sbf_metadata=True)
 
     def batch(day: str, ids: list[str]):
@@ -389,7 +410,7 @@ def test_sbf_obs_lands_with_observations_and_is_not_duplicated(
 
 
 def test_store_sbf_metadata_false_skips_sbf_obs(store: MyIcechunkStore) -> None:
-    proc = _TestProcessor(store)
+    proc = _TestProcessor.build(store)
     proc._config = _SbfConfig(store_sbf_metadata=False)
     ds = _make_ds("only", slot=0)
     aux = {Path("only.sbf"): {"sbf_obs": _sbf_obs_for(ds)}}
@@ -400,7 +421,7 @@ def test_store_sbf_metadata_false_skips_sbf_obs(store: MyIcechunkStore) -> None:
 
 
 def test_overwrite_promotes_temp_branch_to_main(store: MyIcechunkStore) -> None:
-    proc = _TestProcessor(store, strategy="overwrite")
+    proc = _TestProcessor.build(store, strategy="overwrite")
     files = [(Path("ref_1.rnx"), _make_ds("ref_1", slot=0))]
 
     proc._append_to_icechunk(files, "reference_01", [f for f, _ in files])
@@ -415,7 +436,7 @@ def test_overwrite_keeps_commit_made_to_main_meanwhile(
     """Another writer commits to main during an overwrite: it is not lost."""
     from canvod.store.store import BranchMovedError
 
-    proc = _TestProcessor(store, strategy="overwrite")
+    proc = _TestProcessor.build(store, strategy="overwrite")
     files = [(Path("ref_1.rnx"), _make_ds("ref_1", slot=0))]
     promote = store.promote_branch
 
@@ -441,11 +462,11 @@ def _overwrite_after_two_files(
     """
     files = [(Path(f"{i}.sbf"), _make_ds(i, slot=n)) for n, i in enumerate("ab")]
     aux = {fname: {"sbf_obs": _sbf_obs_for(ds)} for fname, ds in files}
-    proc = _TestProcessor(store)
+    proc = _TestProcessor.build(store)
     proc._config = _SbfConfig(store_sbf_metadata=True)
     proc._append_to_icechunk(files, "canopy_01", [f for f, _ in files], aux)
 
-    proc = _TestProcessor(store, strategy="overwrite")
+    proc = _TestProcessor.build(store, strategy="overwrite")
     proc._config = _SbfConfig(store_sbf_metadata=store_sbf_metadata)
     fname, ds = files[1]
     new_obs = _sbf_obs_for(ds)
@@ -477,14 +498,14 @@ def test_overwrite_without_sbf_obs_keeps_other_files_sbf_obs(
 
 def test_overwrite_keeps_other_metadata_datasets(store: MyIcechunkStore) -> None:
     files = [(Path(f"{i}.rnx"), _make_ds(i, slot=n)) for n, i in enumerate("ab")]
-    proc = _TestProcessor(store)
+    proc = _TestProcessor.build(store)
     proc._append_to_icechunk(files, "canopy_01", [f for f, _ in files])
     other = xr.Dataset({"x": ("station", np.arange(3.0))})
     with store.writable_session("main") as session:
         store.write_metadata_parts([other], "canopy_01", "other", session)
         session.commit("other metadata")
 
-    proc = _TestProcessor(store, strategy="overwrite")
+    proc = _TestProcessor.build(store, strategy="overwrite")
     proc._append_to_icechunk(files[1:], "canopy_01", [files[1][0]])
 
     xr.testing.assert_equal(

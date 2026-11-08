@@ -293,7 +293,7 @@ class TestDeprecation:
     @pytest.mark.parametrize(
         ("make", "replacement"),
         [
-            (lambda: AugmentationContext(), "canvod.ops.Op"),
+            (AugmentationContext, "canvod.ops.Op"),
             (lambda: AuxDataAugmenter(MagicMock()), "add_spherical_coords"),
             (SphericalCoordinateAugmentation, "add_spherical_coords"),
             (ClockCorrectionAugmentation, "drop it"),
