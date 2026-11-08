@@ -888,6 +888,13 @@ def ensure_metadata(
     ``collect`` builds the metadata of a new store (``collect_metadata``);
     it is called only for a store that has none.
 
+    Two runs may create one store at the same time (on S3, which has no
+    commit lock): the run that loses waits up to
+    :data:`CREATION_WAIT_SECONDS` for the other run's repository metadata
+    and returns it, so it goes on with the other run's store; its own
+    settings are then checked against that store's content settings
+    (#358).
+
     Parameters
     ----------
     config
@@ -895,13 +902,6 @@ def ensure_metadata(
         (:func:`~.location.repository_config`); Icechunk keeps it with the
         store. ``None`` uses the defaults of the ``processing.icechunk``
         settings.
-
-    Two runs may create one store at the same time (on S3, which has no
-    commit lock): the run that loses waits up to
-    :data:`CREATION_WAIT_SECONDS` for the other run's repository metadata
-    and returns it, so it goes on with the other run's store; its own
-    settings are then checked against that store's content settings
-    (#358).
 
     Raises
     ------
