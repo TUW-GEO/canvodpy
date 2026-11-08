@@ -5,8 +5,8 @@ from pathlib import Path
 
 import icechunk
 import pytest
-from canvod.config.models.compression import IcechunkConfig
 
+from canvod.config.models.compression import IcechunkConfig
 from canvod.store_metadata import (
     commit_lock,
     open_repository,

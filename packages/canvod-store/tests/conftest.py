@@ -16,14 +16,15 @@ from _helpers import (
     make_synthetic_dataset,
     new_gnss_store,
 )
+
 from canvod.config import loader
 from canvod.utils import testing
 
 __all__ = [
+    "FIXTURES_DIR",
     "GROUP",
     "RINEX_CANOPY_DIR",
     "RINEX_REFERENCE_DIR",
-    "FIXTURES_DIR",
     "_array_checksum",
     "make_synthetic_dataset",
 ]

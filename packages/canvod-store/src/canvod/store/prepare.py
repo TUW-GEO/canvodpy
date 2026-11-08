@@ -8,10 +8,10 @@ import numpy as np
 import xarray as xr
 import zarr
 import zarr.errors
-from canvod.config.models import split_preprocessing
-from canvod.store_metadata.layout import LayoutError, is_day_block_group
 
+from canvod.config.models import split_preprocessing
 from canvod.store.time_encoding import prepare_times
+from canvod.store_metadata.layout import LayoutError, is_day_block_group
 
 #: Dataset attribute listing the satellites of a file that have
 #: observations but no position, with their epochs (#571): a JSON object

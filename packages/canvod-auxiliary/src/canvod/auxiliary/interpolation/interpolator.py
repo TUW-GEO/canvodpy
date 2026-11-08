@@ -13,10 +13,11 @@ from typing import Any, Literal, get_args
 
 import numpy as np
 import xarray as xr
-from canvod.utils.tools import deprecated_argument
 from pydantic import ConfigDict, validate_call
 from pydantic.dataclasses import dataclass
 from scipy.interpolate import CubicHermiteSpline, interp1d
+
+from canvod.utils.tools import deprecated_argument
 
 #: Epochs of an orbit product each interpolated position is computed from:
 #: a polynomial of degree 10, as RTKLIB interpolates precise ephemerides

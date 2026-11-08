@@ -23,9 +23,9 @@ from typing import Any
 import numpy as np
 import structlog
 import xarray as xr
-from canvod.store_metadata.io import commit_with_rebase
 
 from canvod.store.store import MyIcechunkStore
+from canvod.store_metadata.io import commit_with_rebase
 
 logger = structlog.get_logger(__name__)
 
@@ -916,15 +916,9 @@ class AnalysisStorage:
             branch,
         )
 
-        # Ensure branch exists
-        try:
+        if branch not in self.store.repo.list_branches():
             main_head = next(iter(self.store.repo.ancestry(branch="main"))).id
-            self.store.repo.create_branch(
-                branch,
-                main_head,
-            )
-        except Exception:
-            pass  # Branch already exists
+            self.store.repo.create_branch(branch, main_head)
 
         # Clean attributes for JSON serializability
         ds = percell_ds.copy()

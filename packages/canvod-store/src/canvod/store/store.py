@@ -18,6 +18,10 @@ import polars as pl
 import structlog
 import xarray as xr
 import zarr
+from icechunk.session import ForkSession
+from icechunk.xarray import to_icechunk
+from zarr.dtype import VariableLengthUTF8
+
 from canvod.config.loader import get_default_config_dir
 from canvod.config.models import (
     PREPROCESSING_ATTR,
@@ -31,6 +35,22 @@ from canvod.config.models import (
     vod_preprocessing_settings,
 )
 from canvod.readers.base import validate_vod_dataset
+from canvod.store.day_blocks import (
+    add_day_block,
+    clear_day_block,
+    data_groups,
+    day_blocks,
+    drop_empty_slots,
+    fill_encoding,
+    holds_day_blocks,
+    load_group,
+    to_stored_axis,
+    write_file_region,
+)
+from canvod.store.prepare import prepare_write, split_log_book_attrs
+from canvod.store.time_encoding import with_time_units
+from canvod.store.viewer import add_rich_display_to_store
+from canvod.store.zarr_concurrency import scoped_zarr_concurrency
 from canvod.store_metadata import RESERVED_GROUP
 from canvod.store_metadata.icechunk_logs import apply_icechunk_log_filter
 from canvod.store_metadata.identity import check_store_folder
@@ -58,32 +78,13 @@ from canvod.utils.tools import (
     get_version_from_pyproject,
     sanitize_directory,
 )
-from icechunk.session import ForkSession
-from icechunk.xarray import to_icechunk
-from zarr.dtype import VariableLengthUTF8
-
-from canvod.store.day_blocks import (
-    add_day_block,
-    clear_day_block,
-    data_groups,
-    day_blocks,
-    drop_empty_slots,
-    fill_encoding,
-    holds_day_blocks,
-    load_group,
-    to_stored_axis,
-    write_file_region,
-)
-from canvod.store.prepare import prepare_write, split_log_book_attrs
-from canvod.store.time_encoding import with_time_units
-from canvod.store.viewer import add_rich_display_to_store
-from canvod.store.zarr_concurrency import scoped_zarr_concurrency
 
 apply_icechunk_log_filter()  # see canvod.store_metadata.icechunk_logs
 
 if TYPE_CHECKING:
-    from canvod.config.models import CanvodConfig
     from icechunk import AncestryGraph
+
+    from canvod.config.models import CanvodConfig
 
 
 class _PatchedAncestryGraph:

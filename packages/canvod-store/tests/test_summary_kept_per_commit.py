@@ -16,11 +16,11 @@ import pytest
 import xarray as xr
 import zarr
 from _helpers import new_gnss_store
+
+from canvod.store.day_blocks import add_day_block
 from canvod.store_metadata import summary_state as summary_state_module
 from canvod.store_metadata.io import commit_with_rebase
 from canvod.store_metadata.snapshot import SNAPSHOT_SUMMARY_ATTR, snapshot_summary
-
-from canvod.store.day_blocks import add_day_block
 
 CANOPY = "canopy_01"
 REFERENCE = "reference_01_canopy_01"

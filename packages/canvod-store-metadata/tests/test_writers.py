@@ -6,7 +6,6 @@ from pathlib import Path
 import icechunk
 import pytest
 import zarr
-from canvod.utils import testing
 
 from canvod.store_metadata import (
     check_receivers,
@@ -30,6 +29,7 @@ from canvod.store_metadata.schema import (
     TemporalExtent,
     VodAnalysisInfo,
 )
+from canvod.utils import testing
 
 
 def _metadata(store_type: str = "gnss_store") -> StoreMetadata:

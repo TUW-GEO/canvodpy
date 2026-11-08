@@ -22,10 +22,8 @@ if TYPE_CHECKING:
     from canvod.vod import VODCalculator
 
 import structlog
-from canvod.config.models import VodAnalysisConfig
-from canvod.store_metadata.io import commit_with_rebase
-from canvod.utils.tools import deprecated
 
+from canvod.config.models import VodAnalysisConfig
 from canvod.store.prepare import prepare_write
 from canvod.store.store import (
     MyIcechunkStore,
@@ -34,6 +32,8 @@ from canvod.store.store import (
     open_gnss_store,
     open_vod_store,
 )
+from canvod.store_metadata.io import commit_with_rebase
+from canvod.utils.tools import deprecated
 
 
 class GnssResearchSite:

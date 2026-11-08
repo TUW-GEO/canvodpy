@@ -6,11 +6,11 @@ from pathlib import Path
 
 import numpy as np
 import xarray as xr
-from canvod.store_metadata.location import open_repository
-from canvod.store_metadata.testing import create_test_store
 from icechunk.xarray import to_icechunk
 
 from canvod.store import open_gnss_store
+from canvod.store_metadata.location import open_repository
+from canvod.store_metadata.testing import create_test_store
 
 _DAY = np.timedelta64(1, "D")
 

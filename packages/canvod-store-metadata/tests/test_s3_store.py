@@ -20,13 +20,13 @@ import uuid
 import icechunk
 import pytest
 import zarr
-from canvod.utils.testing import SITE_KEY
 
 from canvod.store_metadata import open_repository, store_exists, store_location
 from canvod.store_metadata.io import ensure_metadata, read_metadata
 from canvod.store_metadata.location import S3StoreLocation, read_store_uuid
 from canvod.store_metadata.show import show_metadata
 from canvod.store_metadata.testing import made_up_metadata
+from canvod.utils.testing import SITE_KEY
 
 S3_URL = os.environ.get("CANVOD_TEST_S3_URL", "")
 

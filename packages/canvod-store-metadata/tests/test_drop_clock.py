@@ -14,7 +14,6 @@ import numpy as np
 import pytest
 import xarray as xr
 import zarr
-from canvod.utils import testing
 from icechunk.xarray import to_icechunk
 from test_vod_content_settings import GNSS_NAMES, NAMES
 from test_writers import _settings
@@ -31,6 +30,7 @@ from canvod.store_metadata.migration import (
     drop_clock,
     follow_gnss_content_hash,
 )
+from canvod.utils import testing
 
 
 def _settings_with_clock(tmp_path: Path, fetch_clock: bool):

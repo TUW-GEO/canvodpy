@@ -16,6 +16,7 @@ from typing import TYPE_CHECKING, Any, Protocol
 
 import numpy as np
 import zarr
+
 from canvod.config.models.sites import reference_store_group
 from canvod.utils.tools import directory_size_bytes
 

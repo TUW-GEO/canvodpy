@@ -2,10 +2,12 @@
 
 from __future__ import annotations
 
-import canvod.config.loader as config_loader
 import icechunk
 import pytest
+
+import canvod.config.loader as config_loader
 from canvod.config import load_config
+from canvod.store import MyIcechunkStore
 from canvod.store_metadata import collect_config_snapshot, write_metadata
 from canvod.store_metadata.schema import (
     Creator,
@@ -16,8 +18,6 @@ from canvod.store_metadata.schema import (
     TemporalExtent,
 )
 from canvod.store_metadata.testing import create_test_store
-
-from canvod.store import MyIcechunkStore
 
 
 @pytest.fixture

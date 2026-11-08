@@ -19,7 +19,6 @@ from typing import TYPE_CHECKING, Any
 import numpy as np
 import structlog
 import xarray as xr
-from canvod.utils.tools import deprecated
 
 from canvod.auxiliary.matching import DatasetMatcher
 from canvod.auxiliary.position import (
@@ -27,6 +26,7 @@ from canvod.auxiliary.position import (
     add_spherical_coords_to_dataset,
     compute_spherical_coordinates,
 )
+from canvod.utils.tools import deprecated
 
 if TYPE_CHECKING:
     from canvod.auxiliary.pipeline import AuxDataPipeline
@@ -799,10 +799,10 @@ if __name__ == "__main__":
     from pathlib import Path
 
     import xarray as xr
-    from canvod.readers import MatchedDirs
-    from canvod.utils.tools import YYYYDOY
 
     from canvod.auxiliary.pipeline import AuxDataPipeline
+    from canvod.readers import MatchedDirs
+    from canvod.utils.tools import YYYYDOY
 
     print("\n" + "=" * 60)
     print("AUGMENTATION FRAMEWORK EXAMPLES")

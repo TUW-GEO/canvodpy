@@ -16,13 +16,13 @@ from pathlib import Path
 import numpy as np
 import xarray as xr
 import zarr
-from canvod.store_metadata.testing import create_test_store
 
 from canvod.store import (
     MyIcechunkStore,
     open_gnss_store,
     open_vod_store,
 )
+from canvod.store_metadata.testing import create_test_store
 
 
 class TestStoreOpening:

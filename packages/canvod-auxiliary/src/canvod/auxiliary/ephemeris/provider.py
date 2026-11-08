@@ -197,9 +197,9 @@ class AgencyEphemerisProvider(EphemerisProvider):
         import shutil
 
         import numpy as np
-        from canvod.utils.tools import YYYYDOY
 
         from canvod.auxiliary.interpolation import aux_epoch_grid, interpolate_aux_day
+        from canvod.utils.tools import YYYYDOY
 
         path = self._aux_zarr_paths.get(interval_s)
         if path is not None:
@@ -371,9 +371,9 @@ class RinexNavProvider(EphemerisProvider):
             If no navigation files were given.
         """
         import numpy as np
-        from canvod.utils.tools import YYYYDOY
 
         from canvod.auxiliary.ephemeris.broadcast import broadcast_ephemerides
+        from canvod.utils.tools import YYYYDOY
 
         if not self.nav_files:
             raise ValueError(f"No navigation files for {date}")

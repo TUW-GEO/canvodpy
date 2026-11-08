@@ -8,12 +8,12 @@ next to the old one; it stops before writing and names the migration.
 from pathlib import Path
 
 import pytest
-from canvod.utils import testing
 from test_vod_content_settings import GNSS_NAMES
 from test_writers import _settings
 
 from canvod.store_metadata import ensure_store_metadata, store_exists
 from canvod.store_metadata.testing import create_test_store
+from canvod.utils import testing
 
 
 def _start(path: Path, settings) -> dict:

@@ -14,11 +14,12 @@ from typing import Any
 import icechunk
 import structlog
 import zarr
-from canvod.config.store_names import OLD_GNSS_STORE_NAME
-from canvod.utils.tools import deprecated
 from filelock import FileLock, Timeout
 from pydantic import ValidationError
 from zarr import errors as zarr_errors
+
+from canvod.config.store_names import OLD_GNSS_STORE_NAME
+from canvod.utils.tools import deprecated
 
 from .collectors import collect_metadata, recipe_sha256_of
 from .content import (
@@ -88,7 +89,7 @@ def wait_after_conflict(retry: int) -> float:
         random part.
     """
     base = CONFLICT_WAIT_SECONDS * 2 ** (retry - 1)
-    seconds = base * (1 + random.random() / 2)  # noqa: S311 (not for security)
+    seconds = base * (1 + random.random() / 2)
     time.sleep(seconds)
     return seconds
 

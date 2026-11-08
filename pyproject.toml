@@ -87,7 +87,14 @@ select = [
     "UP",    # pyupgrade (use modern Python syntax)
     "B",     # flake8-bugbear (catches likely bugs)
     "RUF",   # ruff-specific rules
+    "S110",  # try-except-pass: say why an error is ignored, or log it (ADR 0004)
+    "S112",  # try-except-continue: the same for a skipped loop iteration
 ]
+# The code-scanning categories (#651) that ruff can check locally: S110 and
+# S112 (empty except), F841 (unused variable), B018 (useless expression,
+# outside marimo notebooks) and F811 (repeated import, part of "F"). ruff
+# has no rule for a module imported with both `import` and `from ... import`;
+# CodeQL still reports that one.
 # Dropped (stylistic, not bugs):
 #   N   — naming (scientists use N, K, theta, phi, SNR, VOD ...)
 #   SIM — simplify (opinionated if-else and ternary preferences)
@@ -104,13 +111,9 @@ ignore = [
     "COM812",  # missing-trailing-comma (conflicts with ruff formatter)
 
     # --- Scientific code ---
-    "F841",    # unused-variable (intermediate results, exploratory analysis)
     "RUF001",  # ambiguous-unicode-character-string (degree symbols, mu, etc.)
     "RUF002",  # ambiguous-unicode-character-docstring (GNSS notation)
     "RUF003",  # ambiguous-unicode-character-comment
-
-    # --- Marimo notebooks ---
-    "B018",    # useless-expression (marimo cells display via bare expressions)
 
     # --- Pragmatic ---
     "B905",    # zip-without-explicit-strict (not a real bug)
@@ -124,8 +127,11 @@ unfixable = []
 [tool.ruff.lint.per-file-ignores]
 "__init__.py" = ["E402", "F401"]           # re-exports and lazy imports
 "**/{tests}/*" = ["S101", "PLR2004"]       # assert and magic values OK in tests
-"**/demo/**" = ["F811", "F821", "F401", "E402"]  # marimo notebooks: cross-cell refs, re-exports
-"release-notes/*.py" = ["F811", "F821", "F401", "E402"]  # marimo release notebooks, as demo/
+# Marimo notebooks: cross-cell refs, re-exports, and a cell shows its result
+# through a bare expression (B018).
+"**/demo/**" = ["F811", "F821", "F401", "E402", "B018"]
+"release-notes/*.py" = ["F811", "F821", "F401", "E402", "B018"]
+"canvodpy/src/canvodpy/cli/dashboards/performance.py" = ["B018"]
 
 [tool.ruff.lint.isort]
 known-first-party = ["canvod"]

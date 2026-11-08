@@ -14,7 +14,6 @@ from dataclasses import dataclass
 from importlib import resources
 from typing import Annotated, Any, Self
 
-from canvod.utils.tools import deprecated
 from pydantic import (
     AfterValidator,
     BaseModel,
@@ -26,6 +25,8 @@ from pydantic import (
     model_validator,
 )
 from pydantic_core import PydanticCustomError
+
+from canvod.utils.tools import deprecated
 
 from .identity import STORE_TYPES
 

@@ -18,13 +18,13 @@ import os
 from pathlib import Path
 
 import pytest
-from canvod.utils.tools import YYYYDOY
 
 from canvod.auxiliary.clock.reader import ClkFile
 from canvod.auxiliary.core.downloader import FtpDownloader
 from canvod.auxiliary.ephemeris.reader import Sp3File
 from canvod.auxiliary.products.check import check_registry, ftp_lister
 from canvod.auxiliary.products.registry_config import get_registry
+from canvod.utils.tools import YYYYDOY
 
 pytestmark = [
     pytest.mark.network,

@@ -1,7 +1,5 @@
 """Test metadata validation against standards."""
 
-from canvod.utils import testing
-
 from canvod.store_metadata.schema import (
     Creator,
     Publisher,
@@ -22,6 +20,7 @@ from canvod.store_metadata.validate import (
     validate_stac,
     validate_zarr_conventions,
 )
+from canvod.utils import testing
 
 
 def _make_complete_metadata() -> StoreMetadata:

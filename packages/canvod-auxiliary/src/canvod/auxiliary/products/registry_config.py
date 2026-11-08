@@ -7,8 +7,9 @@ import warnings
 from pathlib import Path
 from typing import Literal
 
-from canvod.utils.tools import deprecated
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
+
+from canvod.utils.tools import deprecated
 
 #: Every registry product file covers one day.
 FILE_DURATION = "01D"

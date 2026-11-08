@@ -370,7 +370,7 @@ def format_metadata(
     if section is not None:
         formatter = sections.get(section)
         if formatter is None:
-            available = ", ".join(list(sections) + ["uv", "toml", "reproduce"])
+            available = ", ".join([*list(sections), "uv", "toml", "reproduce"])
             return f"Unknown section '{section}'. Available: {available}"
         return formatter(meta)
 

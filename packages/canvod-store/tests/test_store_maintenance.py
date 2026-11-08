@@ -15,9 +15,9 @@ from pathlib import Path
 from unittest.mock import Mock
 
 import zarr
-from canvod.store_metadata.testing import create_test_store
 
 from canvod.store import open_vod_store
+from canvod.store_metadata.testing import create_test_store
 
 
 class TestExpireOldSnapshotsDefaults:
@@ -403,7 +403,10 @@ class TestCompactionRecordsCommitMetadata:
         import icechunk
         import numpy as np
         import xarray as xr
+        from icechunk.xarray import to_icechunk
+
         from canvod.config import load_config
+        from canvod.store import MyIcechunkStore
         from canvod.store_metadata import (
             collect_config_snapshot,
             commit_with_rebase,
@@ -417,9 +420,6 @@ class TestCompactionRecordsCommitMetadata:
             StoreMetadata,
             TemporalExtent,
         )
-        from icechunk.xarray import to_icechunk
-
-        from canvod.store import MyIcechunkStore
 
         settings = load_config()
         icechunk.Repository.create(icechunk.local_filesystem_storage(str(path)))

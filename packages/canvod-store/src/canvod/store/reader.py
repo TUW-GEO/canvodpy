@@ -11,13 +11,13 @@ from pathlib import Path
 import numpy as np
 import structlog
 import xarray as xr
-from canvod.config import load_config
-from canvod.readers import MatchedDirs, Rnxv3Obs
-from canvod.utils.tools import _worker_init, deprecated, get_version_from_pyproject
 from natsort import natsorted
 from tqdm import tqdm
 
+from canvod.config import load_config
+from canvod.readers import MatchedDirs, Rnxv3Obs
 from canvod.store.manager import GnssResearchSite
+from canvod.utils.tools import _worker_init, deprecated, get_version_from_pyproject
 
 _REPLACEMENT = (
     "Use `canvodpy run` or `canvodpy.Site(<site>).pipeline().process_date(<date>)` "

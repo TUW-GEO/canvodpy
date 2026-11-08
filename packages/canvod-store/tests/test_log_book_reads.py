@@ -15,11 +15,11 @@ import polars as pl
 import pytest
 import zarr
 from _helpers import new_gnss_store
-from canvod.store_metadata.log_book import LogBooks, read_log_book
 from polars.testing import assert_frame_equal
 from zarr.storage import WrapperStore
 
 from canvod.store.store import _append_log_rows
+from canvod.store_metadata.log_book import LogBooks, read_log_book
 
 GROUP = "canopy_01"
 TABLE = f"{GROUP}/metadata/table"

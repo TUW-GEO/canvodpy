@@ -77,14 +77,6 @@ build-backend = "uv_build"
 [tool.uv.build-backend]
 module-name = "canvod.auxiliary"
 
-[tool.ruff]
-line-length = 88
-target-version = "py314"
-
-[tool.ruff.lint]
-select = ["E", "F", "I", "N", "W", "UP"]
-ignore = []
-
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 python_files = ["test_*.py"]

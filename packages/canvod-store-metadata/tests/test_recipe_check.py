@@ -4,9 +4,9 @@ import hashlib
 from types import SimpleNamespace
 
 import pytest
-from canvod.utils import testing
 
 from canvod.store_metadata import check_recipes
+from canvod.utils import testing
 
 pytest.importorskip("canvod.filemap.recipe_files")
 

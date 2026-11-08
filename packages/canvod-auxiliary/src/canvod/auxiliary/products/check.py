@@ -23,9 +23,8 @@ from dataclasses import dataclass, field
 from ftplib import FTP, FTP_TLS
 from urllib.parse import urlparse
 
-from canvod.utils.tools import YYYYDOY
-
 from canvod.auxiliary.products.registry_config import ProductSpec, get_registry
+from canvod.utils.tools import YYYYDOY
 
 #: Lists one directory of one server: ``(server_url, path) -> file names``.
 DirLister = Callable[[str, str], set[str]]

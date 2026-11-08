@@ -3,6 +3,7 @@
 from collections.abc import Iterator
 
 import pytest
+
 from canvod.config import loader
 from canvod.utils import testing
 

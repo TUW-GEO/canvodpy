@@ -7,9 +7,8 @@ Units are specific to canvod-auxiliary package.
 
 # Import date utilities from canonical location
 # Import aux-specific utilities
-from canvod.utils.tools import YYYYDOY, get_gps_week_from_filename
-
 from canvod.auxiliary._internal.units import SPEEDOFLIGHT, UREG
+from canvod.utils.tools import YYYYDOY, get_gps_week_from_filename
 
 __all__ = [
     "SPEEDOFLIGHT",

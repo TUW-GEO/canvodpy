@@ -27,10 +27,12 @@ from pathlib import Path
 from typing import Any, NoReturn
 
 import numpy as np
+import structlog
 import zarr
-from canvod.config.store_names import store_folder_name
 from pydantic import ValidationError
 from zarr import errors as zarr_errors
+
+from canvod.config.store_names import store_folder_name
 
 from .amend import check_amendable
 from .content import (
@@ -61,6 +63,8 @@ from .schema import (
 )
 from .snapshot import RESERVED_GROUP, preview_metadata
 from .validate import validate_all
+
+_logger = structlog.get_logger(__name__)
 
 #: Attributes xarray writes to encode a variable; kept when a variable's
 #: attributes are replaced.
@@ -447,8 +451,12 @@ def _gnss_content_settings(
             from_data |= _settings_from_data(
                 vod_store, _VOD_SWITCHES, preprocessing=False
             )
-        except Exception:  # no VOD store: the recorded settings count
-            pass
+        except Exception as exc:  # no VOD store: the recorded settings count
+            _logger.warning(
+                "vod_store_not_readable_using_recorded_settings",
+                vod_store=str(vod_store),
+                error=str(exc),
+            )
     for key in CONTENT_KEYS:
         if key in values:
             value = values[key]
@@ -648,7 +656,12 @@ def _derive_gnss_hash(
     for candidate in candidates:
         try:
             repository = read_repository_metadata(store_location(candidate))
-        except Exception:
+        except Exception as exc:
+            _logger.info(
+                "gnss_store_candidate_not_readable",
+                candidate=str(candidate),
+                error=str(exc),
+            )
             continue
         break
     else:

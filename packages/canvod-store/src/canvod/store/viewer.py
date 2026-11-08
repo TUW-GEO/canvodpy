@@ -23,6 +23,8 @@ from html import escape
 from typing import TYPE_CHECKING, Any, cast
 
 import structlog
+from zarr.errors import GroupNotFoundError
+
 from canvod.store_metadata import RESERVED_GROUP
 
 if TYPE_CHECKING:
@@ -815,8 +817,14 @@ class IcechunkStoreViewer:
                 {sbf_meta._repr_html_()}
             </div>
             """)
-        except Exception:
-            pass  # No SBF metadata for this group
+        except GroupNotFoundError:
+            pass  # not every group has SBF metadata; nothing to show
+        except Exception as e:
+            content_parts.append(f"""
+            <div class="icechunk-error">
+                Failed to load SBF metadata: {escape(str(e))}
+            </div>
+            """)
 
         # 3. Load and display metadata table
         try:
@@ -1145,11 +1153,12 @@ def add_rich_display_to_store[StoreT: type](store_class: StoreT) -> StoreT:
             show_column_summaries=True,
         )
 
-    # Add methods to class
-    setattr(store_class, "_repr_html_", _repr_html_)
-    setattr(store_class, "show_tree", show_tree)
-    setattr(store_class, "preview", preview)
-    setattr(store_class, "to_marimo_table", to_marimo_table)
+    # Add methods to class. setattr, not attribute assignment: the class is
+    # a type variable, which declares none of these names (B010 off here).
+    setattr(store_class, "_repr_html_", _repr_html_)  # noqa: B010
+    setattr(store_class, "show_tree", show_tree)  # noqa: B010
+    setattr(store_class, "preview", preview)  # noqa: B010
+    setattr(store_class, "to_marimo_table", to_marimo_table)  # noqa: B010
 
     return store_class
 

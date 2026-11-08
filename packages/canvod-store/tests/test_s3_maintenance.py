@@ -21,13 +21,13 @@ import uuid
 
 import pytest
 import zarr
-from canvod.store_metadata import open_repository, store_location
-from canvod.store_metadata.location import S3StoreLocation
 
 from canvod.store import (
     MaintenanceOnS3Error,
     MyIcechunkStore,
 )
+from canvod.store_metadata import open_repository, store_location
+from canvod.store_metadata.location import S3StoreLocation
 
 S3_URL = os.environ.get("CANVOD_TEST_S3_URL", "")
 

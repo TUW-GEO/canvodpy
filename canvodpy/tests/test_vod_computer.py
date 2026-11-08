@@ -651,4 +651,4 @@ class TestEffectiveCalculatorParams:
     def test_a_required_field_without_a_default_raises(self):
         site = _make_site()
         with pytest.raises(ValueError, match="gamma"):
-            VodComputer(site, calculator="required_param_test").calculator_params
+            _ = VodComputer(site, calculator="required_param_test").calculator_params

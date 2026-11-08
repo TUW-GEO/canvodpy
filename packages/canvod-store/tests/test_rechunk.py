@@ -244,9 +244,8 @@ class TestRechunkDayBlocks:
 
     @pytest.fixture
     def day_block_store(self, tmp_path):
-        from canvod.store_metadata.io import commit_with_rebase
-
         from canvod.store.day_blocks import add_day_block, write_file_region
+        from canvod.store_metadata.io import commit_with_rebase
 
         store = new_gnss_store(tmp_path / "day_block_store")
         day = np.datetime64("2025-01-01", "D")

@@ -8,7 +8,6 @@ from typing import Any
 import icechunk
 import pytest
 import zarr
-from canvod.utils import testing
 from pydantic import ValidationError
 
 from canvod.store_metadata import (
@@ -25,6 +24,7 @@ from canvod.store_metadata.testing import (
     made_up_metadata,
     write_unchecked,
 )
+from canvod.utils import testing
 
 _ORCID = testing.PERSON_ORCID
 _ROR = testing.INSTITUTION_ROR

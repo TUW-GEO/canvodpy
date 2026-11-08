@@ -12,13 +12,13 @@ import pytest
 import xarray as xr
 import zarr
 from _helpers import GROUP, make_synthetic_dataset
+
 from canvod.config.models import (
     PREPROCESSING_ATTR,
     PreprocessingMismatchError,
     preprocessing_record,
     vod_preprocessing_record,
 )
-
 from canvod.store import MyIcechunkStore
 
 AGGREGATE = {
@@ -181,7 +181,9 @@ class TestCheckSettingsMatch:
                 "settings": {"freq": "30s", "method": "median"},
             }
         ]
-        with pytest.raises(PreprocessingMismatchError, match="this run has .*freq=30s"):
+        with pytest.raises(
+            PreprocessingMismatchError, match=r"this run has .*freq=30s"
+        ):
             tmp_store.check_settings_match(GROUP, other)
         with pytest.raises(PreprocessingMismatchError, match="this run has none"):
             tmp_store.check_settings_match(GROUP, [])
