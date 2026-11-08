@@ -40,7 +40,7 @@ def new_store(tmp_path: Path) -> MyIcechunkStore:
 
 @pytest.fixture
 def proc(tmp_path: Path, new_store: MyIcechunkStore) -> _SourceFormatProcessor:
-    proc = _SourceFormatProcessor(new_store)
+    proc = _SourceFormatProcessor.build(new_store)
     proc.site.site_name = testing.SITE_KEY
     testing.write_settings(tmp_path / "settings")
     config = load_config(config_dir=tmp_path / "settings").model_copy(deep=True)
