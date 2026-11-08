@@ -231,10 +231,19 @@ names the systems with angles for each receiver and day. The files sit in
 the folder `nav_directory` names, relative to the site data root like
 `directory` (it may be the same folder), and need canonical names of type
 `nav` with sampling `00U`, for example
-`FANA01INK_R_20250010000_15M_00U_AA.nav`. Navigation files with other
-names must be renamed or linked under their canonical names: canvod-filemap
-has no naming recipes for navigation files yet, and a receiver with a
-`nav_recipe` stops with an error that says so.
+`FANA01INK_R_20250010000_15M_00U_AA.nav`. For navigation files with other
+names, such as the RINEX short names `ract001a00.25p`, set a naming recipe
+with `file_type: nav` and `sampling: "00U"` in the receiver's `nav_recipe`
+(canvod-filemap 1.1.0 or later):
+
+```yaml
+sites:
+  my_site:
+    receivers:
+      canopy_01:
+        nav_directory: canopy_01_nav
+        nav_recipe: my_site_canopy_nav
+```
 In per-receiver mode (`receiver_position_mode: per_receiver`) every
 receiver with RINEX files reads its own navigation files.
 
