@@ -1403,7 +1403,7 @@ def _optional(value: float, unit: Any) -> Any:
 class SbfReader(GNSSDataReader):
     """Read and decode a Septentrio Binary Format (SBF) observation file.
 
-    Parameters
+    Attributes
     ----------
     fpath : Path
         Path to the ``*.sbf`` (or ``*.SBF``, or receiver-named) binary file.

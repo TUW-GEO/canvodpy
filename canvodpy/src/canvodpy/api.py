@@ -386,6 +386,8 @@ class Pipeline:
         processed receiver-day with satellites observed at epochs without a
         position (no orbit record or product): their angles are NaN.
 
+    Notes
+    -----
     A pipeline that is not a dry run is a run: it records itself in the run
     history of the log folder (ADR 0018) from its creation until
     :meth:`close` (or the end of its ``with`` block), and ends as failed

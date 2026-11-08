@@ -30,7 +30,7 @@ class ECEFPosition(BaseModel):
     - Y-axis pointing to 0° latitude, 90° East longitude
     - Z-axis pointing to North Pole
 
-    Parameters
+    Attributes
     ----------
     x : float
         X coordinate in meters.
