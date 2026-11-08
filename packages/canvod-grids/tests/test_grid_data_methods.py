@@ -197,3 +197,32 @@ class TestGeometricSolidAngles:
         # delta_phi = 2pi
         # omega = 2pi * 1 = 2pi
         assert angles[0] == pytest.approx(2 * np.pi)
+
+
+class TestHealpixWithoutHealpy:
+    """HEALPix pixel areas come from nside alone; healpy is not needed."""
+
+    @staticmethod
+    def _healpix_grid(nside: int) -> GridData:
+        gd = _make_grid_data(n_cells=4)
+        return GridData(
+            grid=gd.grid.with_columns(pl.lit(nside).alias("healpix_nside")),
+            theta_lims=gd.theta_lims,
+            phi_lims=gd.phi_lims,
+            cell_ids=gd.cell_ids,
+            grid_type="healpix",
+        )
+
+    def test_solid_angle_is_the_pixel_area(self):
+        # nside 4: 192 pixels of equal area, 4π / 192 = π / 48 sr each
+        angles = self._healpix_grid(4).get_solid_angles()
+        np.testing.assert_allclose(angles, np.pi / 48)
+
+    def test_stats(self):
+        stats = self._healpix_grid(4).get_grid_stats()
+        assert stats["healpix_npix_total"] == 192
+        assert stats["healpix_pixel_area_sr"] == pytest.approx(np.pi / 48)
+        # The square root of the pixel area, in arc minutes
+        assert stats["healpix_resolution_arcmin"] == pytest.approx(
+            np.degrees(np.sqrt(np.pi / 48)) * 60
+        )

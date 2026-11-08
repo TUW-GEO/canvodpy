@@ -1191,7 +1191,7 @@ class Rnxv3Obs(GNSSDataReader):
                     return value, lli, ssi
 
         except ValueError, IndexError:
-            pass
+            pass  # not this form: the next method below
 
         try:
             # Method 2: Flexible parsing for variable-length records
@@ -1232,14 +1232,14 @@ class Rnxv3Obs(GNSSDataReader):
                     return value, lli, ssi
 
         except ValueError, IndexError:
-            pass
+            pass  # not this form: the next method below
 
         # Method 3: Last resort - try simple float parsing
         try:
             simple_value = float(slice_text.strip())
             return simple_value, None, None
         except ValueError:
-            pass
+            pass  # not a number: no value
 
         return None, None, None
 

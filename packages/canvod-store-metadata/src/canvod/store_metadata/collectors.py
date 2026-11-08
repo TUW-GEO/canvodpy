@@ -84,7 +84,7 @@ def _software_versions() -> dict[str, str]:
         try:
             versions[pkg] = importlib.metadata.version(pkg)
         except importlib.metadata.PackageNotFoundError:
-            pass
+            pass  # not installed: not recorded
     return versions
 
 
@@ -118,7 +118,7 @@ def collect_uv_version() -> str | None:
             match = re.match(r"uv\s+(\S+)", result.stdout.strip())
             return match.group(1) if match else None
     except FileNotFoundError, subprocess.TimeoutExpired:
-        pass
+        pass  # no uv, or it didn't answer: recorded as unknown
     return None
 
 
@@ -193,7 +193,7 @@ def collect_environment(
 
         memory_gb = round(psutil.virtual_memory().total / (1024**3), 1)
     except ImportError:
-        pass
+        pass  # psutil is optional: the memory is recorded as unknown
 
     disk_free_gb = None
     if store_path is not None:

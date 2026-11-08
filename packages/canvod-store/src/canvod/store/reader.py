@@ -2,6 +2,7 @@
 
 import gc
 import time
+import weakref
 from collections.abc import Generator
 from concurrent.futures import ProcessPoolExecutor, as_completed
 from datetime import datetime
@@ -211,17 +212,12 @@ class IcechunkDataReader:
             initializer=_worker_init,
             initargs=(_res["nice_priority"], _res["cpu_affinity"]),
         )
+        # The pool shuts down when the reader is collected or Python exits.
+        weakref.finalize(self, self._pool.shutdown, wait=True)
 
         self._logger.info(
             f"Initialized Icechunk data reader for {matched_dirs.yyyydoy.to_str()}"
         )
-
-    def __del__(self) -> None:
-        """Ensure the pool is shut down when the reader is deleted."""
-        try:
-            self._pool.shutdown(wait=True)
-        except Exception:
-            pass
 
     def _memory_cleanup(self) -> None:
         """Perform memory cleanup if enabled."""

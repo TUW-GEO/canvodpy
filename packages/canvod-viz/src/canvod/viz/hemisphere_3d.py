@@ -727,7 +727,7 @@ class HemisphereVisualizer3D:
             try:
                 import healpy as hp
             except ImportError:
-                pass
+                pass  # healpy is optional: without it, no HEALPix cell boundaries
             if hp is not None and "healpix_ipix" in grid_df.columns:
                 nside = int(grid_df["healpix_nside"][0])
                 for row in grid_df.iter_rows(named=True):
