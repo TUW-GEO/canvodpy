@@ -75,7 +75,7 @@ def _inputs(name: str, files: list[tuple[Path, xr.Dataset]]):
 
 @pytest.fixture
 def proc(store: MyIcechunkStore) -> _DayBlockProcessor:  # noqa: F811
-    proc = _DayBlockProcessor(store)
+    proc = _DayBlockProcessor.build(store)
     proc._config = _config()
     return proc
 
@@ -118,7 +118,7 @@ def test_a_rerun_skips_and_adds_nothing(proc, store) -> None:  # noqa: F811
 
 
 def test_overwrite_rewrites_the_file_region(store) -> None:  # noqa: F811
-    proc = _DayBlockProcessor(store, strategy="overwrite")
+    proc = _DayBlockProcessor.build(store, strategy="overwrite")
     proc._config = _config()
     path, ds = _file("a", 0)
     proc._write_day_blocks(_inputs("canopy_01", [(path, ds)]))
@@ -137,7 +137,7 @@ def test_overwrite_rewrites_the_file_region(store) -> None:  # noqa: F811
 def test_a_file_written_again_with_fewer_epochs_leaves_nothing_of_before(
     store,  # noqa: F811
 ) -> None:
-    proc = _DayBlockProcessor(store, strategy="overwrite")
+    proc = _DayBlockProcessor.build(store, strategy="overwrite")
     proc._config = _config()
     path, ds = _file("a", 0)
     proc._write_day_blocks(_inputs("canopy_01", [(path, ds)]))
@@ -186,7 +186,7 @@ def test_days_out_of_order_and_two_groups(proc, store) -> None:  # noqa: F811
 
 
 def test_the_aggregation_cadence_sets_the_slots(store) -> None:  # noqa: F811
-    proc = _DayBlockProcessor(store)
+    proc = _DayBlockProcessor.build(store)
     proc._config = _config(aggregation="30s")
     path, ds = _file("a", 0, sampling="01S")
     aggregated = ds.isel(epoch=slice(0, None, 6))
