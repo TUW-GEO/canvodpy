@@ -65,7 +65,7 @@
             <a id="nextFileLink" class="nav" href="z_ba710b8cfda711fd_downloader_py.html">&#xbb; next</a>
             &nbsp; &nbsp; &nbsp;
             <a class="nav" href="https://coverage.readthedocs.io/en/7.17.0">coverage.py v7.17.0</a>,
-            created at 2026-11-08 15:34 +0000
+            created at 2026-11-08 21:27 +0000
         </p>
         <aside class="hidden">
             <button type="button" class="button_next_chunk" data-shortcut="j"></button>
@@ -92,13 +92,13 @@
     <p class="run"><span class="n"><a id="t10" href="#t10">10</a></span><span class="t"><span class="key">import</span> <span class="nam">numpy</span> <span class="key">as</span> <span class="nam">np</span>&nbsp;</span><span class="r"></span></p>
     <p class="run"><span class="n"><a id="t11" href="#t11">11</a></span><span class="t"><span class="key">import</span> <span class="nam">structlog</span>&nbsp;</span><span class="r"></span></p>
     <p class="run"><span class="n"><a id="t12" href="#t12">12</a></span><span class="t"><span class="key">import</span> <span class="nam">xarray</span> <span class="key">as</span> <span class="nam">xr</span>&nbsp;</span><span class="r"></span></p>
-    <p class="run"><span class="n"><a id="t13" href="#t13">13</a></span><span class="t"><span class="key">from</span> <span class="nam">canvod</span><span class="op">.</span><span class="nam">utils</span><span class="op">.</span><span class="nam">tools</span> <span class="key">import</span> <span class="nam">YYYYDOY</span><span class="op">,</span> <span class="nam">deprecated</span>&nbsp;</span><span class="r"></span></p>
-    <p class="run"><span class="n"><a id="t14" href="#t14">14</a></span><span class="t"><span class="key">from</span> <span class="nam">pydantic</span> <span class="key">import</span> <span class="nam">ConfigDict</span><span class="op">,</span> <span class="nam">Field</span>&nbsp;</span><span class="r"></span></p>
-    <p class="run"><span class="n"><a id="t15" href="#t15">15</a></span><span class="t"><span class="key">from</span> <span class="nam">pydantic</span><span class="op">.</span><span class="nam">dataclasses</span> <span class="key">import</span> <span class="nam">dataclass</span>&nbsp;</span><span class="r"></span></p>
-    <p class="pln"><span class="n"><a id="t16" href="#t16">16</a></span><span class="t">&nbsp;</span><span class="r"></span></p>
-    <p class="run"><span class="n"><a id="t17" href="#t17">17</a></span><span class="t"><span class="key">from</span> <span class="nam">canvod</span><span class="op">.</span><span class="nam">auxiliary</span><span class="op">.</span><span class="nam">core</span><span class="op">.</span><span class="nam">downloader</span> <span class="key">import</span> <span class="nam">FileDownloader</span><span class="op">,</span> <span class="nam">FtpDownloader</span>&nbsp;</span><span class="r"></span></p>
-    <p class="run"><span class="n"><a id="t18" href="#t18">18</a></span><span class="t"><span class="key">from</span> <span class="nam">canvod</span><span class="op">.</span><span class="nam">auxiliary</span><span class="op">.</span><span class="nam">interpolation</span> <span class="key">import</span> <span class="nam">Interpolator</span>&nbsp;</span><span class="r"></span></p>
-    <p class="run"><span class="n"><a id="t19" href="#t19">19</a></span><span class="t"><span class="key">from</span> <span class="nam">canvod</span><span class="op">.</span><span class="nam">auxiliary</span><span class="op">.</span><span class="nam">products</span><span class="op">.</span><span class="nam">registry_config</span> <span class="key">import</span> <span class="nam">get_registry</span>&nbsp;</span><span class="r"></span></p>
+    <p class="run"><span class="n"><a id="t13" href="#t13">13</a></span><span class="t"><span class="key">from</span> <span class="nam">pydantic</span> <span class="key">import</span> <span class="nam">ConfigDict</span><span class="op">,</span> <span class="nam">Field</span>&nbsp;</span><span class="r"></span></p>
+    <p class="run"><span class="n"><a id="t14" href="#t14">14</a></span><span class="t"><span class="key">from</span> <span class="nam">pydantic</span><span class="op">.</span><span class="nam">dataclasses</span> <span class="key">import</span> <span class="nam">dataclass</span>&nbsp;</span><span class="r"></span></p>
+    <p class="pln"><span class="n"><a id="t15" href="#t15">15</a></span><span class="t">&nbsp;</span><span class="r"></span></p>
+    <p class="run"><span class="n"><a id="t16" href="#t16">16</a></span><span class="t"><span class="key">from</span> <span class="nam">canvod</span><span class="op">.</span><span class="nam">auxiliary</span><span class="op">.</span><span class="nam">core</span><span class="op">.</span><span class="nam">downloader</span> <span class="key">import</span> <span class="nam">FileDownloader</span><span class="op">,</span> <span class="nam">FtpDownloader</span>&nbsp;</span><span class="r"></span></p>
+    <p class="run"><span class="n"><a id="t17" href="#t17">17</a></span><span class="t"><span class="key">from</span> <span class="nam">canvod</span><span class="op">.</span><span class="nam">auxiliary</span><span class="op">.</span><span class="nam">interpolation</span> <span class="key">import</span> <span class="nam">Interpolator</span>&nbsp;</span><span class="r"></span></p>
+    <p class="run"><span class="n"><a id="t18" href="#t18">18</a></span><span class="t"><span class="key">from</span> <span class="nam">canvod</span><span class="op">.</span><span class="nam">auxiliary</span><span class="op">.</span><span class="nam">products</span><span class="op">.</span><span class="nam">registry_config</span> <span class="key">import</span> <span class="nam">get_registry</span>&nbsp;</span><span class="r"></span></p>
+    <p class="run"><span class="n"><a id="t19" href="#t19">19</a></span><span class="t"><span class="key">from</span> <span class="nam">canvod</span><span class="op">.</span><span class="nam">utils</span><span class="op">.</span><span class="nam">tools</span> <span class="key">import</span> <span class="nam">YYYYDOY</span><span class="op">,</span> <span class="nam">deprecated</span>&nbsp;</span><span class="r"></span></p>
     <p class="pln"><span class="n"><a id="t20" href="#t20">20</a></span><span class="t">&nbsp;</span><span class="r"></span></p>
     <p class="run"><span class="n"><a id="t21" href="#t21">21</a></span><span class="t"><span class="nam">log</span> <span class="op">=</span> <span class="nam">structlog</span><span class="op">.</span><span class="nam">get_logger</span><span class="op">(</span><span class="nam">__name__</span><span class="op">)</span>&nbsp;</span><span class="r"></span></p>
     <p class="pln"><span class="n"><a id="t22" href="#t22">22</a></span><span class="t">&nbsp;</span><span class="r"></span></p>
@@ -544,7 +544,7 @@
             <a class="nav" href="z_ba710b8cfda711fd_downloader_py.html">&#xbb; next</a>
             &nbsp; &nbsp; &nbsp;
             <a class="nav" href="https://coverage.readthedocs.io/en/7.17.0">coverage.py v7.17.0</a>,
-            created at 2026-11-08 15:34 +0000
+            created at 2026-11-08 21:27 +0000
         </p>
     </div>
 </footer>
