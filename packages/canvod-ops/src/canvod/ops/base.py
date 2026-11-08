@@ -58,7 +58,8 @@ class Op(ABC):
 
     @property
     @abstractmethod
-    def name(self) -> str: ...
+    def name(self) -> str:
+        """The operation's name, as the preprocessing record and the log hold it."""
 
     @property
     @abstractmethod
@@ -70,4 +71,5 @@ class Op(ABC):
         """
 
     @abstractmethod
-    def __call__(self, ds: xr.Dataset) -> tuple[xr.Dataset, OpResult]: ...
+    def __call__(self, ds: xr.Dataset) -> tuple[xr.Dataset, OpResult]:
+        """Run the operation on ``ds``; return the new dataset and the result."""

@@ -74,7 +74,6 @@ class PerCellFilter(ABC):
             Boolean mask (True = keep).
 
         """
-        ...
 
     def apply(
         self,

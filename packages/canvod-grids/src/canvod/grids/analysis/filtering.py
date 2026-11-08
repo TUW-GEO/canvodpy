@@ -66,7 +66,6 @@ class Filter(ABC):
         **kwargs: Any,
     ) -> xr.DataArray:
         """Compute boolean mask (True = keep, False = remove)."""
-        ...
 
     def apply(
         self,

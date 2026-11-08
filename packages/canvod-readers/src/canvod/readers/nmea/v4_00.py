@@ -402,7 +402,7 @@ def _parse_gsv_satellites(
     # Stop before the signal_id field if present
     end = len(fields) - 1 if signal_id is not None else len(fields)
     while sat_start < end:
-        prn_str = fields[sat_start] if sat_start < end else ""
+        prn_str = fields[sat_start]
         snr_str = fields[sat_start + 3] if sat_start + 3 < end else ""
 
         if not prn_str:
