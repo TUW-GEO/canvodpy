@@ -11,7 +11,7 @@ from pathlib import Path
 
 import pytest
 import xarray as xr
-from canvodpy.orchestrator.processor import (
+from canvodpy.orchestrator.file_worker import (
     preprocess_reference_with_hermite_aux_fanout,
     preprocess_with_hermite_aux,
 )

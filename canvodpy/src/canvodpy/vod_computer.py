@@ -47,10 +47,10 @@ Custom calculator::
 from __future__ import annotations
 
 import warnings
-from collections.abc import Mapping, Sequence
+from collections.abc import Sequence
 from concurrent.futures import Executor
 from datetime import datetime
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Protocol
 
 import structlog
 
@@ -59,6 +59,14 @@ from canvod.config.models import (
     vod_preprocessing_record,
 )
 from canvod.utils.tools import deprecated
+from canvodpy.orchestrator.vod_phase import (
+    VOD_UNIT_DAYS,
+    VodPair,
+    VodPhase,
+    VodUnitReport,
+    units,
+)
+from canvodpy.vod_calculation import compute_vod
 
 #: Why writing VOD from per-day datasets is deprecated (#427).
 _DAY_WRITE_DEPRECATED = (
@@ -69,15 +77,40 @@ _DAY_WRITE_DEPRECATED = (
 )
 
 if TYPE_CHECKING:
+    from pathlib import Path
+
     import xarray as xr
 
     from canvod.config.models import ProcessingParams
-    from canvodpy.api import Site
-    from canvodpy.orchestrator.vod_phase import VodUnitReport
+    from canvod.store import GnssResearchSite, MyIcechunkStore
+
+
+class _VodSite(Protocol):
+    """The members of ``canvodpy.api.Site`` that VOD computation uses.
+
+    A protocol instead of an import of ``Site``: ``api.py`` imports this
+    module, so an import back, even for annotations only, is an import
+    cycle (#657).
+    """
+
+    name: str
+    _site: GnssResearchSite
+
+    @property
+    def vod_analyses(self) -> dict:
+        """The configured VOD analysis pairs."""
+
+    @property
+    def gnss_store(self) -> MyIcechunkStore:
+        """The site's GNSS store."""
+
+    @property
+    def vod_store_path(self) -> Path | str:
+        """Where the site's VOD store is."""
 
 
 def ensure_vod_store_metadata(
-    site: Site, calculator_name: str, analyses: list[str]
+    site: _VodSite, calculator_name: str, analyses: list[str]
 ) -> None:
     """Give a new VOD store its metadata; refuse unlisted VOD analyses.
 
@@ -117,7 +150,7 @@ def _vod_pool(params: ProcessingParams) -> Executor:
 
     from canvod.utils.logging import get_run_id
     from canvodpy.logging.logging_config import active_log_dir
-    from canvodpy.orchestrator.processor import _worker_init_with_run_id
+    from canvodpy.orchestrator.file_worker import _worker_init_with_run_id
 
     resources = params.resolve_resources()
     return get_reusable_executor(
@@ -131,59 +164,6 @@ def _vod_pool(params: ProcessingParams) -> Executor:
             active_log_dir(),
         ),
     )
-
-
-def compute_vod(
-    canopy_ds: xr.Dataset,
-    sky_ds: xr.Dataset,
-    *,
-    analysis_name: str,
-    canopy_receiver: str,
-    reference_receiver: str,
-    calculator: str,
-    calculator_params: Mapping[str, Any],
-    store_delta_snr: bool,
-    store_radial_diff: bool,
-) -> xr.Dataset:
-    """The VOD of one analysis pair, with the optional outputs.
-
-    The calculator aligns both datasets on their shared epochs and
-    signals. ``store_delta_snr`` keeps ``delta_snr`` (dropped otherwise);
-    ``store_radial_diff`` adds ``radial_diff`` (canopy minus reference
-    slant range, needs ``r`` from ``store_radial_distance`` at ingest).
-    Runs in the main process (:class:`VodComputer`) and in the workers of
-    the VOD phase (:mod:`canvodpy.orchestrator.vod_phase`).
-    """
-    from canvodpy.factories import VODFactory
-
-    vod_calculator = VODFactory.create(
-        calculator, canopy_ds=canopy_ds, sky_ds=sky_ds, **calculator_params
-    )
-    vod_ds = vod_calculator.calculate_vod()
-    if not store_delta_snr:
-        vod_ds = vod_ds.drop_vars("delta_snr", errors="ignore")
-    if store_radial_diff:
-        aligned_canopy, aligned_sky = vod_calculator.canopy_ds, vod_calculator.sky_ds
-        if "r" in aligned_canopy and "r" in aligned_sky:
-            radial_diff = aligned_canopy["r"] - aligned_sky["r"]
-            radial_diff.attrs["units"] = "m"
-            radial_diff.attrs["long_name"] = (
-                "radial distance difference (canopy − reference)"
-            )
-            vod_ds["radial_diff"] = radial_diff
-        else:
-            structlog.get_logger(__name__).warning(
-                "radial_diff_unavailable",
-                reason=(
-                    "store_radial_diff=true but 'r' not present in receiver "
-                    "data; set store_radial_distance=true at ingest time"
-                ),
-            )
-    vod_ds.attrs["analysis_name"] = analysis_name
-    vod_ds.attrs["canopy_receiver"] = canopy_receiver
-    vod_ds.attrs["reference_receiver"] = reference_receiver
-    vod_ds.attrs["calculator"] = calculator
-    return vod_ds
 
 
 class VodComputer:
@@ -203,7 +183,7 @@ class VodComputer:
 
     def __init__(
         self,
-        site: Site,
+        site: _VodSite,
         calculator: str = "tau_omega",
         calculator_params: dict | None = None,
         rechunk: dict[str, int] | None = None,
@@ -546,13 +526,6 @@ class VodComputer:
         from canvod.config import load_config
         from canvod.utils.tools import YYYYDOY
         from canvodpy.orchestrator.store_retry import call_with_store_retries
-        from canvodpy.orchestrator.vod_phase import (
-            VOD_UNIT_DAYS,
-            VodPair,
-            VodPhase,
-            VodUnitReport,
-            units,
-        )
 
         names = list(analyses or self._site.vod_analyses)
         pairs = []
@@ -905,8 +878,8 @@ class VodComputer:
             block for ``day``.
         """
         from canvod.store.day_blocks import day_blocks, holds_day_blocks
-        from canvod.store_metadata.io import store_command
         from canvod.store_metadata.layout import LayoutError
+        from canvod.store_metadata.location import store_command
 
         analysis_cfg = self._get_analysis_config(analysis_name)
         groups = (analysis_cfg.canopy_receiver, analysis_cfg.reference_store_group)

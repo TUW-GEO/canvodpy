@@ -221,7 +221,7 @@ def data_sampling_seconds(
     ``reader_options`` are passed to the reader, as a run passes them.
     """
     from canvodpy.factories import ReaderFactory
-    from canvodpy.orchestrator.processor import run_reader_options
+    from canvodpy.orchestrator.file_worker import run_reader_options
 
     reader = ReaderFactory.create(
         reader_format,

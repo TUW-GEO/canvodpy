@@ -612,6 +612,7 @@ def example_custom_augmentation_step():
     print("  - Converts theta (polar angle) to elevation angle")
     print("  - Requires: theta (computed by SphericalCoordinateAugmentation)")
     print("  - Adds: elevation (in degrees)")
+    return ElevationAugmentation
 
 
 @deprecated(

@@ -7,7 +7,7 @@ from unittest import mock
 
 import numpy as np
 import xarray as xr
-from canvodpy.orchestrator.processor import _warn_if_aux_grid_coarser
+from canvodpy.orchestrator.file_worker import _warn_if_aux_grid_coarser
 
 
 def _epochs(step_s: int, n: int = 10) -> xr.Dataset:
@@ -34,7 +34,7 @@ def test_silent_when_grid_matches_or_is_finer() -> None:
 
 
 def test_warns_when_first_epoch_is_outside_named_span() -> None:
-    from canvodpy.orchestrator.processor import _warn_if_name_disagrees_with_data
+    from canvodpy.orchestrator.file_worker import _warn_if_name_disagrees_with_data
 
     name = "FANA01INK_R_20250010015_15M_05S_AA.rnx"  # 00:15 to 00:30
     log = mock.Mock()
@@ -50,9 +50,7 @@ def test_warns_when_first_epoch_is_outside_named_span() -> None:
 
 
 def test_warns_when_epoch_count_differs_from_name() -> None:
-    from canvodpy.orchestrator.processor import (
-        _warn_if_epoch_count_differs_from_name,
-    )
+    from canvodpy.orchestrator.file_worker import _warn_if_epoch_count_differs_from_name
 
     name = "FANA01INK_R_20250010015_15M_05S_AA.rnx"  # 180 epochs
     log = mock.Mock()
@@ -69,7 +67,7 @@ def test_warns_when_epoch_count_differs_from_name() -> None:
 
 def test_run_turns_the_rinex_readers_own_check_off() -> None:
     """A run checks every format against the name instead."""
-    from canvodpy.orchestrator.processor import run_reader_options
+    from canvodpy.orchestrator.file_worker import run_reader_options
 
     assert run_reader_options("rinex3") == {"completeness_mode": "off"}
     assert run_reader_options("rinex3_stripped") == {"completeness_mode": "off"}
