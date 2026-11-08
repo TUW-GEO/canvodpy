@@ -95,6 +95,7 @@ class Observation:
         return v
 
     @field_validator("lli", "ssi")
+    @classmethod
     def validate_indicators(cls, v: int | None) -> int | None:
         """Validate LLI and SSI values.
 
@@ -139,6 +140,7 @@ class Satellite:
     observations: list[Observation] = Field(default_factory=list)
 
     @field_validator("sv")
+    @classmethod
     def validate_sv(cls, v: str) -> str:
         """Validate satellite vehicle identifier format.
 
@@ -303,6 +305,7 @@ class RnxObsFileModel(BaseModel):
     fpath: Path
 
     @field_validator("fpath")
+    @classmethod
     def file_must_exist(cls, v: Path) -> Path:
         """Validate that file exists.
 
@@ -328,6 +331,7 @@ class RnxObsFileModel(BaseModel):
         return v
 
     @field_validator("fpath")
+    @classmethod
     def file_must_have_correct_suffix(cls, v: Path) -> Path:
         """Validate RINEX observation file suffix.
 
@@ -368,6 +372,7 @@ class RnxVersion3Model(BaseModel):
     version: float
 
     @field_validator("version")
+    @classmethod
     def version_must_be_3(cls, v: float) -> float:
         """Validate RINEX version is 3.0x.
 
@@ -532,6 +537,7 @@ class Rnxv3ObsEpochRecordLineModel(BaseModel):
     receiver_clock_offset: float | None = None
 
     @model_validator(mode="before")
+    @classmethod
     def parse_epoch(cls, values: dict[str, Any]) -> dict[str, Any]:
         """Parse RINEX v3 epoch record line.
 
@@ -673,6 +679,7 @@ class VodDataValidator(BaseModel):
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
     @field_validator("vod_data", mode="before")
+    @classmethod
     def validate_vod_data(cls, value: xr.Dataset) -> xr.Dataset:
         """Validate the VOD data structure.
 
