@@ -325,7 +325,7 @@ def test_nav_recipe_drives_navigation_file_discovery(
 def test_a_nav_recipe_without_filemap_support_names_canonical_names(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    """A nav_recipe stops with what to do while filemap has no type nav."""
+    """A nav_recipe stops with what to do under canvod-filemap before 1.1.0."""
     pytest.importorskip("canvod.filemap.recipe_files")
     from canvod.filemap.recipe import NamingRecipe
 
