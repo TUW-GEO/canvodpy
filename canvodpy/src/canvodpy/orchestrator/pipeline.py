@@ -475,8 +475,9 @@ class PipelineOrchestrator:
         Research site configuration
     n_max_workers : int | None
         Most parallel workers. ``None`` means the number of cores
-        (``os.cpu_count()``). Fewer workers run if they do not fit in the
-        memory budget (:mod:`canvodpy.orchestrator.memory_budget`).
+        (``os.cpu_count()``). A number above the cores is used as given.
+        Fewer workers run if they do not fit in the memory budget
+        (:mod:`canvodpy.orchestrator.memory_budget`).
     dry_run : bool
         If True, only simulate processing without executing
     max_memory_gb : float | None
@@ -608,7 +609,7 @@ class PipelineOrchestrator:
         if n_max_workers is not None:
             self._logger.info(
                 "resource_mode_manual",
-                n_workers=min(n_max_workers, os.cpu_count() or n_max_workers),
+                n_max_workers=n_max_workers,
                 threads_per_worker=threads_per_worker,
             )
         else:

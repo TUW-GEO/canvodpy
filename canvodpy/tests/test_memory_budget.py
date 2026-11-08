@@ -398,3 +398,28 @@ def test_each_run_sizes_from_the_deprecated_cap_and_records_the_sized_workers(
     assert asked == [3, 3]
     with RunHistory.open(log_dir, read_only=True) as history:
         assert history.run(run.run_id).workers == 1
+
+
+def test_the_startup_log_names_the_workers_asked_for_above_the_cores():
+    # The run does not cap the workers at the cores (#667), so the startup
+    # log does not either.
+    from unittest.mock import MagicMock, patch
+
+    from canvodpy.orchestrator.pipeline import PipelineOrchestrator
+
+    with (
+        patch("canvodpy.orchestrator.pipeline.ensure_file_logging"),
+        patch("canvodpy.orchestrator.pipeline.clear_discovery_cache"),
+        patch("canvodpy.orchestrator.pipeline.check_receivers"),
+        patch("canvodpy.orchestrator.pipeline.os.cpu_count", return_value=4),
+        patch("canvodpy.orchestrator.pipeline.structlog.get_logger") as get_logger,
+    ):
+        PipelineOrchestrator(MagicMock(), n_max_workers=16).close()
+
+    logger = get_logger.return_value.bind.return_value
+    (manual,) = [
+        call.kwargs
+        for call in logger.info.call_args_list
+        if call.args == ("resource_mode_manual",)
+    ]
+    assert manual["n_max_workers"] == 16
