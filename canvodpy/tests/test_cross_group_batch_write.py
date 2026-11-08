@@ -110,12 +110,18 @@ class _TestProcessor(RinexDataProcessor):
     ) -> Self:
         proc = cls.__new__(cls)
         proc.site = _FakeSite(store)
-        proc.matched_data_dirs = matched_data_dirs or _FakeMatchedDataDirs()
+        proc.matched_data_dirs = (
+            _FakeMatchedDataDirs() if matched_data_dirs is None else matched_data_dirs
+        )
         proc._logger = structlog.get_logger(__name__)
         proc._icechunk_log = structlog.get_logger(__name__)
         proc._gnss_store_strategy = strategy
         proc._keeper_tags_enabled = False
-        proc._config = config or SimpleNamespace(sites=SimpleNamespace(sites={}))
+        proc._config = (
+            SimpleNamespace(sites=SimpleNamespace(sites={}))
+            if config is None
+            else config
+        )
         proc._reader_name = "rinex3"
         return proc
 
