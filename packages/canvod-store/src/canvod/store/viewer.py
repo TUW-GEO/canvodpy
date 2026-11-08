@@ -19,7 +19,6 @@ Design priorities:
 from __future__ import annotations
 
 import uuid
-from functools import lru_cache
 from html import escape
 from typing import TYPE_CHECKING, Any, cast
 
@@ -36,19 +35,6 @@ _FORMAT_LABELS: dict[str, str] = {
     "rinex2": "RINEX v2",
     "nmea": "NMEA",
 }
-
-
-@lru_cache(None)
-def _load_xarray_static_files() -> tuple[str, str]:
-    """Load xarray's static files (icons + CSS) for consistency."""
-    try:
-        from xarray.core.formatting_html import _load_static_files
-
-        icons, css = _load_static_files()
-        return icons, css
-    except ImportError:
-        # Fallback if xarray not available (shouldn't happen)
-        return "", ""
 
 
 class IcechunkStoreViewer:
@@ -927,9 +913,6 @@ class IcechunkStoreViewer:
 
     def _repr_html_(self) -> str:
         """Generate modern interactive HTML representation."""
-        # Load xarray's static files for consistency
-        icons, xr_css = _load_xarray_static_files()
-
         # Get store summary
         summary = self._get_store_summary()
 

@@ -16,6 +16,7 @@ replaces this filter.
 
 from __future__ import annotations
 
+import functools
 import os
 
 import icechunk
@@ -25,8 +26,6 @@ ICECHUNK_LOG_FILTER = (
     "warn,icechunk_arrow_object_store=error,icechunk_storage::readback=error"
 )
 
-_applied = False
-
 
 def apply_icechunk_log_filter() -> None:
     """Set the filter once per process, unless ``ICECHUNK_LOG`` is set.
@@ -34,8 +33,11 @@ def apply_icechunk_log_filter() -> None:
     Called on import by every package that opens stores
     (``canvod.store_metadata``, ``canvod.store``).
     """
-    global _applied
-    if _applied or "ICECHUNK_LOG" in os.environ:
+    if "ICECHUNK_LOG" in os.environ:
         return
+    _set_filter_once()
+
+
+@functools.cache
+def _set_filter_once() -> None:
     icechunk.set_logs_filter(ICECHUNK_LOG_FILTER)
-    _applied = True

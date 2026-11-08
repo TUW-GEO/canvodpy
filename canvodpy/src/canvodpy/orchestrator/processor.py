@@ -5120,7 +5120,6 @@ class RinexDataProcessor:
         if keep_vars is None:
             keep_vars = self._config.processing.params.keep_gnss_observables
 
-        pipeline_start = time.perf_counter()
         self._logger.info(
             "rinex_pipeline_started",
             receivers=len(normalized_configs),
@@ -5842,7 +5841,7 @@ class DistributedRinexDataProcessor(RinexDataProcessor):
 
         # Merge all remote sessions
         session.merge(*remote_sessions)
-        _snapshot_id = commit_with_rebase(
+        commit_with_rebase(
             session,
             _with_run_id(f"[v{version}] Cooperative write for {receiver_name}"),
             store_path=self.site.gnss_store.store_path,

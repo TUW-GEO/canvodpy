@@ -601,16 +601,12 @@ class PipelineOrchestrator:
         self._memory_monitor = MemoryMonitor()
 
         if n_max_workers is not None:
-            effective_workers: int | None = min(
-                n_max_workers, os.cpu_count() or n_max_workers
-            )
             self._logger.info(
                 "resource_mode_manual",
-                n_workers=effective_workers,
+                n_workers=min(n_max_workers, os.cpu_count() or n_max_workers),
                 threads_per_worker=threads_per_worker,
             )
         else:
-            effective_workers = None
             self._logger.info(
                 "resource_mode_auto",
                 detected_cores=os.cpu_count(),
@@ -2024,7 +2020,6 @@ class PipelineOrchestrator:
                         total=len(all_tasks),
                     )
 
-                    batch_t0 = _time.monotonic()
                     for task, fut in completion_iter:
                         if stop.is_set():
                             # The caller stopped: take no more results. A

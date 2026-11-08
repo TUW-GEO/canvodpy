@@ -223,13 +223,6 @@ class IcechunkDataReader:
         except Exception:
             pass
 
-    def _memory_cleanup(self) -> None:
-        """Perform memory cleanup if enabled."""
-        if self.enable_gc:
-            gc.collect()
-            if self.gc_delay > 0:
-                time.sleep(self.gc_delay)
-
     def get_receiver_by_type(self, receiver_type: str) -> list[str]:
         """
         Get list of receiver names by type.
@@ -249,13 +242,6 @@ class IcechunkDataReader:
             for name, config in self._site.active_receivers.items()
             if config["type"] == receiver_type
         ]
-
-    def _get_receiver_name_for_type(self, receiver_type: str) -> str | None:
-        """Get the first configured receiver name for a given type."""
-        for name, config in self._site.active_receivers.items():
-            if config["type"] == receiver_type:
-                return name
-        return None
 
     def _memory_cleanup(self) -> None:
         """Perform memory cleanup if enabled."""

@@ -29,7 +29,6 @@ from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from rich.live import Live
-    from rich.progress import TaskID
 
 
 # ---------------------------------------------------------------------------
@@ -131,7 +130,7 @@ class RichReporter:
             MofNCompleteColumn,
             Progress,
             SpinnerColumn,
-            TaskID,  # noqa: F401
+            TaskID,
             TextColumn,
             TimeElapsedColumn,
             TimeRemainingColumn,

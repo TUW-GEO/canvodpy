@@ -22,7 +22,6 @@ from rich.console import Console
 from rich.panel import Panel
 from rich.prompt import Prompt
 from rich.table import Table
-from rich.text import Text
 
 from canvod.config.store_names import STORE_KINDS
 
@@ -51,7 +50,6 @@ def _banner(title: str, paths: list[tuple[str, Path]], extra: str = "") -> None:
         else:
             table.add_row(label, f"[dim]{path}  (does not exist)[/dim]")
 
-    body = Text()
     content = table
 
     panel = Panel(
