@@ -60,7 +60,7 @@
 | canvodpy/src/canvodpy/utils/\_\_init\_\_.py                                     |        0 |        0 |    100% |           |
 | canvodpy/src/canvodpy/utils/history.py                                          |        8 |        0 |    100% |           |
 | canvodpy/src/canvodpy/vod\_calculation.py                                       |       23 |        1 |     96% |        58 |
-| canvodpy/src/canvodpy/vod\_computer.py                                          |      293 |       58 |     80% |104-110, 123-130, 176, 281, 455-460, 496-548, 562-577, 698-699, 866, 877-885, 965, 1029-1030 |
+| canvodpy/src/canvodpy/vod\_computer.py                                          |      302 |       58 |     81% |130-136, 149-156, 202, 307, 481-486, 522-574, 588-603, 724-725, 892, 903-911, 991, 1055-1056 |
 | canvodpy/src/canvodpy/workflow.py                                               |       96 |       25 |     74% |147-149, 236-238, 300-302, 359-381, 462-469 |
 | canvodpy/src/canvodpy/workflows/\_\_init\_\_.py                                 |        2 |        0 |    100% |           |
 | canvodpy/src/canvodpy/workflows/tasks.py                                        |      425 |      104 |     76% |64, 332, 388, 545, 613-692, 775-777, 794-795, 798-799, 815-817, 843-849, 967-969, 976-1068, 1253-1256, 1314-1315, 1379-1380 |
@@ -251,7 +251,7 @@
 | packages/canvod-viz/src/canvod/viz/widgets/hemisphere\_widgets.py               |       27 |        0 |    100% |           |
 | packages/canvod-vod/src/canvod/vod/\_\_init\_\_.py                              |        4 |        0 |    100% |           |
 | packages/canvod-vod/src/canvod/vod/calculator.py                                |       76 |        8 |     89% |55, 77, 121, 128-135 |
-| **TOTAL**                                                                       | **30501** | **8360** | **73%** |           |
+| **TOTAL**                                                                       | **30510** | **8360** | **73%** |           |
 
 
 ## Setup coverage badge
