@@ -598,7 +598,7 @@ class TestProcessRinexPreprocessing:
             patch.object(tasks, "load_config", return_value=config),
             patch("canvod.store.GnssResearchSite", return_value=site),
             patch(
-                "canvodpy.orchestrator.processor.preprocess_with_hermite_aux",
+                "canvodpy.orchestrator.file_worker.preprocess_with_hermite_aux",
                 side_effect=fake_worker,
             ),
             patch(

@@ -13,7 +13,7 @@ from unittest import mock
 import numpy as np
 import pytest
 import xarray as xr
-from canvodpy.orchestrator.processor import (
+from canvodpy.orchestrator.file_worker import (
     _open_aux_store,
     preprocess_with_hermite_aux,
 )

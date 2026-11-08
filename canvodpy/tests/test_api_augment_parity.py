@@ -15,7 +15,7 @@ from pathlib import Path
 import numpy as np
 import pytest
 from canvodpy.orchestrator.discovery import parse_sampling_interval_from_filename
-from canvodpy.orchestrator.processor import preprocess_with_hermite_aux
+from canvodpy.orchestrator.file_worker import preprocess_with_hermite_aux
 
 from canvod.auxiliary.clock.reader import ClkFile
 from canvod.auxiliary.ephemeris.provider import AgencyEphemerisProvider

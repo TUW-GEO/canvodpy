@@ -175,7 +175,7 @@ def site_position(site_settings: dict, data_root: Path, day: int) -> dict:
     """
     from canvodpy.factories import ReaderFactory
     from canvodpy.orchestrator.discovery import ReceiverDay, discover_files
-    from canvodpy.orchestrator.processor import run_reader_options
+    from canvodpy.orchestrator.file_worker import run_reader_options
 
     from canvod.auxiliary.position import ECEFPosition
 

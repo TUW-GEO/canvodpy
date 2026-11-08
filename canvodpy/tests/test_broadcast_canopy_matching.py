@@ -10,10 +10,8 @@ from pathlib import Path
 from unittest.mock import MagicMock
 
 from canvodpy.orchestrator.discovery import ReceiverDay
-from canvodpy.orchestrator.processor import (
-    RinexDataProcessor,
-    preprocess_with_hermite_aux,
-)
+from canvodpy.orchestrator.file_worker import preprocess_with_hermite_aux
+from canvodpy.orchestrator.processor import RinexDataProcessor
 
 # physical name -> canonical name
 _FILES = {

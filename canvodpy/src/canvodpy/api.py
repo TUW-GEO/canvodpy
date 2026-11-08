@@ -41,6 +41,7 @@ from typing import TYPE_CHECKING
 from canvod.utils.tools import deprecated, deprecated_argument
 from canvodpy.orchestrator.resources import deprecate_no_effect_arguments
 from canvodpy.orchestrator.run_dates import check_run_dates
+from canvodpy.vod_computer import VodComputer
 
 # Lazy imports to avoid circular dependencies
 
@@ -53,7 +54,6 @@ if TYPE_CHECKING:
 
     from canvod.store import MyIcechunkStore
     from canvodpy.orchestrator.vod_phase import VodUnitReport
-    from canvodpy.vod_computer import VodComputer
 
 
 def _passed(**arguments: object) -> dict[str, object]:
@@ -147,8 +147,6 @@ class Site:
     def vod(self) -> VodComputer:
         """Lazy VOD computation helper."""
         if not hasattr(self, "_vod_computer"):
-            from canvodpy.vod_computer import VodComputer
-
             self._vod_computer = VodComputer(self)
         return self._vod_computer
 
@@ -733,7 +731,6 @@ class Pipeline:
         ...         print(sorted(unit.days), unit.vod.written)
         """
         from canvod.utils.tools import YYYYDOY
-        from canvodpy.vod_computer import VodComputer
 
         check_run_dates(start, end, update_to_latest=update_to_latest)
         if update_to_latest:

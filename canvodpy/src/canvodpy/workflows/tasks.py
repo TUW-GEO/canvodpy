@@ -191,9 +191,7 @@ def _warn_epoch_counts(
     canonical names of recipe files; without them the physical name is used.
     """
     from canvodpy.orchestrator.discovery import canonical_name_for
-    from canvodpy.orchestrator.processor import (
-        _warn_if_epoch_count_differs_from_name,
-    )
+    from canvodpy.orchestrator.file_worker import _warn_if_epoch_count_differs_from_name
 
     names = {f.path: f.canonical_name for f in discovered or []}
     for fpath, ds in processed:
@@ -740,7 +738,7 @@ def process_rinex(
 
     from canvod.readers.rinex.v3_04 import Rnxv3Header
     from canvod.store import GnssResearchSite
-    from canvodpy.orchestrator.processor import preprocess_with_hermite_aux
+    from canvodpy.orchestrator.file_worker import preprocess_with_hermite_aux
 
     config = _task_settings()
     _cap_blas_threads(config.processing.processing.threads_per_worker or 1)
@@ -928,7 +926,7 @@ def process_sbf(
         "sbf_obs_written", "ephemeris_source"}``
     """
     from canvod.store import GnssResearchSite
-    from canvodpy.orchestrator.processor import preprocess_with_hermite_aux
+    from canvodpy.orchestrator.file_worker import preprocess_with_hermite_aux
 
     config = _task_settings()
     _cap_blas_threads(config.processing.processing.threads_per_worker or 1)

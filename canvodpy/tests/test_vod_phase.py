@@ -14,7 +14,7 @@ import numpy as np
 import pytest
 import xarray as xr
 from canvodpy.orchestrator.vod_phase import VodPair, VodPhase, units
-from canvodpy.vod_computer import compute_vod
+from canvodpy.vod_calculation import compute_vod
 from loky import get_reusable_executor
 
 from canvod.config.models import (
