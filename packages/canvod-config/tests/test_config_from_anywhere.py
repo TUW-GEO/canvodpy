@@ -46,13 +46,12 @@ def test_load_config_finds_the_checkout_config_from_a_subdirectory(tmp_path):
     }
     env["XDG_CONFIG_HOME"] = str(tmp_path / "xdg")
 
+    code = (
+        "from canvod.config import load_config; "
+        "print(sorted(load_config().sites.sites))"
+    )
     result = subprocess.run(
-        [
-            sys.executable,
-            "-c",
-            "from canvod.config import load_config; "
-            "print(sorted(load_config().sites.sites))",
-        ],
+        [sys.executable, "-c", code],
         cwd=subdirectory,
         env=env,
         capture_output=True,

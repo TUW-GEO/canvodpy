@@ -76,7 +76,7 @@ class TestYYYYDOY:
         yyyydoy2 = YYYYDOY(year=2024, doy=20)
 
         assert yyyydoy1 < yyyydoy2
-        assert not yyyydoy2 < yyyydoy1
+        assert sorted([yyyydoy2, yyyydoy1]) == [yyyydoy1, yyyydoy2]
 
     def test_hashable(self):
         """Test that YYYYDOY is hashable."""

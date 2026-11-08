@@ -357,7 +357,7 @@ def test_a_run_logs_its_sizes_and_the_worker_peaks(rosalia_site):
 def test_each_run_sizes_from_the_deprecated_cap_and_records_the_sized_workers(
     rosalia_site, monkeypatch
 ):
-    import canvodpy.orchestrator.pipeline as pipeline_module
+    from canvodpy.orchestrator import pipeline as pipeline_module
     from canvodpy.orchestrator.memory_budget import MemoryPlan
     from canvodpy.run_history import RunHistory, recorded_run
 
