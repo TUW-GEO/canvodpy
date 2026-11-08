@@ -65,7 +65,7 @@
             <a id="nextFileLink" class="nav" href="z_ba058af754c03588___init___py.html">&#xbb; next</a>
             &nbsp; &nbsp; &nbsp;
             <a class="nav" href="https://coverage.readthedocs.io/en/7.17.0">coverage.py v7.17.0</a>,
-            created at 2026-11-08 14:47 +0000
+            created at 2026-11-08 15:34 +0000
         </p>
         <aside class="hidden">
             <button type="button" class="button_next_chunk" data-shortcut="j"></button>
@@ -236,7 +236,7 @@
     <p class="run"><span class="n"><a id="t154" href="#t154">154</a></span><span class="t">        <span class="key">if</span> <span class="nam">monorepo_config</span><span class="op">.</span><span class="nam">exists</span><span class="op">(</span><span class="op">)</span><span class="op">:</span>&nbsp;</span><span class="r"></span></p>
     <p class="run"><span class="n"><a id="t155" href="#t155">155</a></span><span class="t">            <span class="key">return</span> <span class="nam">monorepo_config</span>&nbsp;</span><span class="r"></span></p>
     <p class="run"><span class="n"><a id="t156" href="#t156">156</a></span><span class="t">    <span class="key">except</span> <span class="nam">RuntimeError</span><span class="op">:</span>&nbsp;</span><span class="r"></span></p>
-    <p class="run"><span class="n"><a id="t157" href="#t157">157</a></span><span class="t">        <span class="key">pass</span>&nbsp;</span><span class="r"></span></p>
+    <p class="run"><span class="n"><a id="t157" href="#t157">157</a></span><span class="t">        <span class="key">pass</span>  <span class="com"># not in a canvodpy checkout: the user&#x27;s config folder below</span>&nbsp;</span><span class="r"></span></p>
     <p class="pln"><span class="n"><a id="t158" href="#t158">158</a></span><span class="t">&nbsp;</span><span class="r"></span></p>
     <p class="run"><span class="n"><a id="t159" href="#t159">159</a></span><span class="t">    <span class="nam">xdg_config_home</span> <span class="op">=</span> <span class="nam">os</span><span class="op">.</span><span class="nam">environ</span><span class="op">.</span><span class="nam">get</span><span class="op">(</span><span class="str">&quot;XDG_CONFIG_HOME&quot;</span><span class="op">)</span>&nbsp;</span><span class="r"></span></p>
     <p class="run"><span class="n"><a id="t160" href="#t160">160</a></span><span class="t">    <span class="nam">base</span> <span class="op">=</span> <span class="nam">Path</span><span class="op">(</span><span class="nam">xdg_config_home</span><span class="op">)</span> <span class="key">if</span> <span class="nam">xdg_config_home</span> <span class="key">else</span> <span class="nam">Path</span><span class="op">.</span><span class="nam">home</span><span class="op">(</span><span class="op">)</span> <span class="op">/</span> <span class="str">&quot;.config&quot;</span>&nbsp;</span><span class="r"></span></p>
@@ -498,7 +498,7 @@
             <a class="nav" href="z_ba058af754c03588___init___py.html">&#xbb; next</a>
             &nbsp; &nbsp; &nbsp;
             <a class="nav" href="https://coverage.readthedocs.io/en/7.17.0">coverage.py v7.17.0</a>,
-            created at 2026-11-08 14:47 +0000
+            created at 2026-11-08 15:34 +0000
         </p>
     </div>
 </footer>

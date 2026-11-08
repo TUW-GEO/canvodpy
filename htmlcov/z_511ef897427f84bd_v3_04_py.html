@@ -65,7 +65,7 @@
             <a id="nextFileLink" class="nav" href="z_511ef897427f84bd_v3_05_stripped_py.html">&#xbb; next</a>
             &nbsp; &nbsp; &nbsp;
             <a class="nav" href="https://coverage.readthedocs.io/en/7.17.0">coverage.py v7.17.0</a>,
-            created at 2026-11-08 14:47 +0000
+            created at 2026-11-08 15:34 +0000
         </p>
         <aside class="hidden">
             <button type="button" class="button_next_chunk" data-shortcut="j"></button>
@@ -1270,7 +1270,7 @@
     <p class="mis show_mis"><span class="n"><a id="t1188" href="#t1188">1188</a></span><span class="t">                    <span class="key">return</span> <span class="nam">value</span><span class="op">,</span> <span class="nam">lli</span><span class="op">,</span> <span class="nam">ssi</span>&nbsp;</span><span class="r"></span></p>
     <p class="pln"><span class="n"><a id="t1189" href="#t1189">1189</a></span><span class="t">&nbsp;</span><span class="r"></span></p>
     <p class="mis show_mis"><span class="n"><a id="t1190" href="#t1190">1190</a></span><span class="t">        <span class="key">except</span> <span class="nam">ValueError</span><span class="op">,</span> <span class="nam">IndexError</span><span class="op">:</span>&nbsp;</span><span class="r"></span></p>
-    <p class="mis show_mis"><span class="n"><a id="t1191" href="#t1191">1191</a></span><span class="t">            <span class="key">pass</span>&nbsp;</span><span class="r"></span></p>
+    <p class="mis show_mis"><span class="n"><a id="t1191" href="#t1191">1191</a></span><span class="t">            <span class="key">pass</span>  <span class="com"># not this form: the next method below</span>&nbsp;</span><span class="r"></span></p>
     <p class="pln"><span class="n"><a id="t1192" href="#t1192">1192</a></span><span class="t">&nbsp;</span><span class="r"></span></p>
     <p class="mis show_mis"><span class="n"><a id="t1193" href="#t1193">1193</a></span><span class="t">        <span class="key">try</span><span class="op">:</span>&nbsp;</span><span class="r"></span></p>
     <p class="pln"><span class="n"><a id="t1194" href="#t1194">1194</a></span><span class="t">            <span class="com"># Method 2: Flexible parsing for variable-length records</span>&nbsp;</span><span class="r"></span></p>
@@ -1311,14 +1311,14 @@
     <p class="mis show_mis"><span class="n"><a id="t1229" href="#t1229">1229</a></span><span class="t">                    <span class="key">return</span> <span class="nam">value</span><span class="op">,</span> <span class="nam">lli</span><span class="op">,</span> <span class="nam">ssi</span>&nbsp;</span><span class="r"></span></p>
     <p class="pln"><span class="n"><a id="t1230" href="#t1230">1230</a></span><span class="t">&nbsp;</span><span class="r"></span></p>
     <p class="mis show_mis"><span class="n"><a id="t1231" href="#t1231">1231</a></span><span class="t">        <span class="key">except</span> <span class="nam">ValueError</span><span class="op">,</span> <span class="nam">IndexError</span><span class="op">:</span>&nbsp;</span><span class="r"></span></p>
-    <p class="mis show_mis"><span class="n"><a id="t1232" href="#t1232">1232</a></span><span class="t">            <span class="key">pass</span>&nbsp;</span><span class="r"></span></p>
+    <p class="mis show_mis"><span class="n"><a id="t1232" href="#t1232">1232</a></span><span class="t">            <span class="key">pass</span>  <span class="com"># not this form: the next method below</span>&nbsp;</span><span class="r"></span></p>
     <p class="pln"><span class="n"><a id="t1233" href="#t1233">1233</a></span><span class="t">&nbsp;</span><span class="r"></span></p>
     <p class="pln"><span class="n"><a id="t1234" href="#t1234">1234</a></span><span class="t">        <span class="com"># Method 3: Last resort - try simple float parsing</span>&nbsp;</span><span class="r"></span></p>
     <p class="mis show_mis"><span class="n"><a id="t1235" href="#t1235">1235</a></span><span class="t">        <span class="key">try</span><span class="op">:</span>&nbsp;</span><span class="r"></span></p>
     <p class="mis show_mis"><span class="n"><a id="t1236" href="#t1236">1236</a></span><span class="t">            <span class="nam">simple_value</span> <span class="op">=</span> <span class="nam">float</span><span class="op">(</span><span class="nam">slice_text</span><span class="op">.</span><span class="nam">strip</span><span class="op">(</span><span class="op">)</span><span class="op">)</span>&nbsp;</span><span class="r"></span></p>
     <p class="mis show_mis"><span class="n"><a id="t1237" href="#t1237">1237</a></span><span class="t">            <span class="key">return</span> <span class="nam">simple_value</span><span class="op">,</span> <span class="key">None</span><span class="op">,</span> <span class="key">None</span>&nbsp;</span><span class="r"></span></p>
     <p class="mis show_mis"><span class="n"><a id="t1238" href="#t1238">1238</a></span><span class="t">        <span class="key">except</span> <span class="nam">ValueError</span><span class="op">:</span>&nbsp;</span><span class="r"></span></p>
-    <p class="mis show_mis"><span class="n"><a id="t1239" href="#t1239">1239</a></span><span class="t">            <span class="key">pass</span>&nbsp;</span><span class="r"></span></p>
+    <p class="mis show_mis"><span class="n"><a id="t1239" href="#t1239">1239</a></span><span class="t">            <span class="key">pass</span>  <span class="com"># not a number: no value</span>&nbsp;</span><span class="r"></span></p>
     <p class="pln"><span class="n"><a id="t1240" href="#t1240">1240</a></span><span class="t">&nbsp;</span><span class="r"></span></p>
     <p class="mis show_mis"><span class="n"><a id="t1241" href="#t1241">1241</a></span><span class="t">        <span class="key">return</span> <span class="key">None</span><span class="op">,</span> <span class="key">None</span><span class="op">,</span> <span class="key">None</span>&nbsp;</span><span class="r"></span></p>
     <p class="pln"><span class="n"><a id="t1242" href="#t1242">1242</a></span><span class="t">&nbsp;</span><span class="r"></span></p>
@@ -2549,7 +2549,7 @@
             <a class="nav" href="z_511ef897427f84bd_v3_05_stripped_py.html">&#xbb; next</a>
             &nbsp; &nbsp; &nbsp;
             <a class="nav" href="https://coverage.readthedocs.io/en/7.17.0">coverage.py v7.17.0</a>,
-            created at 2026-11-08 14:47 +0000
+            created at 2026-11-08 15:34 +0000
         </p>
     </div>
 </footer>

@@ -65,7 +65,7 @@
             <a id="nextFileLink" class="nav" href="z_22dcf1be771ab7fb_history_py.html">&#xbb; next</a>
             &nbsp; &nbsp; &nbsp;
             <a class="nav" href="https://coverage.readthedocs.io/en/7.17.0">coverage.py v7.17.0</a>,
-            created at 2026-11-08 14:47 +0000
+            created at 2026-11-08 15:34 +0000
         </p>
         <aside class="hidden">
             <button type="button" class="button_next_chunk" data-shortcut="j"></button>
@@ -1443,14 +1443,14 @@
     <p class="mis mis2 show_mis"><span class="n"><a id="t1361" href="#t1361">1361</a></span><span class="t">                <span class="nam">check</span><span class="op">=</span><span class="key">True</span><span class="op">,</span>&nbsp;</span><span class="r"></span></p>
     <p class="mis mis2 show_mis"><span class="n"><a id="t1362" href="#t1362">1362</a></span><span class="t">            <span class="op">)</span><span class="op">.</span><span class="nam">stdout</span><span class="op">.</span><span class="nam">strip</span><span class="op">(</span><span class="op">)</span>&nbsp;</span><span class="r"></span></p>
     <p class="mis show_mis"><span class="n"><a id="t1363" href="#t1363">1363</a></span><span class="t">        <span class="key">except</span> <span class="nam">OSError</span><span class="op">,</span> <span class="nam">subprocess</span><span class="op">.</span><span class="nam">SubprocessError</span><span class="op">:</span>&nbsp;</span><span class="r"></span></p>
-    <p class="mis show_mis"><span class="n"><a id="t1364" href="#t1364">1364</a></span><span class="t">            <span class="key">pass</span>&nbsp;</span><span class="r"></span></p>
+    <p class="mis show_mis"><span class="n"><a id="t1364" href="#t1364">1364</a></span><span class="t">            <span class="key">pass</span>  <span class="com"># no sysctl: the platform&#x27;s name below</span>&nbsp;</span><span class="r"></span></p>
     <p class="run"><span class="n"><a id="t1365" href="#t1365">1365</a></span><span class="t">    <span class="key">elif</span> <span class="nam">sys</span><span class="op">.</span><span class="nam">platform</span><span class="op">.</span><span class="nam">startswith</span><span class="op">(</span><span class="str">&quot;linux&quot;</span><span class="op">)</span><span class="op">:</span>&nbsp;</span><span class="r"></span></p>
     <p class="run"><span class="n"><a id="t1366" href="#t1366">1366</a></span><span class="t">        <span class="key">try</span><span class="op">:</span>&nbsp;</span><span class="r"></span></p>
     <p class="run"><span class="n"><a id="t1367" href="#t1367">1367</a></span><span class="t">            <span class="key">for</span> <span class="nam">line</span> <span class="key">in</span> <span class="nam">Path</span><span class="op">(</span><span class="str">&quot;/proc/cpuinfo&quot;</span><span class="op">)</span><span class="op">.</span><span class="nam">read_text</span><span class="op">(</span><span class="op">)</span><span class="op">.</span><span class="nam">splitlines</span><span class="op">(</span><span class="op">)</span><span class="op">:</span>&nbsp;</span><span class="r"></span></p>
     <p class="run"><span class="n"><a id="t1368" href="#t1368">1368</a></span><span class="t">                <span class="key">if</span> <span class="nam">line</span><span class="op">.</span><span class="nam">startswith</span><span class="op">(</span><span class="str">&quot;model name&quot;</span><span class="op">)</span><span class="op">:</span>&nbsp;</span><span class="r"></span></p>
     <p class="run"><span class="n"><a id="t1369" href="#t1369">1369</a></span><span class="t">                    <span class="key">return</span> <span class="nam">line</span><span class="op">.</span><span class="nam">split</span><span class="op">(</span><span class="str">&quot;:&quot;</span><span class="op">,</span> <span class="num">1</span><span class="op">)</span><span class="op">[</span><span class="num">1</span><span class="op">]</span><span class="op">.</span><span class="nam">strip</span><span class="op">(</span><span class="op">)</span>&nbsp;</span><span class="r"></span></p>
     <p class="mis show_mis"><span class="n"><a id="t1370" href="#t1370">1370</a></span><span class="t">        <span class="key">except</span> <span class="nam">OSError</span><span class="op">:</span>&nbsp;</span><span class="r"></span></p>
-    <p class="mis show_mis"><span class="n"><a id="t1371" href="#t1371">1371</a></span><span class="t">            <span class="key">pass</span>&nbsp;</span><span class="r"></span></p>
+    <p class="mis show_mis"><span class="n"><a id="t1371" href="#t1371">1371</a></span><span class="t">            <span class="key">pass</span>  <span class="com"># no /proc/cpuinfo: the platform&#x27;s name below</span>&nbsp;</span><span class="r"></span></p>
     <p class="mis show_mis"><span class="n"><a id="t1372" href="#t1372">1372</a></span><span class="t">    <span class="key">return</span> <span class="nam">platform</span><span class="op">.</span><span class="nam">processor</span><span class="op">(</span><span class="op">)</span> <span class="key">or</span> <span class="nam">platform</span><span class="op">.</span><span class="nam">machine</span><span class="op">(</span><span class="op">)</span>&nbsp;</span><span class="r"></span></p>
 </main>
 <footer>
@@ -1461,7 +1461,7 @@
             <a class="nav" href="z_22dcf1be771ab7fb_history_py.html">&#xbb; next</a>
             &nbsp; &nbsp; &nbsp;
             <a class="nav" href="https://coverage.readthedocs.io/en/7.17.0">coverage.py v7.17.0</a>,
-            created at 2026-11-08 14:47 +0000
+            created at 2026-11-08 15:34 +0000
         </p>
     </div>
 </footer>
