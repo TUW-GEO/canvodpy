@@ -310,7 +310,7 @@ def test_nav_recipe_drives_navigation_file_discovery(
     from canvod.filemap.recipe import NamingRecipe
 
     if "nav" not in get_args(NamingRecipe.model_fields["file_type"].annotation):
-        pytest.skip("canvod-filemap has no file type nav yet (extensions #110)")
+        pytest.skip("canvod-filemap before 1.1.0 has no file type nav")
     (tmp_path / "recipes" / "fangorn").mkdir(parents=True)
     (tmp_path / "recipes" / "fangorn" / "ros_nav.yaml").write_text(_FANGORN_NAV_RECIPE)
     monkeypatch.setenv("CANVOD_CONFIG_DIR", str(tmp_path))
@@ -330,7 +330,7 @@ def test_a_nav_recipe_without_filemap_support_names_canonical_names(
     from canvod.filemap.recipe import NamingRecipe
 
     if "nav" in get_args(NamingRecipe.model_fields["file_type"].annotation):
-        pytest.skip("canvod-filemap has the file type nav (extensions #110)")
+        pytest.skip("canvod-filemap 1.1.0 or later has the file type nav")
     (tmp_path / "recipes" / "fangorn").mkdir(parents=True)
     (tmp_path / "recipes" / "fangorn" / "ros_nav.yaml").write_text(_FANGORN_NAV_RECIPE)
     monkeypatch.setenv("CANVOD_CONFIG_DIR", str(tmp_path))

@@ -232,7 +232,7 @@ the folder `nav_directory` names, relative to the site data root like
 `directory` (it may be the same folder), and need canonical names of type
 `nav` with sampling `00U`, for example
 `FANA01INK_R_20250010000_15M_00U_AA.nav`. For navigation files with other
-names, such as the RINEX short names `ract001a00.25p`, set a naming recipe
+names, such as the RINEX short names `fana001a00.25p`, set a naming recipe
 with `file_type: nav` and `sampling: "00U"` in the receiver's `nav_recipe`
 (canvod-filemap 1.1.0 or later):
 
@@ -244,6 +244,7 @@ sites:
         nav_directory: canopy_01_nav
         nav_recipe: my_site_canopy_nav
 ```
+
 In per-receiver mode (`receiver_position_mode: per_receiver`) every
 receiver with RINEX files reads its own navigation files.
 
