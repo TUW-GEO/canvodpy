@@ -18,6 +18,7 @@ import time
 from concurrent.futures import Future
 from pathlib import Path
 from types import SimpleNamespace
+from typing import Self
 
 import icechunk
 import numpy as np
@@ -80,16 +81,17 @@ def _dataset(index: int, offset: float = 0.0, date_key: str = _DATE_KEY) -> xr.D
 class _Processor(_DayBlockProcessor):
     """One day's processor of a run, without reading files."""
 
-    def __init__(
-        self,
+    @classmethod
+    def for_day(
+        cls,
         gnss_store: MyIcechunkStore,
         strategy: str = "skip",
         date_key: str = _DATE_KEY,
-    ) -> None:
+    ) -> Self:
         config = _config()
         # The real section: tasks carry it to the workers, pickled.
         config.processing.preprocessing = PreprocessingConfig()
-        super().__init__(
+        return cls.build(
             gnss_store,
             strategy=strategy,
             config=config,
@@ -127,7 +129,7 @@ def files(monkeypatch) -> dict[str, xr.Dataset]:
 @pytest.fixture
 def seeded(store: MyIcechunkStore, files) -> MyIcechunkStore:  # noqa: F811
     """The store with the day's first file written, so the day has its block."""
-    _Processor(store)._write_day_blocks(
+    _Processor.for_day(store)._write_day_blocks(
         _inputs(_GROUP, [(Path(_name(0)), files[_name(0)])])
     )
     return store
@@ -168,7 +170,9 @@ def _log_book(gnss_store: MyIcechunkStore):
 
 
 def test_files_sharing_a_chunk_go_to_one_task(seeded) -> None:
-    planned = _Processor(seeded).plan_forked_day(_descriptors(range(_FILES_PER_DAY)))
+    planned = _Processor.for_day(seeded).plan_forked_day(
+        _descriptors(range(_FILES_PER_DAY))
+    )
 
     assert planned is not None
     assert len(planned.tasks) == 16
@@ -183,7 +187,7 @@ def test_a_forked_day_keeps_every_epoch_in_one_commit(seeded, files) -> None:
     # other's chunk when merged and five sixths of the day are lost.
     n_commits = _commits(seeded)
 
-    out = _write_day(_Processor(seeded))
+    out = _write_day(_Processor.for_day(seeded))
 
     assert _commits(seeded) == n_commits + 1
     assert out[_GROUP].actions["written"] == _FILES_PER_DAY - 1
@@ -202,11 +206,11 @@ def test_a_forked_day_keeps_every_epoch_in_one_commit(seeded, files) -> None:
 
 
 def test_an_overwrite_rerun_gives_the_same_data_in_one_commit(seeded, files) -> None:
-    _write_day(_Processor(seeded))
+    _write_day(_Processor.for_day(seeded))
     before = seeded.read_group(_GROUP, drop_empty=True)
     n_commits = _commits(seeded)
 
-    out = _write_day(_Processor(seeded, strategy="overwrite"))
+    out = _write_day(_Processor.for_day(seeded, strategy="overwrite"))
 
     assert _commits(seeded) == n_commits + 1
     assert out[_GROUP].actions["overwritten"] == _FILES_PER_DAY
@@ -219,13 +223,13 @@ def test_an_overwrite_rerun_gives_the_same_data_in_one_commit(seeded, files) -> 
 def test_a_changed_file_with_fewer_epochs_leaves_nothing_of_before(
     seeded, files
 ) -> None:
-    _write_day(_Processor(seeded))
+    _write_day(_Processor.for_day(seeded))
     # File 5 again, changed (a new hash) and with fewer epochs at its start
     # and end.
     name = _name(5)
     files[name] = _dataset(5, offset=100.0).isel(epoch=slice(3, 25))
 
-    _write_day(_Processor(seeded, strategy="overwrite"))
+    _write_day(_Processor.for_day(seeded, strategy="overwrite"))
 
     stored = seeded.read_group(_GROUP, drop_empty=True)
     np.testing.assert_array_equal(stored.epoch.values, _day(files).epoch.values)
@@ -242,12 +246,12 @@ def test_a_first_write_leaves_the_rest_of_its_period_alone(seeded, files) -> Non
     restart_name = _name(5).replace("0115_15M", "0125_15M")
     restart.attrs |= {"canonical_name": restart_name, "physical_path": restart_name}
     restart.attrs["File Hash"] = "restart"
-    _Processor(seeded)._write_day_blocks(
+    _Processor.for_day(seeded)._write_day_blocks(
         _inputs(_GROUP, [(Path(restart_name), restart)])
     )
     files[_name(5)] = _dataset(5).isel(epoch=slice(0, 20))
 
-    _write_day(_Processor(seeded))
+    _write_day(_Processor.for_day(seeded))
 
     stored = seeded.read_group(_GROUP, drop_empty=True)
     expected = xr.concat([_day(files), restart], dim="epoch").sortby("epoch")
@@ -256,10 +260,10 @@ def test_a_first_write_leaves_the_rest_of_its_period_alone(seeded, files) -> Non
 
 
 def test_a_rerun_with_skip_writes_no_data(seeded) -> None:
-    _write_day(_Processor(seeded))
+    _write_day(_Processor.for_day(seeded))
     before = seeded.read_group(_GROUP, drop_empty=True)
 
-    out = _write_day(_Processor(seeded))
+    out = _write_day(_Processor.for_day(seeded))
 
     assert out[_GROUP].actions["skipped"] == _FILES_PER_DAY
     assert out[_GROUP].total_nbytes == 0
@@ -273,7 +277,7 @@ def test_two_days_planned_together_both_commit(seeded, files) -> None:
     seeded.grow_day_blocks({_GROUP: {next_day: 30.0}}, message="grow")
     days = []
     for date_key in (_DATE_KEY, _NEXT_DATE_KEY):
-        proc = _Processor(seeded, date_key=date_key)
+        proc = _Processor.for_day(seeded, date_key=date_key)
         planned = proc.plan_forked_day(_descriptors(range(_FILES_PER_DAY), date_key))
         assert planned is not None
         days.append((proc, planned))
@@ -295,7 +299,7 @@ def test_a_changed_file_over_a_stored_file_stops_the_day(seeded, files) -> None:
     n_commits = _commits(seeded)
 
     with pytest.raises(StoredOverlapError, match=_name(0)):
-        _write_day(_Processor(seeded))
+        _write_day(_Processor.for_day(seeded))
 
     assert _commits(seeded) == n_commits
     assert _log_book(seeded).height == 1
@@ -304,7 +308,7 @@ def test_a_changed_file_over_a_stored_file_stops_the_day(seeded, files) -> None:
 def test_overwrite_replaces_another_stored_file_and_says_so(seeded, files) -> None:
     files[_name(0)] = _dataset(0, offset=100.0)
 
-    out = _write_day(_Processor(seeded, strategy="overwrite"))
+    out = _write_day(_Processor.for_day(seeded, strategy="overwrite"))
 
     assert out[_GROUP].actions["overwritten"] == 1
     assert out[_GROUP].actions["written"] == _FILES_PER_DAY - 1
@@ -330,10 +334,10 @@ def test_a_forked_day_of_two_receivers_records_its_writing_once(
         files[other_name(index)] = _dataset(index, offset=0.5).assign_attrs(
             canonical_name=other_name(index), physical_path=other_name(index)
         )
-    _Processor(seeded)._write_day_blocks(
+    _Processor.for_day(seeded)._write_day_blocks(
         _inputs(other, [(Path(other_name(0)), files[other_name(0)])])
     )
-    proc = _Processor(seeded)
+    proc = _Processor.for_day(seeded)
     planned = proc.plan_forked_day(
         _descriptors(range(1, _FILES_PER_DAY))
         + [
@@ -390,13 +394,13 @@ class _Recorder:
 
 def test_a_day_that_lost_a_conflict_is_written_again(seeded, files) -> None:
     # Two runs plan the same day; the other commits first.
-    proc = _Processor(seeded, strategy="overwrite")
+    proc = _Processor.for_day(seeded, strategy="overwrite")
     planned = proc.plan_forked_day(_descriptors(range(_FILES_PER_DAY)))
     assert planned is not None
     results = [_run_task(_ForkJob(task, fork)) for task, fork in planned.tasks]
     for index in range(_FILES_PER_DAY):
         files[_name(index)] = _dataset(index, offset=100.0)
-    _write_day(_Processor(seeded, strategy="overwrite"))
+    _write_day(_Processor.for_day(seeded, strategy="overwrite"))
     for index in range(_FILES_PER_DAY):
         files[_name(index)] = _dataset(index)
     with pytest.raises(icechunk.ConflictError):
@@ -419,13 +423,13 @@ def test_a_day_whose_files_another_run_stored_first_stops_after_the_replan(
     # Two runs plan the same day with different files for its epochs; the
     # other commits first. After the lost conflict this run plans the day
     # again at the new tip and stops (#351).
-    proc = _Processor(seeded)
+    proc = _Processor.for_day(seeded)
     planned = proc.plan_forked_day(_descriptors(range(_FILES_PER_DAY)))
     assert planned is not None
     results = [_run_task(_ForkJob(task, fork)) for task, fork in planned.tasks]
     for index in range(1, _FILES_PER_DAY):
         files[_name(index)] = _dataset(index, offset=100.0)
-    _write_day(_Processor(seeded))
+    _write_day(_Processor.for_day(seeded))
     for index in range(1, _FILES_PER_DAY):
         files[_name(index)] = _dataset(index)
     n_commits = _commits(seeded)
@@ -440,13 +444,13 @@ def test_a_day_another_process_stored_first_stops_at_the_tip(seeded, files) -> N
     # As above, but the other run is another process with its own store
     # object: this run's log book, read when it planned, must take the
     # other run's rows at the tip (#351, #421).
-    proc = _Processor(seeded)
+    proc = _Processor.for_day(seeded)
     planned = proc.plan_forked_day(_descriptors(range(_FILES_PER_DAY)))
     assert planned is not None
     results = [_run_task(_ForkJob(task, fork)) for task, fork in planned.tasks]
     for index in range(1, _FILES_PER_DAY):
         files[_name(index)] = _dataset(index, offset=100.0)
-    _write_day(_Processor(MyIcechunkStore(seeded.store_path)))
+    _write_day(_Processor.for_day(MyIcechunkStore(seeded.store_path)))
     for index in range(1, _FILES_PER_DAY):
         files[_name(index)] = _dataset(index)
 
@@ -461,7 +465,7 @@ def test_a_day_that_lost_several_conflicts_is_stored_once(
     # commits; the fourth wins (#339).
     sleeps: list[float] = []
     monkeypatch.setattr(store_retry._time, "sleep", sleeps.append)
-    proc = _Processor(seeded, strategy="overwrite")
+    proc = _Processor.for_day(seeded, strategy="overwrite")
     planned = proc.plan_forked_day(_descriptors(range(_FILES_PER_DAY)))
     assert planned is not None
     results = [_run_task(_ForkJob(task, fork)) for task, fork in planned.tasks]
@@ -470,7 +474,7 @@ def test_a_day_that_lost_several_conflicts_is_stored_once(
 
     def commit_after_the_other_run(days):
         if len(lost) < 3:
-            _write_day(_Processor(seeded, strategy="overwrite"))
+            _write_day(_Processor.for_day(seeded, strategy="overwrite"))
             try:
                 return commit(days)
             except icechunk.ConflictError as exc:
@@ -495,7 +499,7 @@ def test_a_day_that_lost_several_conflicts_is_stored_once(
 def test_a_day_that_loses_every_try_fails_after_five(seeded, monkeypatch) -> None:
     sleeps: list[float] = []
     monkeypatch.setattr(store_retry._time, "sleep", sleeps.append)
-    proc = _Processor(seeded)
+    proc = _Processor.for_day(seeded)
     planned = proc.plan_forked_day(_descriptors(range(_FILES_PER_DAY)))
     assert planned is not None
     results = [_run_task(_ForkJob(task, fork)) for task, fork in planned.tasks]
@@ -535,7 +539,7 @@ def test_a_unit_that_lost_its_conflict_is_not_logged_twice(seeded) -> None:
 
 
 def test_a_day_whose_write_failed_is_recorded_failed(seeded) -> None:
-    proc = _Processor(seeded)
+    proc = _Processor.for_day(seeded)
     planned = proc.plan_forked_day(_descriptors(range(_FILES_PER_DAY)))
     assert planned is not None
     pipe = _orchestrator(seeded)
@@ -565,7 +569,7 @@ def test_a_failed_growth_fails_the_batch_days_and_the_run_goes_on(
 
     def prepare(date_key, _receivers, _keep_vars):
         file_map = [(_GROUP, [Path(_name(0))])]
-        return _Processor(seeded), _descriptors([0]), file_map
+        return _Processor.for_day(seeded), _descriptors([0]), file_map
 
     def grow(_doy_contexts, _batch_index):
         msg = "Could not grow the day blocks: other commits conflicted 3 times."
@@ -588,12 +592,12 @@ def test_a_group_keeps_its_chunks_when_the_settings_change(store, files) -> None
     # 180. Tasks own the chunks the group has, so no file is left to the
     # writer thread.
     store.chunk_strategy = {**store.chunk_strategy, "epoch": 90}
-    _Processor(store)._write_day_blocks(
+    _Processor.for_day(store)._write_day_blocks(
         _inputs(_GROUP, [(Path(_name(0)), files[_name(0)])])
     )
     store.chunk_strategy = {**store.chunk_strategy, "epoch": 180}
     before = _commits(store)
-    proc = _Processor(store)
+    proc = _Processor.for_day(store)
     planned = proc.plan_forked_day(_descriptors(range(_FILES_PER_DAY)))
     assert planned is not None
     results = [_run_task(_ForkJob(task, fork)) for task, fork in planned.tasks]
@@ -615,11 +619,11 @@ def _finished(pipe, planned, out) -> list[tuple[str, str, str]]:
 
 
 def test_files_that_fail_in_the_retry_round_fail_the_day(seeded, files) -> None:
-    proc = _Processor(seeded, strategy="overwrite")
+    proc = _Processor.for_day(seeded, strategy="overwrite")
     planned = proc.plan_forked_day(_descriptors(range(_FILES_PER_DAY)))
     assert planned is not None
     results = [_run_task(_ForkJob(task, fork)) for task, fork in planned.tasks]
-    _write_day(_Processor(seeded, strategy="overwrite"))
+    _write_day(_Processor.for_day(seeded, strategy="overwrite"))
 
     def failing(_job: _ForkJob) -> Future:
         future: Future = Future()
@@ -643,7 +647,7 @@ def test_a_deferred_file_that_fails_fails_the_day(seeded, monkeypatch) -> None:
         raise RuntimeError(msg)
 
     monkeypatch.setattr(forked_writes, "write_file_region", beyond)
-    proc = _Processor(seeded)
+    proc = _Processor.for_day(seeded)
     monkeypatch.setattr(proc, "_write_deferred", broken)
     # Without the seed's file, which would be skipped and so give a row.
     planned = proc.plan_forked_day(_descriptors(range(1, _FILES_PER_DAY)))
@@ -662,7 +666,7 @@ def test_a_forked_day_whose_fork_jobs_all_fail_is_a_failed_receiver_day(
 ) -> None:
     # The #334 contract on the forked path: the day ends in
     # failed_receiver_days, which makes `canvodpy run` exit 3.
-    proc = _Processor(seeded)
+    proc = _Processor.for_day(seeded)
     # Without the seed's file, which would be skipped and so give a row.
     planned = proc.plan_forked_day(_descriptors(range(1, _FILES_PER_DAY)))
     assert planned is not None
@@ -681,7 +685,7 @@ def test_a_forked_day_whose_fork_jobs_all_fail_is_a_failed_receiver_day(
 
 
 def test_a_forked_day_whose_write_raises_is_a_failed_receiver_day(seeded) -> None:
-    proc = _Processor(seeded)
+    proc = _Processor.for_day(seeded)
     planned = proc.plan_forked_day(_descriptors(range(_FILES_PER_DAY)))
     assert planned is not None
     pipe = _orchestrator(seeded)
@@ -705,7 +709,7 @@ def _aggregated_day(gnss_store: MyIcechunkStore, files, freq: str, epoch_chunk: 
             freq=freq, method="mean", integer_method="first"
         )
     )
-    proc = _Processor(gnss_store)
+    proc = _Processor.for_day(gnss_store)
     proc._config.processing.preprocessing = preprocessing
     proc._config.processing.temporal_aggregation = preprocessing.temporal_aggregation
     last = _FILES_PER_DAY - 1
@@ -750,7 +754,7 @@ def test_a_time_bin_two_files_share_is_aggregated_from_both(store, files) -> Non
 
 def test_a_day_without_a_calendar_date_is_refused_when_planned(seeded) -> None:
     # Refused before any fork runs, not when the writer thread finishes it.
-    proc = _Processor(seeded)
+    proc = _Processor.for_day(seeded)
     proc.matched_data_dirs = SimpleNamespace(
         yyyydoy=SimpleNamespace(date=None, to_str=lambda: _DATE_KEY)
     )
@@ -778,7 +782,7 @@ def test_a_batch_that_breaks_waits_for_the_unit_being_committed(
 
     def prepare(date_key, _receivers, _keep_vars):
         file_map = [(_GROUP, [Path(_name(i)) for i in range(_FILES_PER_DAY)])]
-        return _Processor(seeded), _descriptors(range(_FILES_PER_DAY)), file_map
+        return _Processor.for_day(seeded), _descriptors(range(_FILES_PER_DAY)), file_map
 
     def completions(_submit_task, tasks, _window):
         for task in tasks:
@@ -821,7 +825,7 @@ def _write_day_in_process(store_path: str, barrier, outcomes) -> None:
 
     forked_writes._read = read
     gnss_store = MyIcechunkStore(Path(store_path))
-    proc = _Processor(gnss_store)
+    proc = _Processor.for_day(gnss_store)
     descriptors = _descriptors(range(_FILES_PER_DAY))
     planned = proc.plan_forked_day(descriptors)
     results = [_run_task(_ForkJob(task, fork)) for task, fork in planned.tasks]

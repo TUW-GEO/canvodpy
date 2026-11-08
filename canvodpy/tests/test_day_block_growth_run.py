@@ -10,6 +10,7 @@ import threading
 from concurrent.futures import Future
 from pathlib import Path
 from types import SimpleNamespace
+from typing import Self
 
 import numpy as np
 import pytest
@@ -39,13 +40,15 @@ def _name(date_key: str, receiver: str = "canopy_01") -> Path:
 class _Processor(_DayBlockProcessor):
     """One day's processor, as Phase 1 returns it."""
 
-    def __init__(self, store: MyIcechunkStore, date_key: str) -> None:
-        super().__init__(
+    @classmethod
+    def for_day(cls, store: MyIcechunkStore, date_key: str) -> Self:
+        proc = cls.build(
             store,
             config=_config(),
             matched_data_dirs=SimpleNamespace(yyyydoy=YYYYDOY.from_str(date_key)),
         )
-        self._canonical_names: dict[Path, str] = {}
+        proc._canonical_names = {}
+        return proc
 
     def _canonical_name(self, fname: Path) -> str:
         return fname.name.split(".")[0] + ".rnx"
@@ -85,7 +88,7 @@ def _run(store: MyIcechunkStore, monkeypatch, receivers: list[str]) -> None:
             raise RuntimeError(msg)
         file_map = [(r, [_name(date_key, r)]) for r in receivers]
         tasks = [(f[0], None, None, None, r, False) for r, f in file_map]
-        return _Processor(store, date_key), tasks, file_map
+        return _Processor.for_day(store, date_key), tasks, file_map
 
     monkeypatch.setattr(pipe, "_prepare_single_date", prepare)
     monkeypatch.setattr(pipeline_module, "_loky_reusable", lambda **_: _FailingPool())
@@ -101,7 +104,7 @@ def _blocks(store: MyIcechunkStore, group: str = "canopy_01") -> dict:
 @pytest.fixture
 def stored(store: MyIcechunkStore) -> MyIcechunkStore:
     """The store with one day of canopy_01 written as day blocks."""
-    proc = _DayBlockProcessor(store)
+    proc = _DayBlockProcessor.build(store)
     proc._config = _config()
     proc._write_day_blocks(_inputs("canopy_01", [_file("a", 0)]))
     return store
