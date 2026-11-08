@@ -318,8 +318,13 @@ def _run_ahead(  # noqa: UP047 -- see TypeVar comment above
             finally:
                 made.close()
             put("done", None)
-        except BaseException as exc:  # handed to the caller, raised there
+        except Exception as exc:  # handed to the caller, raised there
             put("error", exc)
+        except BaseException as exc:
+            # Not an error of the items (SystemExit in this thread, say):
+            # the caller gets it too, so it doesn't wait forever.
+            put("error", exc)
+            raise
 
     # The thread runs in a copy of this context, so its log events carry
     # the run ID like those of the caller.

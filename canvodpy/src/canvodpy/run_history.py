@@ -1361,12 +1361,12 @@ def _cpu_model() -> str:
                 check=True,
             ).stdout.strip()
         except OSError, subprocess.SubprocessError:
-            pass
+            pass  # no sysctl: the platform's name below
     elif sys.platform.startswith("linux"):
         try:
             for line in Path("/proc/cpuinfo").read_text().splitlines():
                 if line.startswith("model name"):
                     return line.split(":", 1)[1].strip()
         except OSError:
-            pass
+            pass  # no /proc/cpuinfo: the platform's name below
     return platform.processor() or platform.machine()

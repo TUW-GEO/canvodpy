@@ -1854,7 +1854,9 @@ class SbfReader(GNSSDataReader):
             attrs["APPROX POSITION Y"] = float(y)
             attrs["APPROX POSITION Z"] = float(z)
         except LookupError, AttributeError:
-            pass
+            # No position in the file: the dataset has no APPROX POSITION
+            # attributes, and code that needs the position says so.
+            log.debug("sbf_approx_position_missing", exc_info=True)
 
         obs_vars: dict[str, Any] = {
             "SNR": (["epoch", "sid"], snr_arr, _SBF_CN0_METADATA),

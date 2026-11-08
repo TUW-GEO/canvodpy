@@ -18,13 +18,15 @@ def _worker_init(nice: int, affinity: list[int] | None) -> None:
         try:
             os.nice(nice)
         except AttributeError, PermissionError:
-            pass
+            pass  # no os.nice, or not allowed: the worker runs at normal priority
     if affinity is not None:
-        try:
-            import psutil
+        import psutil
 
-            proc = psutil.Process()
-            if hasattr(proc, "cpu_affinity"):
+        proc = psutil.Process()
+        if hasattr(proc, "cpu_affinity"):
+            try:
                 proc.cpu_affinity(affinity)
-        except Exception:
-            pass
+            except psutil.Error, OSError, ValueError:
+                # Not allowed, or a CPU the machine doesn't have: like the
+                # priority, best effort, so a pool never fails on it.
+                pass
