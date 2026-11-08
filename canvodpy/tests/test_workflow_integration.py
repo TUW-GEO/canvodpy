@@ -41,7 +41,7 @@ class TestWorkflowInitialization:
 
     def test_workflow_creates_with_site_name(self):
         """Should create workflow from site name string."""
-        with patch("canvodpy.workflow.Site", side_effect=lambda n: _FakeSite(n)):
+        with patch("canvodpy.workflow.Site", side_effect=_FakeSite):
             workflow = VODWorkflow(site="Fangorn", keep_vars=["SNR"])
         assert workflow.site.name == "Fangorn"
 

@@ -289,6 +289,7 @@ class TestEqualAreaEdgeCases:
 
         # Should have some cells near horizon
         assert len(horizon_cells) > 0
+        assert horizon_mask.sum() == len(horizon_cells)
 
         # All should have valid phi values
         phi_vals = horizon_cells["phi"].to_numpy()

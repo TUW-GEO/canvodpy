@@ -14,6 +14,15 @@ from canvodpy.cli.dashboards.shutdown import RUN_VARIABLE, run_going, run_marker
 from typer.testing import CliRunner
 
 
+def _fail(exc: Exception) -> None:
+    """Raise ``exc`` inside a ``with`` block that is expected to see it.
+
+    A bare ``raise`` there makes code scanners read the lines after the
+    block as unreachable.
+    """
+    raise exc
+
+
 def _sleeper() -> subprocess.Popen:
     """A process that stands in for the dashboard or for a run."""
     return subprocess.Popen([sys.executable, "-c", "import time; time.sleep(60)"])
@@ -103,7 +112,7 @@ class TestDashboardForRun:
                 _args(dashboard=True, stop_at_end=True), tmp_path
             ),
         ):
-            raise RuntimeError("the run crashed")
+            _fail(RuntimeError("the run crashed"))
 
         assert dashboards[0].wait(timeout=10) is not None
 

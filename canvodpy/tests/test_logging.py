@@ -25,6 +25,15 @@ from canvodpy.logging.logging_config import PerformanceFilter
 from canvod.utils.logging import reset_run_stats
 
 
+def _fail(exc: Exception) -> None:
+    """Raise ``exc`` inside a ``with`` block that is expected to see it.
+
+    A bare ``raise`` there makes code scanners read the lines after the
+    block as unreachable.
+    """
+    raise exc
+
+
 @pytest.fixture(autouse=True)
 def _restore_excepthook():
     """configure_logging() reassigns sys.excepthook globally; restore after each test.
@@ -194,7 +203,7 @@ class TestStageTimer:
     def test_emits_error_and_reraises_on_exception(self, configured_logs):
         with pytest.raises(ValueError, match="boom"):
             with stage_timer("unit.failure"):
-                raise ValueError("boom")
+                _fail(ValueError("boom"))
         events = _read_jsonl(configured_logs["agent"])
         matches = [e for e in events if e.get("event") == "stage_timing"]
         assert len(matches) == 1
@@ -221,7 +230,7 @@ class TestRunSummary:
                 pass
             with pytest.raises(ValueError):
                 with stage_timer("stage.b"):
-                    raise ValueError("x")
+                    _fail(ValueError("x"))
             emit_run_summary(site="ExampleSite")
         finally:
             reset_run_stats("SummaryTest-20260101-000000")
@@ -282,7 +291,7 @@ class TestRunSummary:
 
         from canvodpy.logging import record_stage_timing
 
-        monkeypatch.setattr(multiprocessing, "parent_process", lambda: object())
+        monkeypatch.setattr(multiprocessing, "parent_process", object)
         token = set_run_id("WorkerTest-20260101-000000")
         try:
             record_stage_timing("reading", 1.0)

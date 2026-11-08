@@ -184,6 +184,7 @@ class TestFilenameMapperYYDDD:
         vfs = mapper.discover_all()
         assert len(vfs) == 3
         names = [vf.conventional_name.name for vf in vfs]
+        assert len(set(names)) == 3
         # All should have the made-up site, R receiver type and agency
         for vf in vfs:
             assert vf.conventional_name.site == testing.SITE_ID

@@ -12,7 +12,6 @@ from pathlib import Path
 
 import canvodpy.demo as demo_module
 import pytest
-from canvodpy.demo import DemoArchive
 
 from canvodpy import demo_data
 
@@ -43,7 +42,7 @@ def archives(tmp_path, monkeypatch) -> Path:
     for kind, name, members in specs:
         digest = _zip(served / name, members)
         local.append(
-            DemoArchive(
+            demo_module.DemoArchive(
                 name=name,
                 kind=kind,
                 url=(served / name).as_uri(),
@@ -82,7 +81,7 @@ def test_cached_data_needs_no_download(archives, tmp_path):
 def test_wrong_checksum_is_refused_and_nothing_is_unpacked(
     archives, tmp_path, monkeypatch
 ):
-    bad = DemoArchive(
+    bad = demo_module.DemoArchive(
         name="sbf-canopy.zip",
         kind="sbf",
         url=(archives / "sbf-canopy.zip").as_uri(),
@@ -105,7 +104,7 @@ def test_unknown_kind_names_the_known_ones(archives, tmp_path):
 
 
 def test_unpublished_archive_says_so(archives, tmp_path, monkeypatch):
-    unpublished = DemoArchive(
+    unpublished = demo_module.DemoArchive(
         name="aux.zip", kind="aux", url=None, sha256="0" * 64, members=()
     )
     monkeypatch.setattr(demo_module, "ARCHIVES", (unpublished,))
@@ -159,7 +158,7 @@ def flaky_server(archives):
 def test_a_broken_download_resumes(flaky_server, tmp_path, monkeypatch):
     monkeypatch.setattr(demo_module.time, "sleep", lambda _: None)
     sbf = next(a for a in demo_module.ARCHIVES if a.kind == "sbf")
-    served = DemoArchive(
+    served = demo_module.DemoArchive(
         name=sbf.name,
         kind="sbf",
         url=f"{flaky_server}/{sbf.name}",
@@ -175,7 +174,7 @@ def test_a_broken_download_resumes(flaky_server, tmp_path, monkeypatch):
 
 def test_a_failed_download_names_the_url_and_not_ftp(tmp_path, monkeypatch):
     monkeypatch.setattr(demo_module.time, "sleep", lambda _: None)
-    missing = DemoArchive(
+    missing = demo_module.DemoArchive(
         name="gone.zip",
         kind="sbf",
         url=(tmp_path / "gone.zip").as_uri(),

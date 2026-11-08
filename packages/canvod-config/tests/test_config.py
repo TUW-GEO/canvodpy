@@ -11,12 +11,18 @@ print("=" * 70)
 
 # Test imports
 try:
-    from canvod.config import load_config  # noqa: F401
-    from canvod.config.models import (  # noqa: F401
+    from canvod.config import load_config
+    from canvod.config.models import (
         CanvodConfig,
         ProcessingConfig,
         SidsConfig,
         SitesConfig,
+    )
+
+    assert callable(load_config)
+    assert all(
+        isinstance(model, type)
+        for model in (CanvodConfig, ProcessingConfig, SidsConfig, SitesConfig)
     )
 
     print("✓ All imports successful")

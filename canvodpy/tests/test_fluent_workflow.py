@@ -196,7 +196,7 @@ class TestWorkflowConvenienceFunction:
     def test_workflow_returns_fluent(self):
         import canvodpy
 
-        with patch("canvodpy.fluent.Site", side_effect=lambda name: _FakeSite(name)):
+        with patch("canvodpy.fluent.Site", side_effect=_FakeSite):
             fw = canvodpy.workflow("Fangorn", keep_vars=["SNR"])
         assert isinstance(fw, FluentWorkflow)
         assert fw._site.name == "Fangorn"

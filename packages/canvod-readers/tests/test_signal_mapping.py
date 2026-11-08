@@ -182,7 +182,8 @@ class TestBands:
         # Without aggregation
         bands_no_agg = Bands(aggregate_glonass_fdma=False)
         r_bands_no_agg = bands_no_agg.SYSTEM_BANDS["R"]
-        # Structure might be different based on FDMA handling
+        assert r_bands_no_agg["1"] == "G1_FDMA"
+        assert r_bands_no_agg["2"] == "G2_FDMA"
 
 
 class TestConstellations:

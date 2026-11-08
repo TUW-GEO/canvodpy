@@ -40,9 +40,11 @@ class _Processor(_DayBlockProcessor):
     """One day's processor, as Phase 1 returns it."""
 
     def __init__(self, store: MyIcechunkStore, date_key: str) -> None:
-        super().__init__(store)
-        self._config = _config()
-        self.matched_data_dirs = SimpleNamespace(yyyydoy=YYYYDOY.from_str(date_key))
+        super().__init__(
+            store,
+            config=_config(),
+            matched_data_dirs=SimpleNamespace(yyyydoy=YYYYDOY.from_str(date_key)),
+        )
         self._canonical_names: dict[Path, str] = {}
 
     def _canonical_name(self, fname: Path) -> str:

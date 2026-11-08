@@ -86,11 +86,15 @@ class _Processor(_DayBlockProcessor):
         strategy: str = "skip",
         date_key: str = _DATE_KEY,
     ) -> None:
-        super().__init__(gnss_store, strategy=strategy)
-        self._config = _config()
+        config = _config()
         # The real section: tasks carry it to the workers, pickled.
-        self._config.processing.preprocessing = PreprocessingConfig()
-        self.matched_data_dirs = SimpleNamespace(yyyydoy=YYYYDOY.from_str(date_key))
+        config.processing.preprocessing = PreprocessingConfig()
+        super().__init__(
+            gnss_store,
+            strategy=strategy,
+            config=config,
+            matched_data_dirs=SimpleNamespace(yyyydoy=YYYYDOY.from_str(date_key)),
+        )
 
     def _canonical_name(self, fname: Path) -> str:
         return fname.name

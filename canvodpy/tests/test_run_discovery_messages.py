@@ -10,7 +10,6 @@ import pytest
 import yaml
 from canvodpy.cli.app import main_app
 from canvodpy.cli.run import _discovery_callbacks
-from canvodpy.orchestrator.discovery import clear_discovery_cache
 from typer.testing import CliRunner
 
 import canvod.config.loader as loader_module
@@ -143,7 +142,7 @@ def test_discovery_messages_bracket_the_real_scan(
     """
     config_dir = _write_site(tmp_path)
     original = discovery_module._scan_directory
-    clear_discovery_cache()
+    discovery_module.clear_discovery_cache()
 
     # Behind the real cache (scan_directory), so a scan before the "Finding
     # files" line would make the reported seconds a cache hit and fail the
