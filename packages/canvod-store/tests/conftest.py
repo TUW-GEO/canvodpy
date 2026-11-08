@@ -16,6 +16,7 @@ from _helpers import (
     make_synthetic_dataset,
     new_gnss_store,
 )
+
 from canvod.config import loader
 from canvod.utils import testing
 

@@ -36,6 +36,19 @@ import numpy as np
 import xarray as xr
 import zarr
 import zarr.errors
+
+from canvod.store.day_blocks import (
+    _DAY_NS,
+    CadenceError,
+    _create_group,
+    add_day_block,
+    data_groups,
+    day_blocks,
+    day_slots,
+    restore_integers,
+    write_file_region,
+)
+from canvod.store.store import cleanse_dataset_attrs, normalize_encodings
 from canvod.store_metadata.collectors import collect_config_snapshot
 from canvod.store_metadata.io import commit_lock, commit_with_rebase
 from canvod.store_metadata.layout import (
@@ -50,19 +63,6 @@ from canvod.store_metadata.location import (
     store_location,
 )
 from canvod.store_metadata.summary import logged_keys
-
-from canvod.store.day_blocks import (
-    _DAY_NS,
-    CadenceError,
-    _create_group,
-    add_day_block,
-    data_groups,
-    day_blocks,
-    day_slots,
-    restore_integers,
-    write_file_region,
-)
-from canvod.store.store import cleanse_dataset_attrs, normalize_encodings
 
 #: What the migration does to a group.
 REWRITE = "rewrite"

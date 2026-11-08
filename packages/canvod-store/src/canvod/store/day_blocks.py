@@ -30,7 +30,16 @@ import pandas as pd
 import xarray as xr
 import zarr
 import zarr.errors
+from icechunk.xarray import to_icechunk
+from zarr.core.metadata import ArrayV3Metadata
+
 from canvod.readers.gnss_specs.metadata import INTEGER_FILL_VALUE
+from canvod.store.prepare import (
+    check_append_coordinates,
+    check_append_variables,
+    prepare_write,
+)
+from canvod.store.time_encoding import TIME_UNITS, with_time_units
 from canvod.store_metadata import RESERVED_GROUP
 from canvod.store_metadata.layout import (
     DAY_BLOCK_INDEX_ATTR,
@@ -39,15 +48,6 @@ from canvod.store_metadata.layout import (
     LayoutError,
     is_day_block_group,
 )
-from icechunk.xarray import to_icechunk
-from zarr.core.metadata import ArrayV3Metadata
-
-from canvod.store.prepare import (
-    check_append_coordinates,
-    check_append_variables,
-    prepare_write,
-)
-from canvod.store.time_encoding import TIME_UNITS, with_time_units
 
 _DAY_NS = 86_400 * 10**9
 #: Command that moves a store written by appending to day blocks.

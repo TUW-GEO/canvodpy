@@ -16,16 +16,16 @@ from types import SimpleNamespace
 
 import pytest
 import yaml
-from canvod.config import load_config
-from canvod.utils import testing
 from test_writers import _settings
 
+from canvod.config import load_config
 from canvod.store_metadata import (
     ensure_store_metadata,
     read_repository_metadata,
     settings_from_store,
 )
 from canvod.store_metadata.content import differences, run_content_settings
+from canvod.utils import testing
 
 SITE = testing.SITE_KEY
 CONTENT_NAMES = ["canopy_01", "reference_01_canopy_01"]

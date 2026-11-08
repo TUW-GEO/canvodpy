@@ -7,16 +7,6 @@ clock corrections for GNSS satellite data processing.
 
 from importlib.metadata import version as _version
 
-# Aux cache fingerprinting
-from canvod.readers.preprocessing import (
-    add_future_datavars,
-    create_sv_to_sid_mapping,
-    map_aux_sv_to_sid,
-    normalize_sid_dtype,
-    pad_to_global_sid,
-    strip_fillvalue,
-)
-
 from canvod.auxiliary.augmentation import (
     AugmentationContext,
     AugmentationStep,
@@ -88,15 +78,25 @@ from canvod.auxiliary.products import (
     list_products,
 )
 
+# Aux cache fingerprinting
+from canvod.readers.preprocessing import (
+    add_future_datavars,
+    create_sv_to_sid_mapping,
+    map_aux_sv_to_sid,
+    normalize_sid_dtype,
+    pad_to_global_sid,
+    strip_fillvalue,
+)
+
 __version__ = _version("canvod-auxiliary")
 
 __all__ = [
+    "CANONICAL_AUX_GRID_SECONDS",
     "AugmentationContext",
     "AugmentationStep",
     "AuxDataAugmenter",
     "AuxDataPipeline",
     "AuxFile",
-    "CANONICAL_AUX_GRID_SECONDS",
     "ClkFile",
     "ClockConfig",
     "ClockCorrectionAugmentation",
@@ -117,21 +117,21 @@ __all__ = [
     "InterpolatorConfig",
     "ProductRegistry",
     "ProductSpec",
-    "UnknownProductError",
-    "SphericalCoordinateAugmentation",
     "Sp3Config",
     # File handlers
     "Sp3File",
     "Sp3InterpolationStrategy",
+    "SphericalCoordinateAugmentation",
+    "UnknownProductError",
     "add_future_datavars",
     "add_spherical_coords_to_dataset",
     "aux_for_sids",
+    "check_product",
     "compute_aux_cache_fingerprint",
     "compute_broadcast_cache_fingerprint",
     "compute_spherical_coordinates",
     "create_interpolator_from_attrs",
     "create_sv_to_sid_mapping",
-    "check_product",
     "get_product_spec",
     "get_products_for_agency",
     "get_registry",

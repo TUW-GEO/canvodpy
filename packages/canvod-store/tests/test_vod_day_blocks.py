@@ -14,13 +14,13 @@ import numpy as np
 import pytest
 import xarray as xr
 from _helpers import make_synthetic_vod_dataset, new_vod_store
-from canvod.store_metadata.layout import LayoutError
-from canvod.store_metadata.summary import summarize_store
 
 from canvod.store import MyIcechunkStore
 from canvod.store.day_blocks import day_blocks, drop_empty_slots
 from canvod.store.manager import GnssResearchSite
 from canvod.store.store import VodWriteItem
+from canvod.store_metadata.layout import LayoutError
+from canvod.store_metadata.summary import summarize_store
 
 GROUP = "tau_omega/canopy_01_vs_reference_01"
 OTHER = "tau_omega/canopy_02_vs_reference_01"

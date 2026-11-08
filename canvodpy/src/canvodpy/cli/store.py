@@ -16,6 +16,7 @@ from typing import TYPE_CHECKING, Annotated
 import typer
 from rich.table import Table
 from rich.tree import Tree
+from zarr.errors import GroupNotFoundError
 
 from canvod.store_metadata.location import S3StoreLocation
 from canvodpy.cli.options import CONFIG_DIR_OPTION
@@ -204,8 +205,10 @@ def _print_group_content(icestore, group_name: str, branch: str) -> None:
         tree.add(
             f"[bold]Metadata table[/bold] ({len(metadata_df)} rows)\n{metadata_df}"
         )
-    except Exception:
-        pass  # not every group has a metadata table; skip it
+    except GroupNotFoundError:
+        pass  # not every group has a metadata table; nothing to show
+    except Exception as e:
+        tree.add(f"[canvod.error]❌ Failed to load metadata table: {e}[/canvod.error]")
 
     console.print(tree)
 

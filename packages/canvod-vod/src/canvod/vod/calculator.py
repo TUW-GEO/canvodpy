@@ -8,8 +8,9 @@ from typing import Any, cast
 import numpy as np
 import structlog
 import xarray as xr
-from canvod.utils.tools import deprecated, deprecated_argument
 from pydantic import BaseModel, ConfigDict, field_validator, model_validator
+
+from canvod.utils.tools import deprecated, deprecated_argument
 
 log = structlog.get_logger(__name__)
 

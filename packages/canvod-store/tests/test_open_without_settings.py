@@ -10,8 +10,8 @@ from __future__ import annotations
 import pytest
 import yaml
 from _helpers import make_synthetic_dataset, new_gnss_store, new_vod_store
-from canvod.config import loader
 
+from canvod.config import loader
 from canvod.store import open_gnss_store, open_vod_store
 
 GROUP = "canopy_01"
@@ -111,5 +111,5 @@ def test_expiry_and_garbage_collection_are_refused_without_settings(
 def test_a_broken_settings_file_still_fails_the_open(written_store, no_settings_file):
     (no_settings_file / "canvod-settings.yaml").write_text("processing: [\n")
 
-    with pytest.raises(yaml.YAMLError, match="canvod-settings.yaml"):
+    with pytest.raises(yaml.YAMLError, match=r"canvod-settings\.yaml"):
         open_gnss_store(written_store)

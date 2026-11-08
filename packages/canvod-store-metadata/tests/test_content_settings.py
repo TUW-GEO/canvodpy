@@ -5,10 +5,10 @@ when a run starts and ``commit_with_rebase`` at the tip.
 """
 
 from pathlib import Path
+from typing import ClassVar
 
 import pytest
 import zarr
-from canvod.utils import testing
 from test_writers import _settings
 
 from canvod.store_metadata import (
@@ -22,6 +22,7 @@ from canvod.store_metadata.content import (
     MissingContentSettingsError,
 )
 from canvod.store_metadata.testing import give_test_metadata
+from canvod.utils import testing
 
 NAMES = ["canopy_01", "reference_01_canopy_01"]
 
@@ -517,7 +518,11 @@ class TestMigration:
 class TestAddingAReceiver:
     """A receiver added by amendment brings its content settings."""
 
-    CANOPY_02 = {"type": "canopy", "reader_format": "auto", "paired_canopies": None}
+    CANOPY_02: ClassVar[dict] = {
+        "type": "canopy",
+        "reader_format": "auto",
+        "paired_canopies": None,
+    }
 
     def _amend(self, store: Path, receiver_content=None) -> str:
         from canvod.store_metadata import amend_metadata
@@ -545,7 +550,7 @@ class TestAddingAReceiver:
         other.sites.sites[testing.SITE_KEY].receivers["canopy_02"] = ReceiverConfig(
             type="canopy", directory="c2", reader_format="sbf"
         )
-        with pytest.raises(ContentSettingsError, match="canopy_02.reader_format"):
+        with pytest.raises(ContentSettingsError, match=r"canopy_02\.reader_format"):
             _start(store, other)
 
     def test_a_receiver_without_them_is_refused(self, store):

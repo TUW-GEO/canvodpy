@@ -324,6 +324,7 @@ class TestUnifiedVisualizerOutput:
             save_html=output_file,
         )
 
+        assert fig is not None
         assert output_file.exists()
         assert output_file.stat().st_size > 0
 

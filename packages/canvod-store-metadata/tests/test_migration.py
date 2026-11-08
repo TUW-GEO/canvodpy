@@ -8,7 +8,6 @@ import numpy as np
 import pytest
 import xarray as xr
 import zarr
-from canvod.utils import testing
 
 from canvod.store_metadata import (
     ensure_metadata,
@@ -30,6 +29,7 @@ from canvod.store_metadata.schema import (
     StoreMetadata,
     TemporalExtent,
 )
+from canvod.utils import testing
 
 #: Two epochs of SNR, with attributes as older versions wrote them.
 _SNR_DAY = xr.Dataset(
@@ -281,7 +281,7 @@ class TestMigrationLicenseRule:
     def test_a_license_outside_spdx_is_refused_naming_the_field(self, tmp_path):
         path = _old_store(tmp_path, changes={"publisher.license": "Apache 2"})
 
-        with pytest.raises(ValueError, match="publisher.license") as e:
+        with pytest.raises(ValueError, match=r"publisher\.license") as e:
             migrate_metadata(path, who=testing.PERSON_INITIALS)
         assert "--set publisher.license=" in str(e.value)
         assert not _repo(path).get_metadata()

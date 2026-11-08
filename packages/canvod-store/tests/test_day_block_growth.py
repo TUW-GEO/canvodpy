@@ -2,14 +2,13 @@
 
 from __future__ import annotations
 
+import itertools
 from pathlib import Path
 
 import numpy as np
 import pytest
 import xarray as xr
 from _helpers import new_gnss_store
-from canvod.store_metadata import io
-from canvod.store_metadata.io import commit_with_rebase
 
 from canvod.store import MyIcechunkStore
 from canvod.store.day_blocks import (
@@ -18,6 +17,8 @@ from canvod.store.day_blocks import (
     day_blocks,
     write_file_region,
 )
+from canvod.store_metadata import io
+from canvod.store_metadata.io import commit_with_rebase
 
 GROUP = "canopy_01"
 SIDS = ["G01|L1|C", "G02|L1|C"]
@@ -160,7 +161,7 @@ def test_a_growth_that_lost_four_conflicts_wins_the_fifth(store, monkeypatch) ->
 
     assert DAY_2 in _blocks(store)
     assert len(sleeps) == 4
-    assert all(a < b for a, b in zip(sleeps, sleeps[1:], strict=False))
+    assert all(a < b for a, b in itertools.pairwise(sleeps))
 
 
 def test_a_growth_that_loses_five_conflicts_fails(store, monkeypatch) -> None:
@@ -210,6 +211,7 @@ def _root_attrs(store: MyIcechunkStore) -> dict:
 
 def _recomputed_summary(store: MyIcechunkStore, committed_at: str) -> dict:
     import zarr
+
     from canvod.store_metadata.snapshot import snapshot_summary
 
     with store.readonly_session("main") as session:
@@ -260,6 +262,7 @@ def test_keeping_the_summary_refuses_a_commit_that_writes_data(two_receivers) ->
 
 def test_keeping_the_summary_refuses_a_root_without_one(two_receivers) -> None:
     import zarr
+
     from canvod.store_metadata.snapshot import SNAPSHOT_SUMMARY_ATTR
 
     store = two_receivers

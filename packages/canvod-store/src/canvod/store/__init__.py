@@ -31,10 +31,10 @@ from canvod.store.zarr_concurrency import scoped_zarr_concurrency
 __version__ = _version("canvod-store")
 
 __all__ = [
-    "AnalysisStorage",
-    "VOLATILE_ATTRIBUTES",
-    "DiffKind",
     "FLOAT_TOLERANCES",
+    "VOLATILE_ATTRIBUTES",
+    "AnalysisStorage",
+    "DiffKind",
     "GnssResearchSite",
     "IcechunkDataReader",
     "MaintenanceOnS3Error",
@@ -43,9 +43,9 @@ __all__ = [
     "compare_stores",
     "create_gnss_store",
     "create_vod_store",
+    "load_grid",
     "open_gnss_store",
     "open_vod_store",
-    "load_grid",
     "scoped_zarr_concurrency",
     "store_grid",
 ]

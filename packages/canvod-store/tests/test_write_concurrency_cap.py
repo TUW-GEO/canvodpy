@@ -16,10 +16,10 @@ from unittest import mock
 import pytest
 import xarray as xr
 import zarr
-from canvod.config.models import IcechunkConfig
-from canvod.store_metadata.testing import create_test_store
 
+from canvod.config.models import IcechunkConfig
 from canvod.store import open_vod_store
+from canvod.store_metadata.testing import create_test_store
 
 pytestmark = pytest.mark.filterwarnings(
     "ignore:`_to_icechunk_throttled` is left over:FutureWarning"

@@ -21,6 +21,7 @@ import pytest
 import xarray as xr
 import zarr
 from _helpers import new_gnss_store, new_vod_store
+
 from canvod.config.models import (
     PREPROCESSING_ATTR,
     PreprocessingMismatchError,
@@ -28,7 +29,6 @@ from canvod.config.models import (
     preprocessing_settings,
     vod_preprocessing_record,
 )
-
 from canvod.store.prepare import (
     GroupCoordinatesMismatchError,
     GroupVariablesMismatchError,
@@ -318,9 +318,8 @@ def _log_row(region, file_hash: str) -> dict:
 @pytest.fixture
 def day_block_store(tmp_path):
     """A store whose group holds two days of 15-min data, the later day first."""
-    from canvod.store_metadata.io import commit_with_rebase
-
     from canvod.store.day_blocks import add_day_block, write_file_region
+    from canvod.store_metadata.io import commit_with_rebase
 
     store = new_gnss_store(tmp_path / "site" / "gnss_store")
     with store.writable_session("main") as session:

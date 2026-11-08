@@ -12,7 +12,6 @@ import pandas as pd
 import pystac
 import pytest
 import xarray as xr
-from canvod.utils import testing
 from stac_validator.validate import StacValidate
 
 from canvod.store_metadata import (
@@ -32,6 +31,7 @@ from canvod.store_metadata.testing import (
     made_up_metadata,
     write_unchecked,
 )
+from canvod.utils import testing
 
 _SCHEMAS = Path(__file__).parent / "stac_schemas"
 
@@ -818,7 +818,7 @@ class TestReleases:
         (broken / "repo").write_bytes(b"not an icechunk repository")
         before = _files(two_sites)
 
-        with pytest.raises(ValueError, match="'keep/v1'.*'/'") as caught:
+        with pytest.raises(ValueError, match=r"'keep/v1'.*'/'") as caught:
             create_release(two_sites, "keep/v1")
 
         assert "isengard" not in str(caught.value)

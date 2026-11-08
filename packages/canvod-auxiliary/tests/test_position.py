@@ -3,7 +3,6 @@
 import numpy as np
 import pytest
 import xarray as xr
-from canvod.utils import testing
 from pydantic import ValidationError
 
 from canvod.auxiliary.position import (
@@ -12,6 +11,7 @@ from canvod.auxiliary.position import (
     add_spherical_coords_to_dataset,
     compute_spherical_coordinates,
 )
+from canvod.utils import testing
 
 
 class TestECEFPositionGuardRail:

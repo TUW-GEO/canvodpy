@@ -17,9 +17,9 @@ import numpy as np
 import pytest
 import xarray as xr
 import zarr
-from canvod.store_metadata.testing import create_test_store
 
 from canvod.store import open_vod_store
+from canvod.store_metadata.testing import create_test_store
 
 
 @pytest.fixture

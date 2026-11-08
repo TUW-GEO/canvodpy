@@ -7,6 +7,7 @@ from pathlib import Path
 from typing import Any
 
 import polars as pl
+
 from canvod.utils.tools import deprecated
 
 from .io import (

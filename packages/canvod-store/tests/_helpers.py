@@ -196,17 +196,15 @@ def new_gnss_store(path: Path):
 
     A store takes no data without repository metadata (ADR 0014).
     """
-    from canvod.store_metadata.testing import give_test_metadata
-
     from canvod.store import open_gnss_store
+    from canvod.store_metadata.testing import give_test_metadata
 
     return open_gnss_store(give_test_metadata(path, "gnss_store"))
 
 
 def new_vod_store(path: Path):
     """A new VOD store with the made-up site's repository metadata."""
-    from canvod.store_metadata.testing import give_test_metadata
-
     from canvod.store import open_vod_store
+    from canvod.store_metadata.testing import give_test_metadata
 
     return open_vod_store(give_test_metadata(path, "vod_store"))

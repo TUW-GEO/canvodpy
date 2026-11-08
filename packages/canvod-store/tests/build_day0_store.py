@@ -36,9 +36,8 @@ from _helpers import (  # noqa: E402
 
 def build_store(store_path: Path) -> dict:
     """Build a day 0 store from synthetic datasets and return a snapshot dict."""
-    from canvod.store_metadata.testing import give_test_metadata
-
     from canvod.store import MyIcechunkStore
+    from canvod.store_metadata.testing import give_test_metadata
 
     if store_path.exists():
         shutil.rmtree(store_path)

@@ -10,13 +10,13 @@ from typing import Any
 import numpy as np
 import structlog
 import xarray as xr
-from canvod.utils.tools import YYYYDOY, deprecated
 from pydantic import ConfigDict, Field
 from pydantic.dataclasses import dataclass
 
 from canvod.auxiliary.core.downloader import FileDownloader, FtpDownloader
 from canvod.auxiliary.interpolation import Interpolator
 from canvod.auxiliary.products.registry_config import get_registry
+from canvod.utils.tools import YYYYDOY, deprecated
 
 log = structlog.get_logger(__name__)
 

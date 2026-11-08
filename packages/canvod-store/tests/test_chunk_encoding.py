@@ -14,9 +14,9 @@ from pathlib import Path
 import numpy as np
 import pytest
 import xarray as xr
-from canvod.store_metadata.testing import create_test_store
 
 from canvod.store import MyIcechunkStore, open_vod_store
+from canvod.store_metadata.testing import create_test_store
 
 
 def _ds(n_epoch: int, n_sid: int) -> xr.Dataset:

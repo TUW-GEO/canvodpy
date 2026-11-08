@@ -17,6 +17,7 @@ a genuine import cycle that broke standalone ``canvod-readers`` installs.
 
 import numpy as np
 import xarray as xr
+
 from canvod.readers.preprocessing import (
     map_aux_sv_to_sid,
     normalize_sid_dtype,

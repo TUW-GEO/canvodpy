@@ -3,10 +3,10 @@
 from __future__ import annotations
 
 import zarr
-from canvod.store_metadata import RESERVED_GROUP
-from canvod.store_metadata.testing import create_test_store
 
 from canvod.store import MyIcechunkStore
+from canvod.store_metadata import RESERVED_GROUP
+from canvod.store_metadata.testing import create_test_store
 
 
 def test_group_listings_leave_out_the_reserved_group(tmp_path):

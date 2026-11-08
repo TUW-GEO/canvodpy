@@ -23,8 +23,8 @@ import numpy as np
 import pytest
 import xarray as xr
 from _helpers import new_vod_store
-from canvod.grids import create_hemigrid
 
+from canvod.grids import create_hemigrid
 from canvod.store import load_grid, store_grid
 
 
@@ -354,7 +354,6 @@ class TestOldGridsNames:
 
     def test_analysis_storage_warns_and_returns_store_class(self, vod_store) -> None:
         from canvod.grids.analysis import AnalysisStorage as OldAnalysisStorage
-
         from canvod.store import AnalysisStorage
 
         with pytest.warns(FutureWarning, match="canvod.store.AnalysisStorage"):

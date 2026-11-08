@@ -12,6 +12,7 @@ from typing import TYPE_CHECKING
 import numpy as np
 import structlog
 import xarray as xr
+
 from canvod.grids import grid_to_dataset
 from canvod.grids.core import GridData
 from canvod.store_metadata.io import commit_with_rebase

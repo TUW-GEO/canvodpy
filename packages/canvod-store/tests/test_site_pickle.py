@@ -10,9 +10,9 @@ from __future__ import annotations
 import pickle
 
 from _helpers import new_gnss_store
-from canvod.utils import testing
 
 from canvod.store.manager import GnssResearchSite
+from canvod.utils import testing
 
 
 def test_a_site_with_open_stores_pickles_without_them() -> None:

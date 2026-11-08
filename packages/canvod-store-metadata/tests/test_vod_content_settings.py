@@ -10,7 +10,6 @@ from pathlib import Path
 
 import pytest
 import zarr
-from canvod.utils import testing
 from test_writers import _settings
 
 from canvod.store_metadata import (
@@ -25,6 +24,7 @@ from canvod.store_metadata.content import (
     MissingContentSettingsError,
     _get,
 )
+from canvod.utils import testing
 
 ANALYSIS = "canopy_01_vs_reference_01"
 NAMES = [ANALYSIS]

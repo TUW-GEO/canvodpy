@@ -5,7 +5,6 @@ from __future__ import annotations
 import re
 
 import pytest
-from canvod.store_metadata.testing import give_test_metadata
 
 from canvod.store import (
     MyIcechunkStore,
@@ -13,6 +12,7 @@ from canvod.store import (
     open_gnss_store,
     open_vod_store,
 )
+from canvod.store_metadata.testing import give_test_metadata
 
 
 @pytest.mark.parametrize(

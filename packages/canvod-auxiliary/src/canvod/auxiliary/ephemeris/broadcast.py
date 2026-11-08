@@ -291,7 +291,7 @@ def broadcast_orbits(
         satellite has no valid record.
     """
     start = np.asarray(day_start).astype("datetime64[D]").astype("datetime64[ns]")
-    n_epochs = int(round(86_400 / step_s)) + 1
+    n_epochs = round(86_400 / step_s) + 1
     epochs = start + (np.arange(n_epochs) * step_s * 1e9).astype("timedelta64[ns]")
     t = _gps_seconds(epochs)
 
@@ -372,9 +372,8 @@ def broadcast_ephemerides(
     xr.Dataset
         ``X``, ``Y``, ``Z``, ``Vx``, ``Vy``, ``Vz`` on ``(epoch, sid)``.
     """
-    from canvod.readers.rinex.nav import read_rinex_nav
-
     from canvod.auxiliary.preprocessing import prep_aux_ds
+    from canvod.readers.rinex.nav import read_rinex_nav
 
     orbits = broadcast_orbits(read_rinex_nav(nav_files), day_start)
     return prep_aux_ds(

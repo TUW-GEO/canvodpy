@@ -5,7 +5,6 @@ from pathlib import Path
 import icechunk
 import pytest
 import zarr
-from canvod.utils import testing
 
 from canvod.store_metadata import (
     amend_metadata,
@@ -27,6 +26,7 @@ from canvod.store_metadata.schema import (
     TemporalExtent,
     VodAnalysisInfo,
 )
+from canvod.utils import testing
 
 _CONFIG = {"processing": {"batch_hours": 24}}
 
@@ -180,13 +180,13 @@ class TestAmend:
     def test_an_unknown_field_is_refused(self, tmp_path):
         path = _store(tmp_path)
 
-        with pytest.raises(ValueError, match="identity.titel"):
+        with pytest.raises(ValueError, match=r"identity\.titel"):
             _amend(path, {"identity.titel": "x"})
 
     def test_an_invalid_value_changes_nothing(self, tmp_path):
         path = _store(tmp_path)
 
-        with pytest.raises(ValueError, match="spatial.geospatial_lat"):
+        with pytest.raises(ValueError, match=r"spatial\.geospatial_lat"):
             _amend(path, {"spatial.geospatial_lat": "north"})
         assert _repository(path)["amendments"] == []
 

@@ -15,10 +15,10 @@ from pathlib import Path
 from types import SimpleNamespace
 
 import pytest
-from canvod.config.models import IcechunkConfig
-from canvod.store_metadata.testing import create_test_store
 
+from canvod.config.models import IcechunkConfig
 from canvod.store import MyIcechunkStore
+from canvod.store_metadata.testing import create_test_store
 
 
 def _fake_cfg(ic_cfg: IcechunkConfig) -> SimpleNamespace:

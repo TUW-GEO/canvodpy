@@ -7,7 +7,6 @@ from unittest.mock import MagicMock, patch
 import icechunk
 import pytest
 import zarr
-from canvod.utils import testing
 
 from canvod.store_metadata import (
     collect_metadata,
@@ -16,6 +15,7 @@ from canvod.store_metadata import (
     write_metadata,
 )
 from canvod.store_metadata.schema import ConfigSnapshot
+from canvod.utils import testing
 
 
 @pytest.fixture(autouse=True)
@@ -168,7 +168,6 @@ class TestIdentity:
     )
     def test_a_folder_name_breaking_the_rule_gives_no_id(self, store_type, folder):
         from canvod.config.store_names import StoreNameError
-
         from canvod.store_metadata.identity import store_id
 
         with pytest.raises(StoreNameError):

@@ -6,7 +6,6 @@ import icechunk
 import numpy as np
 import pytest
 import zarr
-from canvod.utils import testing
 
 from canvod.store_metadata import commit_with_rebase, write_metadata
 from canvod.store_metadata.schema import (
@@ -20,6 +19,7 @@ from canvod.store_metadata.schema import (
     StoreMetadata,
     TemporalExtent,
 )
+from canvod.utils import testing
 
 _CONFIG = {"processing": {"batch_hours": 24}}
 _UUID = "00000000-0000-4000-8000-000000000001"

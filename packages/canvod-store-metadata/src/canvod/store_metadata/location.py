@@ -15,6 +15,7 @@ from pathlib import Path, PurePosixPath
 from typing import TYPE_CHECKING
 
 import icechunk
+
 from canvod.config.store_names import STORE_TYPE_KINDS
 
 if TYPE_CHECKING:

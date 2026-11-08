@@ -236,7 +236,7 @@ class TestIntraBatchOverlap:
         ]
 
         # Daily file first (like sorted by filename: "daily" < "slot00")
-        batch = [(daily_fname, daily_ds)] + sub_datasets
+        batch = [(daily_fname, daily_ds), *sub_datasets]
 
         actions = _batch_write(store, "canopy_01", batch)
 
@@ -338,7 +338,7 @@ class TestMultipleBatches:
         day1_subs = [
             _make_15min_dataset("2025-01-01", slot=i, n_epochs=10) for i in range(4)
         ]
-        batch1 = [(daily_fname, daily_ds)] + day1_subs
+        batch1 = [(daily_fname, daily_ds), *day1_subs]
         actions1 = _batch_write(store, "canopy_01", batch1)
         assert actions1["skipped"] == 1  # daily file
 

@@ -9,6 +9,7 @@ canvod.auxiliary.preprocessing.
 from typing import Any
 
 import xarray as xr
+
 from canvod.auxiliary.preprocessing import prep_aux_ds
 from canvod.readers.preprocessing import (
     add_future_datavars,

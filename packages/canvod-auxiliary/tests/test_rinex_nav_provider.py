@@ -191,9 +191,8 @@ def test_qzss_orbits_follow_the_gps_algorithm_within_two_hours() -> None:
     """A QZSS record gives the orbit a GPS record with the same elements
     gives (IS-QZSS-PNT-005, 5.6.1), valid for 1 hour either side of its
     time of ephemeris (fit interval 2 hours, Table 4.1.1-2)."""
-    from canvod.readers.rinex.nav import read_rinex_nav
-
     from canvod.auxiliary.ephemeris.broadcast import broadcast_orbits
+    from canvod.readers.rinex.nav import read_rinex_nav
 
     gps = read_rinex_nav([NAV_DIR / "ract001a00.25p"])["G"]
     g01 = gps.isel(record=np.flatnonzero(gps.sv.values == "G01")[:1])

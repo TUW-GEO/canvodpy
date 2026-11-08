@@ -12,8 +12,8 @@ from __future__ import annotations
 import unittest.mock
 
 import pytest
-from canvod.config.models import ReceiverConfig, SiteConfig, VodAnalysisConfig
 
+from canvod.config.models import ReceiverConfig, SiteConfig, VodAnalysisConfig
 from canvod.store.manager import GnssResearchSite
 
 

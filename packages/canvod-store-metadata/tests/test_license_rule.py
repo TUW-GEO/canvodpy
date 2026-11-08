@@ -42,7 +42,7 @@ class TestPublisher:
             Publisher(license="Apache 2")
 
     def test_a_wrongly_cased_identifier_fails_naming_the_right_one(self):
-        with pytest.raises(ValidationError, match="'CC-BY-4.0'"):
+        with pytest.raises(ValidationError, match=r"'CC-BY-4\.0'"):
             Publisher(license="cc-by-4.0")
 
     def test_other_without_the_license_text_fails(self):

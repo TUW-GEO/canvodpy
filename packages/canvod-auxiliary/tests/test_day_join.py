@@ -8,7 +8,6 @@ from unittest.mock import MagicMock, patch
 import numpy as np
 import pytest
 import xarray as xr
-from canvod.utils.tools import YYYYDOY
 
 from canvod.auxiliary.core.base import AuxFile
 from canvod.auxiliary.interpolation import (
@@ -17,6 +16,7 @@ from canvod.auxiliary.interpolation import (
     interpolate_aux_day,
 )
 from canvod.auxiliary.pipeline import AuxDataPipeline
+from canvod.utils.tools import YYYYDOY
 
 DAY = np.datetime64("2025-01-01T00:00", "ns")
 

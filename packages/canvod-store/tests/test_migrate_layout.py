@@ -15,12 +15,6 @@ from _helpers import (
     new_gnss_store,
     new_vod_store,
 )
-from canvod.store_metadata.layout import (
-    DAY_BLOCK_INDEX_ATTR,
-    LayoutError,
-    is_day_block_group,
-)
-from canvod.store_metadata.summary import summarize_store
 
 from canvod.store import MyIcechunkStore, open_gnss_store, open_vod_store
 from canvod.store.day_blocks import day_blocks
@@ -32,6 +26,12 @@ from canvod.store.migrate_layout import (
     plan_layout_migration,
 )
 from canvod.store.store import VodWriteItem
+from canvod.store_metadata.layout import (
+    DAY_BLOCK_INDEX_ATTR,
+    LayoutError,
+    is_day_block_group,
+)
+from canvod.store_metadata.summary import summarize_store
 
 GROUP = "canopy_01"
 VOD_GROUP = "tau_omega/canopy_01_vs_reference_01"

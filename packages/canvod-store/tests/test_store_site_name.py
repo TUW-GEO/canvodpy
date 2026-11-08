@@ -3,11 +3,11 @@
 from __future__ import annotations
 
 import pytest
+
+from canvod.store import MyIcechunkStore
 from canvod.store_metadata import open_repository
 from canvod.store_metadata.testing import give_test_metadata
 from canvod.utils import testing
-
-from canvod.store import MyIcechunkStore
 
 
 def test_the_site_name_comes_from_the_metadata_not_the_directory(tmp_path):

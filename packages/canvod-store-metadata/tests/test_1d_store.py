@@ -9,6 +9,7 @@ import shutil
 from pathlib import Path
 
 import pytest
+
 from canvod.utils import testing
 
 _TEST_DATA = (

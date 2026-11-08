@@ -324,8 +324,9 @@ def _install_excepthook(logger: structlog.BoundLogger) -> None:
                         traceback.format_exception(exc_type, exc_value, exc_tb)
                     ),
                 )
-            except Exception:
-                # The crash handler must never itself crash the crash report.
+            except Exception:  # noqa: S110
+                # The crash handler must never itself crash the crash report;
+                # the default hook below still prints the traceback.
                 pass
         default_hook(exc_type, exc_value, exc_tb)
 

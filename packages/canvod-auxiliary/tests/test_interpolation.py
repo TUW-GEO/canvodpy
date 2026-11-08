@@ -589,9 +589,8 @@ def test_the_setting_offers_the_methods_of_the_interpolator():
     """
     from typing import get_args
 
-    from canvod.config.models.aux_data import AuxDataConfig
-
     from canvod.auxiliary.interpolation import SP3_INTERPOLATION_METHODS
+    from canvod.config.models.aux_data import AuxDataConfig
 
     annotation = AuxDataConfig.model_fields["sp3_interpolation"].annotation
     assert set(get_args(annotation)) == set(SP3_INTERPOLATION_METHODS)
