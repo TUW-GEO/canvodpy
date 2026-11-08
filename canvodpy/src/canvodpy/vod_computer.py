@@ -97,13 +97,16 @@ class _VodSite(Protocol):
     _site: GnssResearchSite
 
     @property
-    def vod_analyses(self) -> dict: ...
+    def vod_analyses(self) -> dict:
+        """The configured VOD analysis pairs."""
 
     @property
-    def gnss_store(self) -> MyIcechunkStore: ...
+    def gnss_store(self) -> MyIcechunkStore:
+        """The site's GNSS store."""
 
     @property
-    def vod_store_path(self) -> Path | str: ...
+    def vod_store_path(self) -> Path | str:
+        """Where the site's VOD store is."""
 
 
 def ensure_vod_store_metadata(
