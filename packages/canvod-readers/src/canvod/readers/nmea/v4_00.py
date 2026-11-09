@@ -260,7 +260,11 @@ def _parse_rmc_datetime(fields: list[str]) -> datetime | None:
 
 
 def _parse_gga_time(fields: list[str]) -> tuple[int, int, float] | None:
-    """Extract (hour, minute, seconds) from a GGA sentence's fields."""
+    """Extract (hour, minute, seconds) from a GGA sentence's fields.
+
+    ``None`` for a time that can't be read or isn't a time of day, as
+    :func:`_parse_rmc_datetime` does for RMC.
+    """
     if not fields or not fields[0]:
         return None
     utc_time = fields[0]
@@ -268,9 +272,11 @@ def _parse_gga_time(fields: list[str]) -> tuple[int, int, float] | None:
         hour = int(utc_time[:2])
         minute = int(utc_time[2:4])
         seconds = float(utc_time[4:])
-        return hour, minute, seconds
     except ValueError, IndexError:
         return None
+    if not (0 <= hour < 24 and 0 <= minute < 60 and 0 <= seconds < 60):
+        return None
+    return hour, minute, seconds
 
 
 #: GGA position fix indicators of a valid fix the position is taken from:

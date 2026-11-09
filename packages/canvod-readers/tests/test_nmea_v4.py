@@ -14,6 +14,7 @@ from canvod.readers.nmea.exceptions import (
 from canvod.readers.nmea.v4_00 import (
     NmeaObs,
     _extract_gsv_signal_id,
+    _parse_gga_time,
     _parse_gsv_satellites,
     _parse_rmc_datetime,
     _sv_to_sid,
@@ -281,6 +282,18 @@ class TestRmcParsing:
     def test_missing_date(self):
         fields = ["001442.00", "A", "", "", "", "", "", "", ""]
         assert _parse_rmc_datetime(fields) is None
+
+
+class TestGgaTime:
+    """The UTC time of a GGA sentence."""
+
+    def test_a_time_of_day(self):
+        assert _parse_gga_time(["001442.50"]) == (0, 14, 42.5)
+
+    @pytest.mark.parametrize("text", ["001499.00", "006042.00", "241442.00", "0014x"])
+    def test_a_time_that_is_not_a_time_of_day_is_ignored(self, text):
+        """As for RMC: the sentence gives no time, the file is still read."""
+        assert _parse_gga_time([text]) is None
 
 
 class TestGsvParsing:
