@@ -6,5 +6,5 @@ SPDX-PackageDownloadLocation = "https://github.com/TUW-GEO/canvodpy"
 [[annotations]]
 path = "**"
 precedence = "aggregate"
-SPDX-FileCopyrightText = "2026 Nicolas François Bader"
+SPDX-FileCopyrightText = "2026 Nicolas François Bader, CLIMERS, TU Wien"
 SPDX-License-Identifier = "Apache-2.0"
