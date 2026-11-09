@@ -9,6 +9,7 @@ RinexError
     ├── IncompleteEpochError
     ├── InvalidEpochError
     ├── FileNotExistError
+    ├── RinexNavError (also a ValueError)
     └── StrippedRinexError (also a ValueError; canvod.readers.rinex)
 
 NmeaError
@@ -166,6 +167,20 @@ class FileNotExistError(RinexError):
     def __init__(self, message: str) -> None:
         """Initialize with a descriptive message."""
         super().__init__(message)
+
+
+class RinexNavError(RinexError, ValueError):
+    """Raised when a RINEX navigation file can't be read.
+
+    The message names the file, and the line for a record that can't be
+    read. It is also a ``ValueError``, which the navigation reader raised
+    before this class existed.
+
+    Examples
+    --------
+    >>> raise RinexNavError("nav.rnx, line 12: the epoch can't be read")
+
+    """
 
 
 class NmeaError(Exception):
