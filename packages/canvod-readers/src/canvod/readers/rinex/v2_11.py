@@ -543,7 +543,8 @@ def _parse_v2_header_date(date_str: str, fpath: Path) -> datetime:
     RINEX 2.11 leaves its format open (Table A1), so the formats different
     programs write are tried in turn. A trailing time zone is read as in
     RINEX 3: ``LCL`` means local time with the zone unknown, and the date
-    is then returned without a time zone. A date without a zone is UTC.
+    is then returned without a time zone. A date without a zone has its
+    zone unknown too and is returned without a time zone, as for ``LCL``.
 
     Raises
     ------
@@ -560,7 +561,7 @@ def _parse_v2_header_date(date_str: str, fpath: Path) -> datetime:
     ]
     # the zone may follow the time with or without a blank (teqc writes
     # "20260317 16:18:01UTC")
-    text, zone = date_str, "UTC"
+    text, zone = date_str, None
     zoned = _V2_DATE_ZONE.match(date_str)
     if zoned:
         text, zone = zoned["date"], zoned["zone"]
@@ -573,7 +574,7 @@ def _parse_v2_header_date(date_str: str, fpath: Path) -> datetime:
             dt = datetime.strptime(candidate, fmt)
         except ValueError:
             continue
-        if zone == "LCL":
+        if zone is None or zone == "LCL":
             return dt
         try:
             return pytz.timezone(zone).localize(dt)

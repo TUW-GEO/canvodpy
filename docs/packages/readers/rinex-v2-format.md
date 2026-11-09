@@ -134,8 +134,9 @@ RINEX 2.11 Table A1 defines `S` as "raw signal strengths or SNR values as given 
 The date of `PGM / RUN BY / DATE` has no fixed form in RINEX 2.11
 (Table A1). The reader takes the forms producers write, for example
 `20260317 16:18:01UTC` (`teqc`), `20250101 000012 UTC` and
-`24-MAR-01 14:43`. A date without a zone is UTC; the zone `LCL` gives a
-date without a time zone. A missing record or a date in no known form
+`24-MAR-01 14:43`. A date without a zone, and a date with the zone `LCL`
+(local time, zone unknown, as in RINEX 3), gives a date without a time
+zone. A missing record or a date in no known form
 raises `CorruptedFileError` naming the file, and so does an entry of
 `# / TYPES OF OBSERV` that is not a two-character code.
 

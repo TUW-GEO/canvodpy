@@ -735,10 +735,10 @@ def test_snr_and_lli_metadata(rinex_v2_file):
     [
         ("20260317 16:18:01UTC", datetime(2026, 3, 17, 16, 18, 1, tzinfo=UTC)),
         ("20250101 000012 UTC", datetime(2025, 1, 1, 0, 0, 12, tzinfo=UTC)),
-        ("24-MAR-01 14:43", datetime(2001, 3, 24, 14, 43, tzinfo=UTC)),
+        ("24-MAR-01 14:43", datetime(2001, 3, 24, 14, 43)),
         ("20250101 000012 LCL", datetime(2025, 1, 1, 0, 0, 12)),
     ],
-    ids=["teqc", "rinex-3-style", "no-zone-is-utc", "local"],
+    ids=["teqc", "rinex-3-style", "no-zone-is-local", "local"],
 )
 def test_header_dates(text, expected):
     date = _parse_v2_header_date(text, Path("x.25o"))
