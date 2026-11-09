@@ -48,6 +48,7 @@ from canvod.readers.gnss_specs.constellations import (
     QZSS,
     SBAS,
 )
+from canvod.readers.gnss_specs.exceptions import SbfError
 from canvod.readers.gnss_specs.metadata import (
     CN0_METADATA,
     COORDS_METADATA,
@@ -1469,12 +1470,13 @@ class SbfReader(GNSSDataReader):
 
         Raises
         ------
-        LookupError
-            If the file contains no decodable epochs.
+        SbfError
+            If the file contains no decodable epochs. It is a
+            ``LookupError`` too.
         """
         for epoch in self.iter_epochs():
             return epoch.timestamp
-        raise LookupError(f"No epochs in {self.fpath}")
+        raise SbfError(f"No epochs in {self.fpath}")
 
     @cached_property
     def end_time(self) -> datetime:
@@ -1487,14 +1489,15 @@ class SbfReader(GNSSDataReader):
 
         Raises
         ------
-        LookupError
-            If the file contains no decodable epochs.
+        SbfError
+            If the file contains no decodable epochs. It is a
+            ``LookupError`` too.
         """
         last: datetime | None = None
         for epoch in self.iter_epochs():
             last = epoch.timestamp
         if last is None:
-            raise LookupError(f"No epochs in {self.fpath}")
+            raise SbfError(f"No epochs in {self.fpath}")
         return last
 
     @cached_property
@@ -1559,8 +1562,9 @@ class SbfReader(GNSSDataReader):
 
         Raises
         ------
-        LookupError
-            If no ReceiverSetup block is found.
+        SbfError
+            If no ReceiverSetup block is found. It is a
+            ``LookupError`` too.
         """
         parser = sbf_parser.SbfParser()
         for name, data in parser.read(str(self.fpath)):
@@ -1584,7 +1588,7 @@ class SbfReader(GNSSDataReader):
                     gnss_fw_version=_decode_bytes(data["GNSSFWVersion"]),
                     product_name=_decode_bytes(data["ProductName"]),
                 )
-        raise LookupError(f"No ReceiverSetup block found in {self.fpath}")
+        raise SbfError(f"No ReceiverSetup block found in {self.fpath}")
 
     # ------------------------------------------------------------------
     # Epoch iterator
