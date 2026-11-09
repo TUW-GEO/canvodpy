@@ -182,6 +182,15 @@ check: check-lint check-format check-types check-agent-docs
 test:
     uv run pytest
 
+# fuzz one reader for SECONDS: rinex3, rinex2, nav, nmea, sbf or filename
+# (Linux x86_64 only; crashes land in .fuzz/)
+[group('tests')]
+fuzz TARGET="sbf" SECONDS="60":
+    mkdir -p .fuzz/{{TARGET}}
+    uv run --group fuzz python fuzz/fuzz_{{TARGET}}.py \
+        -max_total_time={{SECONDS}} -timeout=10 -rss_limit_mb=2048 \
+        -artifact_prefix=.fuzz/{{TARGET}}- .fuzz/{{TARGET}} fuzz/corpus/{{TARGET}}
+
 # run tests for all packages, skipping integration tests that need real
 # credentials/network/test data (e.g. NASA Earthdata for ephemeris downloads)
 [group('tests')]

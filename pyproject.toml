@@ -24,6 +24,8 @@ exclude-newer-package = { canvod-adapters = false, canvod-airflow = false, canvo
 # Naming recipes for non-canonical receiver filenames, from canvodpy-extensions
 # on PyPI: uv sync --group filemap
 filemap = ["canvod-filemap>=1.0.0"]
+# Fuzzing (just fuzz <target>); atheris has wheels for Linux x86_64 only
+fuzz = ["atheris>=3.1.0; sys_platform == 'linux' and platform_machine == 'x86_64'"]
 dev = [
     "anywidget>=0.11.0",
     "commitizen>=4.19.2",
@@ -185,6 +187,7 @@ testpaths = [
     "packages/canvod-viz/tests",
     "packages/canvod-vod/tests",
     "packages/canvod-ops/tests",
+    "fuzz/tests",
 ]
 addopts = "--cov --cov-report term-missing --cov-report lcov -rsx --verbose --color=yes"
 markers = [

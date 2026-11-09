@@ -382,3 +382,6 @@ packages/*/config/
 
 # Report of just reference-check
 reference-check.txt
+
+# fuzzer output (just fuzz)
+.fuzz/

@@ -1,0 +1,59 @@
+     3.04           OBSERVATION DATA    M                   RINEX VERSION / TYPE
+ssrcrin-15.6.1x                         20250101 194500 UTC PGM / RUN BY / DATE 
+FANA                                                        MARKER NAME         
+01                                                          MARKER NUMBER       
+geodetic                                                    MARKER TYPE         
+Tolkien             The Inklings                            OBSERVER / AGENCY   
+1                   SEPT ASTERX SB3 PRO B4.14.4             REC # / TYPE / VERS 
+Unknown             Unknown                                 ANT # / TYPE        
+  5004115.3010  2463414.9340 -3086206.1040                  APPROX POSITION XYZ 
+        0.0000        0.0000        0.0000                  ANTENNA: DELTA H/E/N
+G   23 X1  C1C L1C D1C S1C C1W S1W C2W L2W D2W S2W C2L L2L  SYS / # / OBS TYPES 
+       D2L S2L C5Q L5Q D5Q S5Q C1L L1L D1L S1L              SYS / # / OBS TYPES 
+E   21 X1  C1C L1C D1C S1C C6C L6C D6C S6C C5Q L5Q D5Q S5Q  SYS / # / OBS TYPES 
+       C7Q L7Q D7Q S7Q C8Q L8Q D8Q S8Q                      SYS / # / OBS TYPES 
+S    9 X1  C1C L1C D1C S1C C5I L5I D5I S5I                  SYS / # / OBS TYPES 
+R   17 X1  C1C L1C D1C S1C C2P L2P D2P S2P C2C L2C D2C S2C  SYS / # / OBS TYPES 
+       C3Q L3Q D3Q S3Q                                      SYS / # / OBS TYPES 
+C   25 X1  C1P L1P D1P S1P C5P L5P D5P S5P C2I L2I D2I S2I  SYS / # / OBS TYPES 
+       C7I L7I D7I S7I C6I L6I D6I S6I C7D L7D D7D S7D      SYS / # / OBS TYPES 
+J   17 X1  C1C L1C D1C S1C C2L L2L D2L S2L C5Q L5Q D5Q S5Q  SYS / # / OBS TYPES 
+       C1L L1L D1L S1L                                      SYS / # / OBS TYPES 
+I    5 X1  C5A L5A D5A S5A                                  SYS / # / OBS TYPES 
+SEPTENTRIO RECEIVERS OUTPUT ALIGNED CARRIER PHASES.         COMMENT             
+NO FURTHER PHASE SHIFT APPLIED IN THE RINEX ENCODER.        COMMENT             
+G L1C                                                       SYS / PHASE SHIFT   
+G L2W                                                       SYS / PHASE SHIFT   
+G L2L  0.00000                                              SYS / PHASE SHIFT   
+G L5Q  0.00000                                              SYS / PHASE SHIFT   
+G L1L  0.00000                                              SYS / PHASE SHIFT   
+E L1C  0.00000                                              SYS / PHASE SHIFT   
+E L6C  0.00000                                              SYS / PHASE SHIFT   
+E L5Q  0.00000                                              SYS / PHASE SHIFT   
+E L7Q  0.00000                                              SYS / PHASE SHIFT   
+E L8Q  0.00000                                              SYS / PHASE SHIFT   
+S L1C                                                       SYS / PHASE SHIFT   
+S L5I                                                       SYS / PHASE SHIFT   
+R L1C                                                       SYS / PHASE SHIFT   
+R L2P  0.00000                                              SYS / PHASE SHIFT   
+R L2C                                                       SYS / PHASE SHIFT   
+R L3Q  0.00000                                              SYS / PHASE SHIFT   
+C L1P  0.00000                                              SYS / PHASE SHIFT   
+C L5P  0.00000                                              SYS / PHASE SHIFT   
+C L2I                                                       SYS / PHASE SHIFT   
+C L7I                                                       SYS / PHASE SHIFT   
+C L6I                                                       SYS / PHASE SHIFT   
+C L7D                                                       SYS / PHASE SHIFT   
+J L1C                                                       SYS / PHASE SHIFT   
+J L2L  0.00000                                              SYS / PHASE SHIFT   
+J L5Q  0.00000                                              SYS / PHASE SHIFT   
+J L1L  0.00000                                              SYS / PHASE SHIFT   
+I L5A                                                       SYS / PHASE SHIFT   
+  2025     1     1    19    45    0.0000000     GPS         TIME OF FIRST OBS   
+ C1C    0.000 C2C    0.000 C2P    0.000                     GLONASS COD/PHS/BIS 
+DBHZ                                                        SIGNAL STRENGTH UNIT
+    18                                                      LEAP SECONDS        
+ 24 R01  1 R02 -4 R03  5 R04  6 R05  1 R06 -4 R07  5 R08  6 GLONASS SLOT / FRQ #
+    R09 -2 R10 -7 R11  0 R12 -1 R13 -2 R14 -7 R15  0 R16 -1 GLONASS SLOT / FRQ #
+    R17  4 R18 -3 R19  3 R20  2 R21  4 R22 -3 R23  3 R24  2 GLONASS SLOT / FRQ #
+                                                            END OF HEADER

@@ -33,12 +33,16 @@ repos:
     hooks:
       - id: trailing-whitespace
         stages: [pre-commit]
+        # fuzz inputs are kept byte for byte
+        exclude: ^fuzz/(corpus|crashes)/
       - id: check-added-large-files
         stages: [pre-commit]
       - id: detect-private-key
         stages: [pre-commit]
       - id: end-of-file-fixer
         stages: [pre-commit]
+        # fuzz inputs are kept byte for byte
+        exclude: ^fuzz/(corpus|crashes)/
 
   - repo: https://github.com/commitizen-tools/commitizen
     rev: v4.19.3
