@@ -1,0 +1,3 @@
+# fuzz inputs are kept byte for byte: no line-ending conversion on checkout
+fuzz/corpus/** -text
+fuzz/crashes/** -text
