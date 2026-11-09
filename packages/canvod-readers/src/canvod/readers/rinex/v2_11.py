@@ -87,7 +87,7 @@ V2_MAX_OBS_PER_LINE = 5  # Max observations per line (5 x 16 = 80 chars)
 V2_MAX_SATS_PER_LINE = 12  # Max satellites on the epoch line
 V2_SAT_FIELD_WIDTH = 3  # Each satellite field: A1 + I2
 V2_OBS_CODE_LENGTH = 2  # An observation code: type + frequency, e.g. L1
-# a header date ending in a time zone, e.g. 20260317 16:18:01UTC
+# a header date ending in a time zone, e.g. 20250102 03:04:05UTC
 _V2_DATE_ZONE = re.compile(r"(?P<date>.*\d)\s*(?P<zone>[A-Z]{3,4})$")
 # LLI bits (rinex211.txt Table A2 -> RINEX 3.04 Table A3). Bit 0 (lost
 # lock) means the same in both. v2 bit 1 flags the opposite wavelength
@@ -555,12 +555,12 @@ def _parse_v2_header_date(date_str: str, fpath: Path) -> datetime:
         "%d-%b-%y %H:%M",  # 24-MAR-01 14:43
         "%d-%b-%Y %H:%M",  # 24-MAR-2001 14:43
         "%Y%m%d %H%M%S",  # 20050324 141200
-        "%Y%m%d %H:%M:%S",  # 20260317 16:18:01 (teqc)
+        "%Y%m%d %H:%M:%S",  # 20250102 03:04:05 (teqc)
         "%Y-%m-%d %H:%M",  # 2005-03-24 14:12
         "%y-%b-%d %H:%M",  # 01-MAR-24 14:43
     ]
     # the zone may follow the time with or without a blank (teqc writes
-    # "20260317 16:18:01UTC")
+    # "20250102 03:04:05UTC")
     text, zone = date_str, None
     zoned = _V2_DATE_ZONE.match(date_str)
     if zoned:

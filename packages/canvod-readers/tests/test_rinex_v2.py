@@ -733,7 +733,7 @@ def test_snr_and_lli_metadata(rinex_v2_file):
 @pytest.mark.parametrize(
     ("text", "expected"),
     [
-        ("20260317 16:18:01UTC", datetime(2026, 3, 17, 16, 18, 1, tzinfo=UTC)),
+        ("20250102 03:04:05UTC", datetime(2025, 1, 2, 3, 4, 5, tzinfo=UTC)),
         ("20250101 000012 UTC", datetime(2025, 1, 1, 0, 0, 12, tzinfo=UTC)),
         ("24-MAR-01 14:43", datetime(2001, 3, 24, 14, 43)),
         ("20250101 000012 LCL", datetime(2025, 1, 1, 0, 0, 12)),
