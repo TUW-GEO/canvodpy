@@ -18,13 +18,18 @@ from typing import Self
 import xarray as xr
 from pydantic import model_validator
 
+from canvod.readers.gnss_specs.exceptions import RinexError
 from canvod.readers.rinex.v3_04 import (
     Rnxv3Obs,
 )
 
 
-class StrippedRinexError(ValueError):
-    """Raised when a file is not a valid SNR-only stripped RINEX."""
+class StrippedRinexError(RinexError, ValueError):
+    """Raised when a file is not a valid SNR-only stripped RINEX.
+
+    A ``RinexError`` like the other RINEX errors, and a ``ValueError`` as
+    before.
+    """
 
 
 class Rnxv3StrippedObs(Rnxv3Obs):

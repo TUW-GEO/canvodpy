@@ -8,7 +8,8 @@ RinexError
     ├── CorruptedFileError
     ├── IncompleteEpochError
     ├── InvalidEpochError
-    └── FileNotExistError
+    ├── FileNotExistError
+    └── StrippedRinexError (also a ValueError; canvod.readers.rinex)
 
 NmeaError
     ├── NmeaChecksumError
