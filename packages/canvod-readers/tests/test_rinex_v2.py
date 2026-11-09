@@ -753,7 +753,7 @@ def test_a_header_date_that_cant_be_read_names_the_file(text):
 
 
 def _write(tmp_path: Path, header: list[str], body: list[str]) -> Path:
-    path = tmp_path / "MOZR01CAL_R_20250010000_01H_15S_AA.rnx"
+    path = tmp_path / "FANA01INK_R_20250010000_01H_15S_AA.rnx"  # test persona
     path.write_text("\n".join([*header, *body]) + "\n", encoding="ascii")
     return path
 

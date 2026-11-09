@@ -23,6 +23,9 @@ SBF_FILE = (
     Path(__file__).parent
     / "test_data/valid/sbf/01_Rosalia/02_canopy/25001/ROSA01TUW_R_20250010000_15M_05S_AA.sbf"
 )
+#: Name of the copies the tests write: the test persona's site
+#: (canvod.utils.testing)
+NAME = "FANA01INK_R_20250010000_15M_05S_AA.sbf"
 MEAS_EPOCH = 4027
 DIFF_CORR_IN = 5919
 
@@ -104,7 +107,7 @@ def _n_epochs(path: Path) -> int:
 
 
 def _write(tmp_path: Path, raw: bytes) -> Path:
-    path = tmp_path / SBF_FILE.name
+    path = tmp_path / NAME
     path.write_bytes(raw)
     return path
 
@@ -133,7 +136,7 @@ def test_a_damaged_block_drops_only_its_epoch_and_warns(
     assert n == clean - 1
     warnings = [log for log in logs if log["event"] == "sbf_damaged_bytes_skipped"]
     assert len(warnings) == 1
-    assert warnings[0]["file"] == SBF_FILE.name
+    assert warnings[0]["file"] == NAME
     assert warnings[0]["stretches"] == 1
     assert warnings[0]["bytes"] > 0
 
