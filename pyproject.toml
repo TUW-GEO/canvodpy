@@ -23,7 +23,7 @@ exclude-newer-package = { canvod-adapters = false, canvod-airflow = false, canvo
 [dependency-groups]
 # Naming recipes for non-canonical receiver filenames, from canvodpy-extensions
 # on PyPI: uv sync --group filemap
-filemap = ["canvod-filemap>=1.0.0"]
+filemap = ["canvod-filemap>=1.1.0"]
 # Fuzzing (just fuzz <target>); atheris has wheels for Linux x86_64 only
 fuzz = ["atheris>=3.1.0; sys_platform == 'linux' and platform_machine == 'x86_64'"]
 dev = [

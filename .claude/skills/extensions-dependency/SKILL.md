@@ -17,7 +17,7 @@ The two repositories depend on each other, in both directions:
 ## Where it is set
 
 Root `pyproject.toml`, `[dependency-groups]`:
-`filemap = ["canvod-filemap>=1.0.0"]`. There is no source for it: it comes
+`filemap = ["canvod-filemap>=1.1.0"]`. There is no source for it: it comes
 from PyPI. canvod-filemap's own dependencies on canvod-preflight and
 canvod-utils resolve to this workspace's packages, so the lock holds one
 of each.

@@ -135,10 +135,9 @@ class ReceiverConfig(_StrictModel):
         None,
         description=(
             "Naming recipe of the files in 'nav_directory', given like "
-            "'recipe' (a name or a raw GitHub URL), with file_type 'nav'. "
-            "canvod-filemap has no file type 'nav' yet, so a run with it "
-            "stops with an error; leave it unset and give the navigation "
-            "files canonical canVOD names."
+            "'recipe' (a name or a raw GitHub URL), with file_type 'nav' and "
+            "sampling '00U'. Needs canvod-filemap 1.1.0 or later; without a "
+            "recipe the navigation files need canonical canVOD names."
         ),
     )
 
