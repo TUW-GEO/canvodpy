@@ -88,7 +88,7 @@ The Open Source Security Foundation (OpenSSF) Best Practices badge program[^19] 
 - **Development transparency**: Public version control and issue tracking
 - **Release integrity**: Signed releases and supply chain security
 
-**canvodpy** earned the OpenSSF Best Practices badge (passing level) by demonstrating:
+**canvodpy** is working toward the OpenSSF Best Practices badge (passing level; in progress). It already has:
 
 - Security policy with coordinated disclosure (SECURITY.md)
 - Static analysis (ruff, ty) and dynamic testing (pytest)
