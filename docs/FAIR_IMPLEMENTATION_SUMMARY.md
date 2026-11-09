@@ -74,7 +74,7 @@ Added new "Security & FAIR" section with:
 
 ## Current FAIR compliance status
 
-### ✅ All 5 FAIR recommendations met + OpenSSF badge
+### ✅ All 5 FAIR recommendations met
 
 | # | Recommendation | Status | Evidence |
 |---|----------------|--------|----------|
@@ -82,7 +82,7 @@ Added new "Security & FAIR" section with:
 | 2 | **License** | ✅ Pass | Apache 2.0 in LICENSE file |
 | 3 | **Registry** | ✅ Pass | Published to PyPI ([canvodpy](https://pypi.org/project/canvodpy/) + 11 sub-packages, v0.2.1+) |
 | 4 | **Citation** | ✅ Pass | CITATION.cff + Zenodo DOI (`10.5281/zenodo.18496233`) |
-| 5 | **Checklist** | ✅ Pass | **OpenSSF Best Practices badge obtained!** ([Project 12329](https://www.bestpractices.dev/projects/12329)) |
+| 5 | **Checklist** | ✅ Pass | OpenSSF Best Practices badge in progress, passing level not reached yet ([Project 12329](https://www.bestpractices.dev/projects/12329)) |
 
 **Overall:** 🟢 **5/5 complete**
 
@@ -108,7 +108,6 @@ Modified:
 - ✅ FAIR compliance is monitored on every PR
 
 ### Completed (short term)
-- ✅ OpenSSF Best Practices badge obtained ([Project 12329](https://www.bestpractices.dev/projects/12329))
 - ✅ GitHub Security Features enabled (secret scanning, private vulnerability reporting)
 - ✅ REUSE 3.3 compliant (`just check-reuse` passes)
 
