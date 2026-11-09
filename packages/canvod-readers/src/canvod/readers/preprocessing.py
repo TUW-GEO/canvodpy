@@ -374,13 +374,14 @@ def _fill_sid_coords_from_sid_strings(
         if name in ds.coords:
             old = ds.coords[name]
             arr = np.asarray(values)
-            # Preserve the original coordinate dtype
-            if old.dtype != arr.dtype:
-                if old.dtype.kind == "f":
-                    arr = arr.astype(old.dtype)
-                elif old.dtype.kind == "O" or str(old.dtype).startswith("StringDType"):
-                    # Keep string coords as object (stable Zarr V3 variable_length_utf8)
-                    arr = arr.astype(object)
+            # Keep string coords as object (stable Zarr V3 variable_length_utf8)
+            # unless they were fixed-width strings: a string coord with no
+            # values (a file without epochs) comes out of reindex as float
+            if arr.dtype.kind == "U" and old.dtype.kind != "U":
+                arr = arr.astype(object)
+            elif old.dtype != arr.dtype and old.dtype.kind == "f":
+                # Preserve the original float dtype of frequency coords
+                arr = arr.astype(old.dtype)
             updates[name] = xr.DataArray(
                 arr,
                 dims=["sid"],
