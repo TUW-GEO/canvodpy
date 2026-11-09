@@ -8,7 +8,7 @@ The OpenSSF Best Practices Badge (formerly CII Best Practices) is a certificatio
 
 ## Badge levels
 
-1. **Passing** (60%+ criteria) - Basic best practices
+1. **Passing** (every MUST criterion met; every SHOULD criterion met or explained) - Basic best practices
 2. **Silver** (100% passing + additional criteria) - Advanced practices
 3. **Gold** (100% silver + highest standards) - Exemplary practices
 
