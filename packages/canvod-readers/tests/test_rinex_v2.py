@@ -1,6 +1,6 @@
 """Test RINEX v2.11 reader functionality."""
 
-from datetime import datetime
+from datetime import UTC, datetime
 from pathlib import Path
 
 import numpy as np
@@ -9,10 +9,12 @@ import xarray as xr
 from structlog.testing import capture_logs
 
 from canvod.readers.gnss_specs.constellations import V2_UNRESOLVED_CODES
+from canvod.readers.gnss_specs.exceptions import CorruptedFileError
 from canvod.readers.preprocessing import pad_to_global_sid
 from canvod.readers.rinex.v2_11 import (
     Rnxv2Header,
     Rnxv2Obs,
+    _parse_v2_header_date,
     _parse_wavelength_fact_line,
     _v2_tracking_code,
 )
@@ -723,3 +725,72 @@ def test_snr_and_lli_metadata(rinex_v2_file):
     assert ds.LLI.attrs["valid_range"] == [0, 7]
     assert "RINEX 3.04 Table A3" in ds.LLI.attrs["description"]
     assert int(ds.LLI.max()) <= 3  # v2 bit 2 (antispoofing) never survives
+
+
+# ---- Input the reader refuses or reads past ------------------------------- #
+
+
+@pytest.mark.parametrize(
+    ("text", "expected"),
+    [
+        ("20260317 16:18:01UTC", datetime(2026, 3, 17, 16, 18, 1, tzinfo=UTC)),
+        ("20250101 000012 UTC", datetime(2025, 1, 1, 0, 0, 12, tzinfo=UTC)),
+        ("24-MAR-01 14:43", datetime(2001, 3, 24, 14, 43, tzinfo=UTC)),
+        ("20250101 000012 LCL", datetime(2025, 1, 1, 0, 0, 12)),
+    ],
+    ids=["teqc", "rinex-3-style", "no-zone-is-utc", "local"],
+)
+def test_header_dates(text, expected):
+    date = _parse_v2_header_date(text, Path("x.25o"))
+    assert date == expected
+    assert date.utcoffset() == expected.utcoffset()
+
+
+@pytest.mark.parametrize("text", ["20250101 000012 ETC", "2025 day one", ""])
+def test_a_header_date_that_cant_be_read_names_the_file(text):
+    with pytest.raises(CorruptedFileError, match=r"x\.25o: .*PGM / RUN BY / DATE"):
+        _parse_v2_header_date(text, Path("x.25o"))
+
+
+def _write(tmp_path: Path, header: list[str], body: list[str]) -> Path:
+    path = tmp_path / "MOZR01CAL_R_20250010000_01H_15S_AA.rnx"
+    path.write_text("\n".join([*header, *body]) + "\n", encoding="ascii")
+    return path
+
+
+def test_a_missing_header_date_names_the_file(rinex_v2_file, tmp_path):
+    header = [
+        line for line in _v2_header(rinex_v2_file) if "PGM / RUN BY / DATE" not in line
+    ]
+    with pytest.raises(CorruptedFileError, match=r"_AA\.rnx: .*PGM / RUN BY / DATE"):
+        Rnxv2Header.from_file(_write(tmp_path, header, []))
+
+
+def test_a_one_character_observation_code_names_the_file(rinex_v2_file, tmp_path):
+    header = [
+        line.replace("    L1    L2", "     L    L2", 1)
+        if "# / TYPES OF OBSERV" in line
+        else line
+        for line in _v2_header(rinex_v2_file)
+    ]
+    with pytest.raises(CorruptedFileError, match=r"_AA\.rnx: .*'L'"):
+        Rnxv2Header.from_file(_write(tmp_path, header, []))
+
+
+def test_an_epoch_with_no_valid_date_is_skipped(rinex_v2_file, tmp_path):
+    body = [
+        " 25  1  1  0  0  0.0000000  0  1G01",
+        *_v2_sat_records(None, None),
+        " 25 13  1  0  0 15.0000000  0  1G01",
+        *_v2_sat_records(None, None),
+    ]
+    ds = _read_lli(tmp_path, _v2_header(rinex_v2_file), body)
+    assert ds.sizes["epoch"] == 1
+
+
+def test_a_file_without_epochs_gives_an_empty_dataset(rinex_v2_file, tmp_path):
+    """Like the RINEX 3 reader: no epochs, every signal ID after padding."""
+    ds = Rnxv2Obs(fpath=_write(tmp_path, _v2_header(rinex_v2_file), [])).to_ds()
+    assert ds.sizes["epoch"] == 0
+    assert ds.sizes["sid"] > 0
+    assert ds.epoch.dtype == np.dtype("datetime64[ns]")
