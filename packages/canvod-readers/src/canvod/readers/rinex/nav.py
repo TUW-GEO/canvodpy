@@ -24,6 +24,7 @@ from pathlib import Path
 import numpy as np
 import xarray as xr
 
+from canvod.readers.gnss_specs.exceptions import RinexNavError
 from canvod.readers.gnss_specs.leap_seconds import gps_minus_utc
 
 #: RINEX versions this reader knows.
@@ -228,30 +229,59 @@ def _header(lines: list[str], path: Path) -> int:
     first = lines[0] if lines else ""
     version = first[:9].strip()
     if "RINEX VERSION / TYPE" not in first or first[20:21] != "N":
-        raise ValueError(f"{path} is not a RINEX navigation file")
+        raise RinexNavError(f"{path} is not a RINEX navigation file")
     if version not in SUPPORTED_VERSIONS:
-        raise ValueError(
+        raise RinexNavError(
             f"{path} is RINEX {version}; navigation files are read in RINEX "
             f"{' and '.join(SUPPORTED_VERSIONS)}"
         )
     for i, line in enumerate(lines):
         if "END OF HEADER" in line[60:]:
             return i + 1
-    raise ValueError(f"{path} has no END OF HEADER line")
+    raise RinexNavError(f"{path} has no END OF HEADER line")
 
 
-def _records(lines: list[str], start: int) -> Iterable[list[str]]:
-    """The lines of each record: a record line starts with its satellite."""
+def _records(lines: list[str], start: int) -> Iterable[tuple[int, list[str]]]:
+    """Line number (from 1) and lines of each record.
+
+    A record line starts with its satellite.
+    """
     record: list[str] = []
-    for line in lines[start:]:
+    first = start + 1
+    for number, line in enumerate(lines[start:], start=start + 1):
         if not line.strip():
             continue
         if line[0] != " " and record:
-            yield record
+            yield first, record
             record = []
+        if not record:
+            first = number
         record.append(line)
     if record:
-        yield record
+        yield first, record
+
+
+def _record_epoch(line: str) -> tuple[int, str]:
+    """Satellite number and time of clock (ISO text) of a record's first line.
+
+    Raises ``ValueError`` if either can't be read.
+    """
+    # QZSS writes the number as I2, the others as I2.2 (Table A12)
+    number = int(line[1:3])
+    year, month, day, hour, minute, second = map(int, line[4:23].split())
+    epoch = f"{year:04d}-{month:02d}-{day:02d}T{hour:02d}:{minute:02d}:{second:02d}"
+    np.datetime64(epoch)  # raises for a date that doesn't exist
+    return number, epoch
+
+
+def _check_fields(texts: list[str]) -> None:
+    """Raise ``ValueError`` for a field that isn't blank or a number.
+
+    Converts as :func:`_system_records` does, so what passes here converts
+    there.
+    """
+    values = np.char.replace(np.array(texts, dtype=str), "D", "E")
+    np.where(np.char.strip(values) == "", "nan", values).astype(np.float64)
 
 
 def _fields(record: list[str]) -> list[str]:
@@ -329,31 +359,38 @@ def read_rinex_nav(paths: Iterable[Path]) -> dict[str, xr.Dataset]:
     Raises
     ------
     ValueError
-        If no files are given, a file is not a RINEX 3.04/3.05 navigation
-        file, or the files hold no record of a system read.
+        If no files are given.
+    RinexNavError
+        If a file is not a RINEX 3.04/3.05 navigation file, a record can't
+        be read (the message names the file and line), or the files hold no
+        record of a system read. It is a ``ValueError`` too.
     """
     paths = [Path(path) for path in paths]
     if not paths:
         raise ValueError("no navigation files given")
     found: dict[str, tuple[list[str], list[str], list[list[str]]]] = {}
     for path in paths:
-        lines = path.read_text().splitlines()
-        for record in _records(lines, _header(lines, path)):
+        # RINEX is ASCII; a byte that isn't becomes U+FFFD, one character per
+        # byte, so the fixed columns stay in place
+        lines = path.read_text(encoding="ascii", errors="replace").splitlines()
+        for number, record in _records(lines, _header(lines, path)):
             system = record[0][0]
             fields = FIELDS.get(system)
             if fields is None:
                 continue
-            # QZSS writes the number as I2, the others as I2.2 (Table A12)
-            sv = f"{system}{int(record[0][1:3]):02d}"
-            year, month, day, hour, minute, second = map(int, record[0][4:23].split())
+            values = (_fields(record) + [""] * len(fields))[: len(fields)]
+            try:
+                sv_number, epoch = _record_epoch(record[0])
+                _check_fields(values)
+            except ValueError as error:
+                msg = f"{path}, line {number}: the record can't be read ({error})"
+                raise RinexNavError(msg) from error
             svs, epochs, texts = found.setdefault(system, ([], [], []))
-            svs.append(sv)
-            epochs.append(
-                f"{year:04d}-{month:02d}-{day:02d}T{hour:02d}:{minute:02d}:{second:02d}"
-            )
-            texts.append((_fields(record) + [""] * len(fields))[: len(fields)])
+            svs.append(f"{system}{sv_number:02d}")
+            epochs.append(epoch)
+            texts.append(values)
     if not found:
-        raise ValueError(
+        raise RinexNavError(
             f"{', '.join(str(path) for path in paths)} hold no record of "
             f"{', '.join(sorted(FIELDS))}; navigation records of the other "
             "systems are not read yet"

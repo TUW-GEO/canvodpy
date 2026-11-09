@@ -46,6 +46,7 @@ from canvod.readers.gnss_specs.constellations import (
     SBAS,
 )
 from canvod.readers.gnss_specs.exceptions import (
+    CorruptedFileError,
     IncompleteEpochError,
     InvalidEpochError,
     MissingEpochError,
@@ -77,6 +78,8 @@ log = structlog.get_logger(__name__)
 
 GLONASS_COD_PHS_MIN_COMPONENTS = 6
 PGM_RUNBY_MIN_COMPONENTS = 4
+# date, time and zone of PGM / RUN BY / DATE
+PGM_RUNBY_DATE_COMPONENTS = 3
 TIME_OF_FIRST_OBS_MIN_COMPONENTS = 6
 RECEIVER_COMPONENTS_SECOND = 2
 POSITION_PARTS_MIN = 2
@@ -379,6 +382,11 @@ class Rnxv3Header(BaseModel):
         except (OSError, ValueError, TypeError) as e:
             msg = f"Failed to read RINEX header: {e}"
             raise ValueError(msg) from e
+        except IndexError as e:
+            # georinex reads fixed columns of the first lines; a line too
+            # short for them is a damaged header
+            msg = f"{fpath}: the RINEX header can't be read (a line is too short)"
+            raise CorruptedFileError(msg) from e
 
         cast(Any, RnxVersion3Model).version_must_be_3(header["version"])
 
@@ -414,23 +422,8 @@ class Rnxv3Header(BaseModel):
             "systems": header.get("systems", ""),
         }
 
-        if "PGM / RUN BY / DATE" in header:
-            pgm, run_by, date_dt = Rnxv3Header._get_pgm_runby_date(header)
-            data.update(
-                {
-                    "pgm": pgm,
-                    "run_by": run_by,
-                    "date": date_dt,  # This is now a datetime object
-                }
-            )
-        else:
-            data.update(
-                {
-                    "pgm": "",
-                    "run_by": "",
-                    "date": datetime.now(UTC),  # Default to current time
-                }
-            )
+        pgm, run_by, date_dt = Rnxv3Header._get_pgm_runby_date(header, fpath)
+        data.update({"pgm": pgm, "run_by": run_by, "date": date_dt})
 
         if "OBSERVER / AGENCY" in header:
             observer, agency = Rnxv3Header._get_observer_agency(header)
@@ -551,42 +544,42 @@ class Rnxv3Header(BaseModel):
     @staticmethod
     def _get_pgm_runby_date(
         header_dict: dict[str, Any],
+        fpath: Path,
     ) -> tuple[str, str, datetime]:
         """Parse ``PGM / RUN BY / DATE`` into program, run_by, and datetime.
 
-        Based on the original __get_pgm_runby_date method.
+        The date is ``yyyymmdd hhmmss zone`` (RINEX 3.04, Table A2,
+        ``PGM / RUN BY / DATE``). The zone ``LCL`` means local time with
+        the zone unknown: the date is then returned without a time zone.
+
+        Raises
+        ------
+        CorruptedFileError
+            If the record is missing or its date can't be read.
         """
         header_value = header_dict.get("PGM / RUN BY / DATE", "")
         components = header_value.split()
-
-        if not components:
-            return "", "", datetime.now(UTC)
+        if len(components) < PGM_RUNBY_DATE_COMPONENTS:
+            msg = (
+                f"{fpath}: the header has no readable PGM / RUN BY / DATE "
+                f"record ({header_value.strip()!r})"
+            )
+            raise CorruptedFileError(msg)
 
         pgm = components[0]
         run_by = components[1] if len(components) > PGM_RUNBY_MIN_COMPONENTS else ""
-
-        # Original logic for extracting date components
-        date = (
-            [components[-3], components[-2], components[-1]]
-            if len(components) > 1
-            else None
-        )
-
-        if date:
-            try:
-                # Original parsing logic
-                dt = datetime.strptime(
-                    date[0] + date[1],
-                    "%Y%m%d%H%M%S",
-                )
-                tz = pytz.timezone(date[2])  # e.g., "UTC"
-                localized_date = tz.localize(dt)
-                return pgm, run_by, localized_date
-            except (ValueError, TypeError) as e:
-                print(f"Warning: Could not parse date components {date}: {e}")
-                return pgm, run_by, datetime.now(UTC)
-        else:
-            return pgm, run_by, datetime.now(UTC)
+        day, time, zone = components[-3:]
+        try:
+            dt = datetime.strptime(day + time, "%Y%m%d%H%M%S")
+            if zone != "LCL":
+                dt = pytz.timezone(zone).localize(dt)
+        except (ValueError, pytz.UnknownTimeZoneError) as e:
+            msg = (
+                f"{fpath}: the date of PGM / RUN BY / DATE can't be read "
+                f"({day} {time} {zone})"
+            )
+            raise CorruptedFileError(msg) from e
+        return pgm, run_by, dt
 
     @staticmethod
     def _get_observer_agency(header_dict: dict[str, Any]) -> tuple[str, str]:

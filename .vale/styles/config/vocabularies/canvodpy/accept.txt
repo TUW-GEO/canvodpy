@@ -142,3 +142,5 @@ Okabe
 viridis
 grayscale
 anonymized
+[Ff]uzzers?
+[Aa]theris

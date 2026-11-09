@@ -153,6 +153,7 @@ uv sync --group filemap               # plus canvod-filemap (naming recipes)
 just check                            # ruff lint + format, ty, agent docs
 just test-fast                        # tests without the integration marker
 just test-network                     # tests that reach the download servers (never in CI)
+just fuzz sbf 600                     # fuzz one reader for 600 s (Linux x86_64; fuzz/)
 just test                             # all tests
 just test-package canvod-readers      # one package
 just docs                             # preview the docs site

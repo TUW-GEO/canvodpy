@@ -8,15 +8,20 @@ RinexError
     ├── CorruptedFileError
     ├── IncompleteEpochError
     ├── InvalidEpochError
-    └── FileNotExistError
+    ├── FileNotExistError
+    ├── RinexNavError (also a ValueError)
+    └── StrippedRinexError (also a ValueError; canvod.readers.rinex)
 
 NmeaError
     ├── NmeaChecksumError
     ├── NmeaMissingSentenceError
     └── NmeaInvalidSentenceError
 
-All exceptions inherit from RinexError or NmeaError, allowing for broad
-exception handling when needed while preserving specific error types.
+SbfError (also a ValueError and a LookupError)
+
+Every error a reader raises for a file it can't read is one of these, or a
+pydantic ``ValidationError`` for a header that fails its model. Anything
+else is a bug in the reader.
 """
 
 
@@ -165,6 +170,34 @@ class FileNotExistError(RinexError):
     def __init__(self, message: str) -> None:
         """Initialize with a descriptive message."""
         super().__init__(message)
+
+
+class RinexNavError(RinexError, ValueError):
+    """Raised when a RINEX navigation file can't be read.
+
+    The message names the file, and the line for a record that can't be
+    read. It is also a ``ValueError``, which the navigation reader raised
+    before this class existed.
+
+    Examples
+    --------
+    >>> raise RinexNavError("nav.rnx, line 12: the epoch can't be read")
+
+    """
+
+
+class SbfError(ValueError, LookupError):
+    """Raised when an SBF file holds nothing the reader can read.
+
+    The message names the file. It is also a ``LookupError``, which the
+    SBF reader raised for a file without epochs or without a
+    ReceiverSetup block before this class existed.
+
+    Examples
+    --------
+    >>> raise SbfError("rx.sbf holds no intact MeasEpoch block")
+
+    """
 
 
 class NmeaError(Exception):

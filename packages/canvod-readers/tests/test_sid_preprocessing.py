@@ -318,3 +318,36 @@ class TestAddFutureDatavars:
 
         # X should still be all ones, not -999
         assert np.all(result["X"].values == 1.0)
+
+
+def _no_epochs_dataset() -> xr.Dataset:
+    """What a reader builds from a file without epochs: no signal IDs either.
+
+    numpy gives an empty list the dtype float64, so the string coordinates
+    of such a dataset are float.
+    """
+    empty = np.array([])
+    return xr.Dataset(
+        {"SNR": (("epoch", "sid"), np.empty((0, 0), dtype=np.float32))},
+        coords={
+            "epoch": np.array([], dtype="datetime64[ns]"),
+            "sid": np.array([], dtype=object),
+            "sv": ("sid", empty),
+            "system": ("sid", empty),
+            "band": ("sid", empty),
+            "code": ("sid", empty),
+            "freq_center": ("sid", empty),
+        },
+    )
+
+
+def test_padding_a_dataset_without_signals_gives_string_coords() -> None:
+    padded = pad_to_global_sid(_no_epochs_dataset())
+
+    assert padded.sizes["epoch"] == 0
+    assert padded.sizes["sid"] > 0
+    first = padded.isel(sid=0)
+    assert str(first.sid.values).startswith(str(first.sv.values) + "|")
+    assert padded.sv.dtype == object
+    assert padded.system.dtype == object
+    assert padded.freq_center.dtype.kind == "f"

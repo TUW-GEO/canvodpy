@@ -21,7 +21,7 @@ following the AsteRx SB3 ProBase Firmware v4.14.0 Reference Guide
 from __future__ import annotations
 
 import math
-from collections.abc import Iterator
+from collections.abc import Callable, Iterator
 from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
 from functools import cached_property
@@ -32,7 +32,7 @@ import numpy as np
 import structlog
 import xarray as xr
 from numpy.typing import NDArray
-from pydantic import ConfigDict
+from pydantic import ConfigDict, PrivateAttr
 
 from canvod.readers.base import (
     GNSSDataReader,
@@ -48,6 +48,7 @@ from canvod.readers.gnss_specs.constellations import (
     QZSS,
     SBAS,
 )
+from canvod.readers.gnss_specs.exceptions import SbfError
 from canvod.readers.gnss_specs.metadata import (
     CN0_METADATA,
     COORDS_METADATA,
@@ -56,6 +57,7 @@ from canvod.readers.gnss_specs.metadata import (
     OBSERVABLES_METADATA,
     epoch_coord_attrs,
 )
+from canvod.readers.sbf._blocks import IntactBlocks
 from canvod.readers.sbf._registry import (
     FDMA_SIGNAL_NUMS,
     SIGNAL_TABLE,
@@ -79,6 +81,7 @@ from canvod.utils.tools import hashing
 
 try:
     import sbf_parser
+    from sbf_parser.block_structure import BLOCKNAMES, BLOCKNUMBERS
 except ImportError as _err:
     raise ImportError(
         "sbf-parser is required for SbfReader. Install it with: uv add sbf-parser"
@@ -142,6 +145,52 @@ _EPOCH_BLOCKS: frozenset[str] = frozenset(
     }
 )
 
+#: Block number of each block name sbf-parser knows
+_BLOCK_NUMBERS: dict[str, int] = dict(zip(BLOCKNAMES, BLOCKNUMBERS, strict=True))
+
+
+#: Bytes of intact blocks handed to ``sbf-parser`` at a time
+_DECODE_BATCH_BYTES: int = 1 << 20
+
+
+def _decoded_blocks(
+    fpath: Path,
+    names: frozenset[str],
+    on_damaged: Callable[[IntactBlocks], None] | None = None,
+) -> Iterator[tuple[str, dict[str, Any]]]:
+    """Decode the intact blocks of the given names, in file order.
+
+    Only these blocks reach ``sbf-parser``; see :mod:`canvod.readers.sbf._blocks`
+    for why. They are decoded in batches, so the file is walked only as far
+    as the caller reads. Bytes outside an intact block are skipped; once the
+    whole file is walked, ``on_damaged`` gets the counts if there were any.
+
+    Raises
+    ------
+    SbfError
+        If the file holds no intact SBF block at all.
+    """
+    blocks = IntactBlocks(
+        fpath.read_bytes(), frozenset(_BLOCK_NUMBERS[name] for name in names)
+    )
+    parser = sbf_parser.SbfParser()
+    batch: list[bytes] = []
+    size = 0
+    for block in blocks:
+        batch.append(block)
+        size += len(block)
+        if size >= _DECODE_BATCH_BYTES:
+            yield from parser.parse(b"".join(batch))
+            batch, size = [], 0
+    if batch:
+        yield from parser.parse(b"".join(batch))
+    if blocks.n_intact == 0:
+        msg = f"{fpath} holds no intact SBF block"
+        raise SbfError(msg)
+    if on_damaged is not None and blocks.dropped_bytes:
+        on_damaged(blocks)
+
+
 _TOW_DNU: int = 4_294_967_295  # Section 4.1.3, p.253
 _WNC_DNU: int = 65_535
 _SVID_DNU: int = 0  # Section 4.1.9, p.255
@@ -156,7 +205,9 @@ _FIXED_FREQ_HZ: dict[int, float] = {
 }
 
 
-def _iter_epoch_groups(fpath: Path) -> Iterator[dict[str, dict[str, Any]]]:
+def _iter_epoch_groups(
+    fpath: Path, on_damaged: Callable[[IntactBlocks], None] | None = None
+) -> Iterator[dict[str, dict[str, Any]]]:
     """Yield the blocks of each epoch that has a MeasEpoch block.
 
     Blocks are grouped by their receiver time stamp (WNc, TOW), which never
@@ -169,6 +220,9 @@ def _iter_epoch_groups(fpath: Path) -> Iterator[dict[str, dict[str, Any]]]:
     ----------
     fpath : Path
         SBF file.
+    on_damaged : callable, optional
+        Gets the block counts once the file is walked, if it held bytes
+        outside an intact block.
 
     Yields
     ------
@@ -177,9 +231,7 @@ def _iter_epoch_groups(fpath: Path) -> Iterator[dict[str, dict[str, Any]]]:
     """
     group: dict[str, dict[str, Any]] = {}
     key: tuple[int, int] | None = None
-    for name, data in sbf_parser.SbfParser().read(str(fpath)):
-        if name not in _EPOCH_BLOCKS:
-            continue
+    for name, data in _decoded_blocks(fpath, _EPOCH_BLOCKS, on_damaged):
         tow = int(data["TOW"])
         wn = int(data["WNc"])
         if tow == _TOW_DNU or wn == _WNC_DNU:
@@ -1439,6 +1491,22 @@ class SbfReader(GNSSDataReader):
 
     file_type: ClassVar[str] = "sbf"
 
+    # whether the warning about damaged bytes was logged: once per reader,
+    # although every scan of the file finds them
+    _damage_reported: bool = PrivateAttr(default=False)
+
+    def _report_damaged(self, blocks: IntactBlocks) -> None:
+        """Warn once per reader about bytes outside an intact block."""
+        if self._damage_reported:
+            return
+        self._damage_reported = True
+        log.warning(
+            "sbf_damaged_bytes_skipped",
+            file=self.fpath.name,
+            stretches=blocks.dropped_stretches,
+            bytes=blocks.dropped_bytes,
+        )
+
     @property
     def source_format(self) -> str:
         return "sbf"
@@ -1469,12 +1537,13 @@ class SbfReader(GNSSDataReader):
 
         Raises
         ------
-        LookupError
-            If the file contains no decodable epochs.
+        SbfError
+            If the file contains no decodable epochs. It is a
+            ``LookupError`` too.
         """
         for epoch in self.iter_epochs():
             return epoch.timestamp
-        raise LookupError(f"No epochs in {self.fpath}")
+        raise SbfError(f"No epochs in {self.fpath}")
 
     @cached_property
     def end_time(self) -> datetime:
@@ -1487,14 +1556,15 @@ class SbfReader(GNSSDataReader):
 
         Raises
         ------
-        LookupError
-            If the file contains no decodable epochs.
+        SbfError
+            If the file contains no decodable epochs. It is a
+            ``LookupError`` too.
         """
         last: datetime | None = None
         for epoch in self.iter_epochs():
             last = epoch.timestamp
         if last is None:
-            raise LookupError(f"No epochs in {self.fpath}")
+            raise SbfError(f"No epochs in {self.fpath}")
         return last
 
     @cached_property
@@ -1540,7 +1610,7 @@ class SbfReader(GNSSDataReader):
         -----
         Scans the entire file once; result is cached.
         """
-        count = sum(1 for _ in _iter_epoch_groups(self.fpath))
+        count = sum(1 for _ in _iter_epoch_groups(self.fpath, self._report_damaged))
         log.debug("sbf_epoch_count", fpath=str(self.fpath), num_epochs=count)
         return count
 
@@ -1559,11 +1629,11 @@ class SbfReader(GNSSDataReader):
 
         Raises
         ------
-        LookupError
-            If no ReceiverSetup block is found.
+        SbfError
+            If no intact ReceiverSetup block is found. It is a
+            ``LookupError`` too.
         """
-        parser = sbf_parser.SbfParser()
-        for name, data in parser.read(str(self.fpath)):
+        for name, data in _decoded_blocks(self.fpath, frozenset({"ReceiverSetup"})):
             if name == "ReceiverSetup":
                 return SbfHeader(
                     marker_name=_decode_bytes(data["MarkerName"]),
@@ -1584,7 +1654,7 @@ class SbfReader(GNSSDataReader):
                     gnss_fw_version=_decode_bytes(data["GNSSFWVersion"]),
                     product_name=_decode_bytes(data["ProductName"]),
                 )
-        raise LookupError(f"No ReceiverSetup block found in {self.fpath}")
+        raise SbfError(f"No ReceiverSetup block found in {self.fpath}")
 
     # ------------------------------------------------------------------
     # Epoch iterator
@@ -1606,7 +1676,7 @@ class SbfReader(GNSSDataReader):
           where it is logged, as the ``SNR`` variable of :meth:`to_ds`.
         - Signals not in the signal table are skipped.
         """
-        for group in _iter_epoch_groups(self.fpath):
+        for group in _iter_epoch_groups(self.fpath, self._report_damaged):
             meas = group["MeasEpoch"]
             tow_ms = int(meas["TOW"])
             wn = int(meas["WNc"])
@@ -1766,7 +1836,7 @@ class SbfReader(GNSSDataReader):
         """
         groups: list[dict[str, dict[str, Any]]] = []
         timestamps: list[np.datetime64] = []
-        for group in _iter_epoch_groups(self.fpath):
+        for group in _iter_epoch_groups(self.fpath, self._report_damaged):
             meas = group["MeasEpoch"]
             ts = _tow_wn_to_gps(int(meas["TOW"]), int(meas["WNc"]))
             timestamps.append(np.datetime64(ts.replace(tzinfo=None), "ns"))
@@ -1818,7 +1888,11 @@ class SbfReader(GNSSDataReader):
         ssi_arr = _snr_dbhz_to_ssi(snr_arr).astype(DTYPES["SSI"])
 
         coords_obs: dict[str, Any] = {
-            "epoch": ("epoch", timestamps, epoch_coord_attrs("GPS")),
+            "epoch": (
+                "epoch",
+                np.array(timestamps, dtype="datetime64[ns]"),
+                epoch_coord_attrs("GPS"),
+            ),
             "sid": xr.DataArray(
                 np.array(sorted_sids, dtype=object),
                 dims=["sid"],
@@ -2086,7 +2160,11 @@ class SbfReader(GNSSDataReader):
                         pvt_status_arr[t, cols] = pvt_raw
 
         coords_meta: dict[str, Any] = {
-            "epoch": ("epoch", timestamps, epoch_coord_attrs("GPS")),
+            "epoch": (
+                "epoch",
+                np.array(timestamps, dtype="datetime64[ns]"),
+                epoch_coord_attrs("GPS"),
+            ),
             "sid": xr.DataArray(
                 sorted_sids, dims=["sid"], attrs=COORDS_METADATA["sid"]
             ),

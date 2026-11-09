@@ -180,6 +180,27 @@ store code skips the S3 tests
   pinned. Otherwise the difference is a bug: run `just reference-check`
   locally to fix it.
 
+### Fuzzing
+
+A second workflow, **Fuzzing** (`.github/workflows/fuzz.yml`), feeds random
+input to the readers and the file name parser with
+[atheris](https://github.com/google/atheris). It fails on any exception
+the code doesn't document for bad input, on a hang and on a memory
+blow-up. It runs weekly for 10 minutes per target and opens an issue for a
+crash, and for 1 minute per target on a pull request that changes a
+reader, the file name parser or the fuzzing setup. It is not part of
+`ci-ok`. Every input that once found a bug is kept in `fuzz/crashes/`,
+and the tests replay it on every pull request. To fuzz locally (Linux
+x86_64 only):
+
+```bash
+uv sync --group fuzz
+just fuzz sbf 600    # target: rinex3, rinex2, nav, nmea, sbf or filename
+```
+
+A crash lands in `.fuzz/`. After the fix, copy the input to
+`fuzz/crashes/<target>/` under a name that says what it holds.
+
 ## Pull request guidelines
 
 A new pull request starts from the template in

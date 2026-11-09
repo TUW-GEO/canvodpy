@@ -5,6 +5,7 @@ from pathlib import Path
 import numpy as np
 import pytest
 
+from canvod.readers.gnss_specs.exceptions import RinexError, RinexNavError
 from canvod.readers.rinex.nav import read_rinex_nav
 
 NAV_DIR = "rinex_v3_04_nav_data/02_canopy"
@@ -296,3 +297,83 @@ def test_a_file_without_records_of_a_known_system_is_refused(tmp_path: Path) -> 
 def test_no_files_are_refused() -> None:
     with pytest.raises(ValueError, match="no navigation files given"):
         read_rinex_nav([])
+
+
+_QZSS_HEADER = (
+    "     3.05           N: GNSS NAV DATA    J: QZSS             RINEX VERSION / TYPE\n"
+)
+_END_OF_HEADER = (
+    "                                                            END OF HEADER\n"
+)
+# one QZSS record (RINEX 3.05, Table A12), the record of the test above
+_QZSS_RECORD = (
+    "J01 2014 05 13 08 15 12 3.323303535581D-04-1.818989403546D-11"
+    " 0.000000000000D+00\n"
+    "     6.900000000000D+01-4.927812500000D+02 2.222949737636D-09"
+    " 7.641996743610D-01\n"
+    "    -1.654587686062D-05 7.542252133135D-02 1.197867095470D-05"
+    " 6.492895933151D+03\n"
+    "     2.025120000000D+05-8.381903171539D-07-9.211997910060D-01"
+    "-2.041459083557D-06\n"
+    "     7.082252892260D-01-1.558437500000D+02-1.575843337115D+00"
+    "-2.349740733276D-09\n"
+    "    -6.793140104410D-10 2.000000000000D+00 1.792000000000D+03"
+    " 1.000000000000D+00\n"
+    "     2.000000000000D+00 1.000000000000D+00-4.656612873077D-09"
+    " 6.900000000000D+01\n"
+    "     1.989000000000D+05 0.000000000000D+00\n"
+)
+
+
+def _write_nav(tmp_path: Path, text: str | bytes) -> Path:
+    path = tmp_path / "FANA01INK_R_20141330000_01D_JN.rnx"
+    if isinstance(text, str):
+        text = text.encode("ascii")
+    path.write_bytes(text)
+    return path
+
+
+def test_a_byte_that_is_not_ascii_in_a_comment_is_read_past(tmp_path: Path) -> None:
+    comment = b"Station M\xfcnchen".ljust(60) + b"COMMENT\n"
+    path = _write_nav(
+        tmp_path,
+        _QZSS_HEADER.encode()
+        + comment
+        + _END_OF_HEADER.encode()
+        + _QZSS_RECORD.encode(),
+    )
+    nav = read_rinex_nav([path])
+    assert nav["J"].e.item() == 7.542252133135e-02
+
+
+@pytest.mark.parametrize(
+    ("bad_record", "line"),
+    [
+        (_QZSS_RECORD.replace("J01", "J0E", 1), 3),
+        (_QZSS_RECORD.replace("2014 05 13", "2014 13 13", 1), 3),
+        (_QZSS_RECORD.replace("2014 05 13 08 15 12", "2014 05 13 08 15   ", 1), 3),
+        (_QZSS_RECORD.replace("7.542252133135D-02", "7.54225-133135D-02", 1), 3),
+        (_QZSS_RECORD.replace("6.9000", "6.\x00000", 1), 3),
+    ],
+    ids=["satellite", "month", "missing-second", "field", "control-byte"],
+)
+def test_a_record_that_cant_be_read_names_file_and_line(
+    tmp_path: Path, bad_record: str, line: int
+) -> None:
+    path = _write_nav(tmp_path, _QZSS_HEADER + _END_OF_HEADER + bad_record)
+    with pytest.raises(RinexNavError, match=rf"_JN\.rnx, line {line}: "):
+        read_rinex_nav([path])
+
+
+def test_a_byte_that_is_not_ascii_in_a_record_names_file_and_line(
+    tmp_path: Path,
+) -> None:
+    record = _QZSS_RECORD.encode().replace(b"7.5422", b"7.\xe9422", 1)
+    path = _write_nav(tmp_path, (_QZSS_HEADER + _END_OF_HEADER).encode() + record)
+    with pytest.raises(RinexNavError, match=r"_JN\.rnx, line 3: "):
+        read_rinex_nav([path])
+
+
+def test_the_navigation_error_is_a_rinex_error_and_a_value_error() -> None:
+    assert issubclass(RinexNavError, RinexError)
+    assert issubclass(RinexNavError, ValueError)

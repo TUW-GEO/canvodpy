@@ -30,6 +30,7 @@ from typing import Any, ClassVar, Self
 
 import numpy as np
 import pint
+import pytz
 import structlog
 import xarray as xr
 from pydantic import (
@@ -49,6 +50,7 @@ from canvod.readers.gnss_specs.constellations import (
     V2_CODE_UNRESOLVED,
 )
 from canvod.readers.gnss_specs.exceptions import (
+    CorruptedFileError,
     IncompleteEpochError,
     InvalidEpochError,
 )
@@ -84,6 +86,9 @@ V2_OBS_FIELD_WIDTH = 16  # F14.3 + I1 (LLI) + I1 (SSI)
 V2_MAX_OBS_PER_LINE = 5  # Max observations per line (5 x 16 = 80 chars)
 V2_MAX_SATS_PER_LINE = 12  # Max satellites on the epoch line
 V2_SAT_FIELD_WIDTH = 3  # Each satellite field: A1 + I2
+V2_OBS_CODE_LENGTH = 2  # An observation code: type + frequency, e.g. L1
+# a header date ending in a time zone, e.g. 20250102 03:04:05UTC
+_V2_DATE_ZONE = re.compile(r"(?P<date>.*\d)\s*(?P<zone>[A-Z]{3,4})$")
 # LLI bits (rinex211.txt Table A2 -> RINEX 3.04 Table A3). Bit 0 (lost
 # lock) means the same in both. v2 bit 1 flags the opposite wavelength
 # factor; it is translated into v3 bit 1 (half-cycle ambiguity). v2 bit 2
@@ -327,7 +332,7 @@ class Rnxv2Header(BaseModel):
                 data["pgm"] = line[:20].strip()
                 data["run_by"] = line[20:40].strip()
                 date_str = line[40:60].strip()
-                data["date"] = _parse_v2_header_date(date_str)
+                data["date"] = _parse_v2_header_date(date_str, fpath)
 
             elif label == "COMMENT":
                 comments.append(line[:60].strip())
@@ -459,7 +464,9 @@ class Rnxv2Header(BaseModel):
         data.setdefault("antenna_delta", [0 * UREG.meters] * 3)
         data.setdefault("pgm", "")
         data.setdefault("run_by", "")
-        data.setdefault("date", datetime.now(UTC))
+        if "date" not in data:
+            msg = f"{fpath}: mandatory header record PGM / RUN BY / DATE is missing"
+            raise CorruptedFileError(msg)
         if "t0" not in data:
             msg = "mandatory header record TIME OF FIRST OBS is missing"
             raise ValueError(msg)
@@ -490,6 +497,12 @@ class Rnxv2Header(BaseModel):
         for system in systems_present:
             codes = []
             for ot in obs_types:
+                if len(ot) != V2_OBS_CODE_LENGTH:
+                    msg = (
+                        f"{fpath}: '# / TYPES OF OBSERV' holds {ot!r}, not a "
+                        "two-character observation code (RINEX 2.11, Table A1)"
+                    )
+                    raise CorruptedFileError(msg)
                 obs_type, freq_num = _parse_v2_obs_code(ot)
                 band = system_bands.get(system, {}).get(freq_num)
                 codes.append(
@@ -524,35 +537,51 @@ class Rnxv2Header(BaseModel):
         )
 
 
-def _parse_v2_header_date(date_str: str) -> datetime:
-    """Parse date string from PGM / RUN BY / DATE header.
+def _parse_v2_header_date(date_str: str, fpath: Path) -> datetime:
+    """Parse the date of the PGM / RUN BY / DATE header record.
 
-    Tries multiple common formats used by different RINEX producers.
+    RINEX 2.11 leaves its format open (Table A1), so the formats different
+    programs write are tried in turn. A trailing time zone is read as in
+    RINEX 3: ``LCL`` means local time with the zone unknown, and the date
+    is then returned without a time zone. A date without a zone has its
+    zone unknown too and is returned without a time zone, as for ``LCL``.
+
+    Raises
+    ------
+    CorruptedFileError
+        If the date can't be read.
     """
     formats = [
         "%d-%b-%y %H:%M",  # 24-MAR-01 14:43
         "%d-%b-%Y %H:%M",  # 24-MAR-2001 14:43
         "%Y%m%d %H%M%S",  # 20050324 141200
+        "%Y%m%d %H:%M:%S",  # 20250102 03:04:05 (teqc)
         "%Y-%m-%d %H:%M",  # 2005-03-24 14:12
         "%y-%b-%d %H:%M",  # 01-MAR-24 14:43
     ]
-    for fmt in formats:
+    # the zone may follow the time with or without a blank (teqc writes
+    # "20250102 03:04:05UTC")
+    text, zone = date_str, None
+    zoned = _V2_DATE_ZONE.match(date_str)
+    if zoned:
+        text, zone = zoned["date"], zoned["zone"]
+    # the date alone, if the time is in a form none of the formats know
+    candidates = [(text, fmt) for fmt in formats]
+    if text.split():
+        candidates.append((text.split()[0], "%d-%b-%y"))
+    for candidate, fmt in candidates:
         try:
-            dt = datetime.strptime(date_str, fmt)
-            return dt.replace(tzinfo=UTC)
+            dt = datetime.strptime(candidate, fmt)
         except ValueError:
             continue
-
-    # Last resort: try to extract components
-    parts = date_str.split()
-    if parts:
+        if zone is None or zone == "LCL":
+            return dt
         try:
-            dt = datetime.strptime(parts[0], "%d-%b-%y")
-            return dt.replace(tzinfo=UTC)
-        except ValueError:
-            pass
-
-    return datetime.now(UTC)
+            return pytz.timezone(zone).localize(dt)
+        except pytz.UnknownTimeZoneError:
+            break
+    msg = f"{fpath}: the date of PGM / RUN BY / DATE can't be read ({date_str!r})"
+    raise CorruptedFileError(msg)
 
 
 def _safe_float(s: str, default: float = 0.0) -> float:
@@ -825,6 +854,11 @@ class Rnxv2Obs(GNSSDataReader, BaseModel):
             raise InvalidEpochError(msg) from e
 
         year = _expand_v2_year(yy)
+        try:
+            datetime(year, month, day, hour, minute, int(seconds))
+        except (ValueError, OverflowError) as e:
+            msg = f"Epoch line has no valid date and time: '{line}'"
+            raise InvalidEpochError(msg) from e
 
         # Parse satellite list from epoch line (up to 12 per line)
         sat_list: list[str] = []
@@ -1304,9 +1338,8 @@ class Rnxv2Obs(GNSSDataReader, BaseModel):
         n_epochs = len(timestamps)
         n_signals = len(sorted_signal_ids)
 
-        if n_epochs == 0 or n_signals == 0:
-            return xr.Dataset()
-
+        # A file without epochs gives a dataset with no epochs, as in RINEX 3;
+        # padding (to_ds) then gives it every signal ID.
         # Allocate arrays
         data_arrays = {
             "SNR": np.full((n_epochs, n_signals), np.nan, dtype=DTYPES["SNR"]),
@@ -1421,7 +1454,7 @@ class Rnxv2Obs(GNSSDataReader, BaseModel):
         coords = {
             "epoch": (
                 "epoch",
-                timestamps,
+                np.array(timestamps, dtype="datetime64[ns]"),
                 epoch_coord_attrs(self.header.time_system, self.fpath.name),
             ),
             "sid": signal_id_coord,

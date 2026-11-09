@@ -39,6 +39,15 @@ Background: `docs/packages/readers/building-a-reader.md`,
   give the same dataset on valid files.
 - SBF: one decoder for observations and auxiliary blocks, paired by time
   of week. Epochs stay in GPS time; never subtract leap seconds.
+- SBF: sbf-parser never sees raw file bytes. `sbf/_blocks.py` picks out
+  the intact blocks (CRC checked) of the types the reader reads; sbf-parser
+  1.0.3 crashes the process on a Length 0 or 4 header and on `DiffCorrIn`
+  (#678). Read blocks only through `_decoded_blocks` in `sbf/reader.py`.
+- Bad input ends in the reader's documented errors (`RinexError`,
+  `NmeaError`, `SbfError`, pydantic's `ValidationError`; plain `ValueError`
+  still in some places, #680), never in `IndexError`, `KeyError` or the
+  like. The fuzzer checks this (`fuzz/`, `just fuzz <target>`); keep an
+  input that found a bug in `fuzz/crashes/<target>/`.
 - Every reader sets the class attribute `file_type` (TYPE field of its
   files' canVOD names). `aggregate_glonass_fdma` is declared on
   `GNSSDataReader`; `False` is refused unless the reader sets
@@ -56,4 +65,6 @@ just test-package canvod-readers
 ```
 
 Real files come from the `test_data` submodule; tests that need them are
-marked `integration` and skip without it.
+marked `integration` and skip without it. Test files and fuzz seeds name
+the test persona's site (Fangorn, `canvod.utils.testing`), never a real
+site.

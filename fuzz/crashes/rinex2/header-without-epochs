@@ -1,0 +1,16 @@
+     2.11           OBSERVATION DATA    M (MIXED)           RINEX VERSION / TYPE
+Unknown                                 20250102 03:04:05UTCPGM / RUN BY / DATE
+BIT 2 OF LLI FLAGS DATA COLLECTED UNDER A/S CONDITION       COMMENT
+FANA                                                        MARKER NAME
+Tolkien             The Inklings                            OBSERVER / AGENCY
+-Unknown-           -Unknown-           -Unknown-           REC # / TYPE / VERS
+-Unknown-           -Unknown-                               ANT # / TYPE
+  5004115.3010  2463414.9340 -3086206.1040                  APPROX POSITION XYZ
+        0.0000        0.0000        0.0000                  ANTENNA: DELTA H/E/N
+     1     1                                                WAVELENGTH FACT L1/2
+     7    L1    L2    C1    P1    P2    S1    S2            # / TYPES OF OBSERV
+ SNR is mapped to RINEX snr flag value [0-9]                COMMENT
+  L1 & L2: min(max(int(snr_dBHz/6), 0), 9)                  COMMENT
+  2025     1     1     4     0    0.0000000     GPS         TIME OF FIRST OBS
+    18                                                      LEAP SECONDS
+                                                            END OF HEADER

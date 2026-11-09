@@ -362,7 +362,19 @@ except ValueError as e:
     print(f"Invalid epoch date or time: {e}")
 ```
 
+A damaged header raises `CorruptedFileError` naming the file: a header
+line too short for its fixed columns, a missing `PGM / RUN BY / DATE`
+record, or a date there that can't be read. The date is
+`yyyymmdd hhmmss zone` (RINEX 3.04, Table A2). The zone `LCL`, local time
+with the zone unknown, gives a date without a time zone; any other zone
+must be a known time zone name such as `UTC`.
+
+A file with a header and no epochs gives a dataset with no epochs and
+every signal ID.
+
 !!! info "Exception hierarchy"
     All reader-specific exceptions inherit from `RinexError`, allowing
     broad `except RinexError` handling when needed alongside specific
-    sub-class recovery.
+    sub-class recovery. The navigation file reader raises
+    `RinexNavError`, a `RinexError` and a `ValueError`, naming the file
+    and, for a record that can't be read, its line.

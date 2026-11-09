@@ -1,0 +1,98 @@
+name: Fuzzing
+
+# Feeds random inputs to the readers and the file name parser (atheris,
+# fuzz/fuzz_<target>.py) and fails on any exception the code doesn't
+# document for bad input, a hang or a memory blow-up. Outside ci.yml and
+# ci-ok: a fuzzer can find a new crash that has nothing to do with the pull
+# request at hand. The tests replay the saved inputs on every pull request
+# (fuzz/tests).
+#
+# - weekly and by hand: 10 minutes per target (by hand: any length); a
+#   crash opens an issue
+# - a pull request that changes the fuzzing setup or a fuzzed reader:
+#   1 minute per target
+
+on:
+    schedule:
+        - cron: '0 5 * * 1'
+    workflow_dispatch:
+        inputs:
+            seconds:
+                description: 'Seconds per target'
+                type: number
+                default: 600
+    pull_request:
+        paths:
+            - 'fuzz/**'
+            - '.github/workflows/fuzz.yml'
+            - 'packages/canvod-readers/src/**'
+            - 'packages/canvod-preflight/src/**'
+
+permissions:
+    contents: read
+
+concurrency:
+    group: fuzz-${{ github.event_name == 'pull_request' && github.ref || github.run_id }}
+    cancel-in-progress: true
+
+env:
+    FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: 'true'
+
+jobs:
+    fuzz:
+        name: Fuzz • ${{ matrix.target }}
+        runs-on: ubuntu-latest # atheris has wheels for Linux x86_64 only
+        timeout-minutes: 90
+        permissions:
+            contents: read
+            issues: write
+        strategy:
+            fail-fast: false
+            matrix:
+                target: [rinex3, rinex2, nav, nmea, sbf, filename]
+        env:
+            FUZZ_SECONDS: ${{ github.event_name == 'pull_request' && 60 || inputs.seconds || 600 }}
+        steps:
+            - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+            - name: Install uv
+              uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2 # v10.3.3
+              with:
+                  enable-cache: true
+            - name: Install the project and atheris
+              run: uv python install && uv sync --locked --dev --group fuzz
+            - name: Install just
+              uses: taiki-e/install-action@1919c4a95903d2c33e4a221102edca87309fc14b # v2.89.0
+              with:
+                  tool: just
+            - name: Fuzz
+              run: just fuzz "${{ matrix.target }}" "$FUZZ_SECONDS" 2>&1 | tee fuzz.log
+              shell: bash -o pipefail {0}
+            - name: Keep the crash
+              if: failure()
+              uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+              with:
+                  name: fuzz-${{ matrix.target }}-crash
+                  path: .fuzz/${{ matrix.target }}-*
+                  if-no-files-found: ignore
+            - name: Open an issue for the crash
+              if: failure() && github.event_name != 'pull_request'
+              env:
+                  GH_TOKEN: ${{ github.token }}
+                  TITLE: 'Fuzzing: ${{ matrix.target }} crashed'
+                  RUN: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+              run: |
+                  {
+                      echo "The fuzzer found an input that ends in an error the code doesn't document, a hang or a memory blow-up."
+                      echo "The input is the artifact \`fuzz-${{ matrix.target }}-crash\` of $RUN."
+                      echo "Fix it, then save the input in \`fuzz/crashes/${{ matrix.target }}/\` so the tests replay it."
+                      echo
+                      echo '```text'
+                      tail -n 60 fuzz.log
+                      echo '```'
+                  } > body.md
+                  number=$(gh issue list --state open --search "in:title \"$TITLE\"" --json number --jq '.[0].number')
+                  if [ -n "$number" ]; then
+                      gh issue comment "$number" --body-file body.md
+                  else
+                      gh issue create --title "$TITLE" --label bug --body-file body.md
+                  fi
