@@ -57,6 +57,7 @@ from canvod.readers.gnss_specs.metadata import (
     OBSERVABLES_METADATA,
     epoch_coord_attrs,
 )
+from canvod.readers.sbf._blocks import intact_blocks
 from canvod.readers.sbf._registry import (
     FDMA_SIGNAL_NUMS,
     SIGNAL_TABLE,
@@ -80,6 +81,7 @@ from canvod.utils.tools import hashing
 
 try:
     import sbf_parser
+    from sbf_parser.block_structure import BLOCKNAMES, BLOCKNUMBERS
 except ImportError as _err:
     raise ImportError(
         "sbf-parser is required for SbfReader. Install it with: uv add sbf-parser"
@@ -143,6 +145,40 @@ _EPOCH_BLOCKS: frozenset[str] = frozenset(
     }
 )
 
+#: Block number of each block name sbf-parser knows
+_BLOCK_NUMBERS: dict[str, int] = dict(zip(BLOCKNAMES, BLOCKNUMBERS, strict=True))
+
+
+def _decoded_blocks(
+    fpath: Path, names: frozenset[str], *, warn: bool
+) -> Iterator[tuple[str, dict[str, Any]]]:
+    """Decode the intact blocks of the given names, in file order.
+
+    Only these blocks reach ``sbf-parser``; see :mod:`canvod.readers.sbf._blocks`
+    for why. Bytes outside an intact block are skipped, with a warning
+    naming the file when ``warn`` is set.
+
+    Raises
+    ------
+    SbfError
+        If the file holds no intact SBF block at all.
+    """
+    blocks = intact_blocks(
+        fpath.read_bytes(), frozenset(_BLOCK_NUMBERS[name] for name in names)
+    )
+    if blocks.n_intact == 0:
+        msg = f"{fpath} holds no intact SBF block"
+        raise SbfError(msg)
+    if warn and blocks.dropped_bytes:
+        log.warning(
+            "sbf_damaged_bytes_skipped",
+            file=fpath.name,
+            stretches=blocks.dropped_stretches,
+            bytes=blocks.dropped_bytes,
+        )
+    yield from sbf_parser.SbfParser().parse(blocks.data)
+
+
 _TOW_DNU: int = 4_294_967_295  # Section 4.1.3, p.253
 _WNC_DNU: int = 65_535
 _SVID_DNU: int = 0  # Section 4.1.9, p.255
@@ -178,9 +214,7 @@ def _iter_epoch_groups(fpath: Path) -> Iterator[dict[str, dict[str, Any]]]:
     """
     group: dict[str, dict[str, Any]] = {}
     key: tuple[int, int] | None = None
-    for name, data in sbf_parser.SbfParser().read(str(fpath)):
-        if name not in _EPOCH_BLOCKS:
-            continue
+    for name, data in _decoded_blocks(fpath, _EPOCH_BLOCKS, warn=True):
         tow = int(data["TOW"])
         wn = int(data["WNc"])
         if tow == _TOW_DNU or wn == _WNC_DNU:
@@ -1563,11 +1597,11 @@ class SbfReader(GNSSDataReader):
         Raises
         ------
         SbfError
-            If no ReceiverSetup block is found. It is a
+            If no intact ReceiverSetup block is found. It is a
             ``LookupError`` too.
         """
-        parser = sbf_parser.SbfParser()
-        for name, data in parser.read(str(self.fpath)):
+        blocks = _decoded_blocks(self.fpath, frozenset({"ReceiverSetup"}), warn=False)
+        for name, data in blocks:
             if name == "ReceiverSetup":
                 return SbfHeader(
                     marker_name=_decode_bytes(data["MarkerName"]),
