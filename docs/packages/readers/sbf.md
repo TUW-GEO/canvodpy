@@ -599,7 +599,7 @@ The reader decodes only intact blocks: Length a multiple of 4 and more than
 the 8 header bytes, inside the file, and a matching CRC (Septentrio
 reference guide, Section 4.1.1). Bytes outside an intact block, such as a
 block damaged on disk, are skipped, and the reader logs
-`sbf_damaged_bytes_skipped` with the file, the number of skipped
+`sbf_damaged_bytes_skipped` once, with the file, the number of skipped
 stretches and bytes. An epoch whose `MeasEpoch` block is skipped is
 missing from the dataset.
 

@@ -12,11 +12,12 @@ import struct
 from pathlib import Path
 
 import pytest
+from sbf_parser.block_structure import BLOCKNAMES
 from structlog.testing import capture_logs
 
 from canvod.readers.gnss_specs.exceptions import SbfError
-from canvod.readers.sbf._blocks import intact_blocks
-from canvod.readers.sbf.reader import SbfReader
+from canvod.readers.sbf._blocks import IntactBlocks
+from canvod.readers.sbf.reader import _EPOCH_BLOCKS, SbfReader
 
 SBF_FILE = (
     Path(__file__).parent
@@ -56,9 +57,9 @@ def test_a_header_with_length_0_or_4_is_dropped(length: int) -> None:
     good = _block(MEAS_EPOCH, b"\x01" * 16)
     raw = good + _with_length(_block(MEAS_EPOCH, b"\x02" * 16), length) + good
 
-    blocks = intact_blocks(raw, frozenset({MEAS_EPOCH}))
+    blocks = IntactBlocks(raw, frozenset({MEAS_EPOCH}))
 
-    assert blocks.data == good + good
+    assert list(blocks) == [good, good]
     assert blocks.n_intact == 2
     assert blocks.dropped_stretches == 1
     assert blocks.dropped_bytes == 24  # the whole damaged block
@@ -67,11 +68,28 @@ def test_a_header_with_length_0_or_4_is_dropped(length: int) -> None:
 def test_a_block_of_a_type_not_read_is_never_kept() -> None:
     good = _block(MEAS_EPOCH, b"\x01" * 16)
 
-    blocks = intact_blocks(good + _diff_corr_in() + good, frozenset({MEAS_EPOCH}))
+    blocks = IntactBlocks(good + _diff_corr_in() + good, frozenset({MEAS_EPOCH}))
 
-    assert blocks.data == good + good
+    assert list(blocks) == [good, good]
     assert blocks.n_intact == 3
     assert blocks.dropped_bytes == 0
+
+
+def test_the_walk_goes_only_as_far_as_it_is_read() -> None:
+    good = _block(MEAS_EPOCH, b"\x01" * 16)
+    blocks = IntactBlocks(good + b"\x00" * 12 + good, frozenset({MEAS_EPOCH}))
+
+    walk = iter(blocks)
+    assert next(walk) == good
+    assert blocks.dropped_bytes == 0  # the damage after the first block
+
+    assert list(walk) == [good]
+    assert blocks.dropped_bytes == 12
+
+
+def test_every_block_the_reader_reads_is_known_to_sbf_parser() -> None:
+    # the reader takes block numbers from sbf-parser's internal block table
+    assert _EPOCH_BLOCKS | {"ReceiverSetup"} <= set(BLOCKNAMES)
 
 
 @pytest.fixture(scope="module")
@@ -118,6 +136,20 @@ def test_a_damaged_block_drops_only_its_epoch_and_warns(
     assert warnings[0]["file"] == SBF_FILE.name
     assert warnings[0]["stretches"] == 1
     assert warnings[0]["bytes"] > 0
+
+
+@pytest.mark.integration
+def test_a_damaged_file_warns_once_per_reader(sbf_bytes: bytes, tmp_path: Path) -> None:
+    at = _first_block(sbf_bytes, MEAS_EPOCH)
+    damaged = sbf_bytes[: at + 6] + b"\x00\x00" + sbf_bytes[at + 8 :]
+    reader = SbfReader(fpath=_write(tmp_path, damaged))
+
+    with capture_logs() as logs:
+        _ = reader.start_time, reader.end_time, reader.num_epochs
+        reader.to_ds()
+
+    warnings = [log for log in logs if log["event"] == "sbf_damaged_bytes_skipped"]
+    assert len(warnings) == 1
 
 
 @pytest.mark.integration
