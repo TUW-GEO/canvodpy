@@ -1822,7 +1822,11 @@ class SbfReader(GNSSDataReader):
         ssi_arr = _snr_dbhz_to_ssi(snr_arr).astype(DTYPES["SSI"])
 
         coords_obs: dict[str, Any] = {
-            "epoch": ("epoch", timestamps, epoch_coord_attrs("GPS")),
+            "epoch": (
+                "epoch",
+                np.array(timestamps, dtype="datetime64[ns]"),
+                epoch_coord_attrs("GPS"),
+            ),
             "sid": xr.DataArray(
                 np.array(sorted_sids, dtype=object),
                 dims=["sid"],
@@ -2090,7 +2094,11 @@ class SbfReader(GNSSDataReader):
                         pvt_status_arr[t, cols] = pvt_raw
 
         coords_meta: dict[str, Any] = {
-            "epoch": ("epoch", timestamps, epoch_coord_attrs("GPS")),
+            "epoch": (
+                "epoch",
+                np.array(timestamps, dtype="datetime64[ns]"),
+                epoch_coord_attrs("GPS"),
+            ),
             "sid": xr.DataArray(
                 sorted_sids, dims=["sid"], attrs=COORDS_METADATA["sid"]
             ),
