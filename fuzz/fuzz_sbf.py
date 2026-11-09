@@ -21,6 +21,7 @@ def fuzz_one_input(data: bytes) -> None:
     try:
         SbfReader(fpath=as_file(data, NAME)).to_ds()
     except SbfError, ValidationError:
+        # a documented error for bad input: not a bug
         pass
 
 

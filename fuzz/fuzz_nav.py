@@ -19,6 +19,7 @@ def fuzz_one_input(data: bytes) -> None:
     try:
         read_rinex_nav([as_file(data, NAME)])
     except RinexNavError:
+        # a documented error for bad input: not a bug
         pass
 
 

@@ -17,6 +17,7 @@ def fuzz_one_input(data: bytes) -> None:
     try:
         CanVODFilename.from_filename(data.decode("utf-8", errors="replace"))
     except ValueError:
+        # a documented error for bad input: not a bug
         pass
 
 
