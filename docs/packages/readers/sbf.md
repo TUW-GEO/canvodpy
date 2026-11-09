@@ -593,6 +593,30 @@ See [:octicons-arrow-right-24: Satellite Catalog](satellite-catalog.md) for the 
 
 ---
 
+## Damaged files
+
+The reader decodes only intact blocks: Length a multiple of 4 and more than
+the 8 header bytes, inside the file, and a matching CRC (Septentrio
+reference guide, Section 4.1.1). Bytes outside an intact block, such as a
+block damaged on disk, are skipped, and the reader logs
+`sbf_damaged_bytes_skipped` with the file, the number of skipped
+stretches and bytes. An epoch whose `MeasEpoch` block is skipped is
+missing from the dataset.
+
+Blocks the reader doesn't read, `DiffCorrIn` among them, are never
+decoded. The SBF library crashes the Python process on a block header
+with Length 0 or 4 and on a `DiffCorrIn` block (canvodpy #678), so a
+receiver that logs differential corrections writes files the reader
+still reads.
+
+A file with no intact block raises `SbfError` naming the file, and so
+does a file without a `ReceiverSetup` block. `SbfError` is a `ValueError`
+and a `LookupError`. `to_ds()` of a file without epochs gives a dataset
+with no epochs and every signal ID, as the RINEX readers do; its
+`start_time` and `end_time` raise `SbfError`.
+
+---
+
 ## Differences vs. RINEX (`Rnxv3Obs`)
 
 | Aspect | RINEX v3 (`Rnxv3Obs`) | SBF (`SbfReader`) |

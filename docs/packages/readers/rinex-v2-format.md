@@ -131,6 +131,19 @@ RINEX 2.11 Table A1 defines `S` as "raw signal strengths or SNR values as given 
 
 ## Header
 
+The date of `PGM / RUN BY / DATE` has no fixed form in RINEX 2.11
+(Table A1). The reader takes the forms producers write, for example
+`20260317 16:18:01UTC` (teqc), `20250101 000012 UTC` and
+`24-MAR-01 14:43`. A date without a zone is UTC; the zone `LCL` gives a
+date without a time zone. A missing record or a date in no known form
+raises `CorruptedFileError` naming the file, and so does an entry of
+`# / TYPES OF OBSERV` that is not a two-character code.
+
+An epoch header whose date and time don't exist (month 13, for example) is
+skipped like an epoch header that can't be read; the `Rnxv3Obs` reader
+rejects such a file instead. A file without epochs gives a dataset with no
+epochs and every signal ID, as in RINEX 3.
+
 `obs_codes_per_system` lists the observation codes in RINEX 3 notation per system, with the resolved code or marker in the attribute position, for a mixed GPS/GLONASS file with `L1 L2 C1 P1 P2 S1 S2`:
 
 ```python
