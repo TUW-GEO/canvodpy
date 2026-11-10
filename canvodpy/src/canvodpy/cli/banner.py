@@ -61,8 +61,8 @@ SUPPORT_EMAIL = "support@canvodpy.eu"
 #: The licence, at the end of the last line.
 LICENSE = "Apache-2.0"
 
-#: The authors, on the last line before the licence.
-HOLDER = "2026 Nicolas François Bader, CLIMERS, TU Wien"
+#: The copyright notice, on the last line before the licence.
+HOLDER = "Copyright © 2026 Nicolas François Bader, CLIMERS, TU Wien"
 
 #: Frames per second of the flight: its 25 frames take about 0.8 s.
 FRAME_RATE = 30
