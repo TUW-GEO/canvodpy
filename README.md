@@ -179,7 +179,7 @@
 | packages/canvod-readers/src/canvod/readers/nmea/\_\_init\_\_.py                 |        2 |        0 |    100% |           |
 | packages/canvod-readers/src/canvod/readers/nmea/exceptions.py                   |       10 |        0 |    100% |           |
 | packages/canvod-readers/src/canvod/readers/nmea/v4\_00.py                       |      389 |       48 |     88% |74-75, 184, 192, 197, 204, 258-259, 269, 317, 325-326, 415-416, 420-422, 426-427, 497-498, 525, 529, 533, 537-541, 545, 549-553, 559, 593-594, 647-649, 743, 748-749, 804-805, 830-831 |
-| packages/canvod-readers/src/canvod/readers/preprocessing.py                     |      163 |        7 |     96% |164, 168-176, 182, 319, 331 |
+| packages/canvod-readers/src/canvod/readers/preprocessing.py                     |      163 |        6 |     96% |164, 168-176, 182, 331 |
 | packages/canvod-readers/src/canvod/readers/rinex/\_\_init\_\_.py                |        4 |        0 |    100% |           |
 | packages/canvod-readers/src/canvod/readers/rinex/nav.py                         |      105 |        3 |     97% |234, 241, 253 |
 | packages/canvod-readers/src/canvod/readers/rinex/v2\_11.py                      |      750 |      152 |     80% |189-192, 208, 222, 284-286, 344, 375-376, 393-397, 400, 423, 425-429, 435, 438-439, 447-449, 452, 468-469, 471-472, 488-491, 519, 522, 528-529, 591-592, 742, 745, 753, 781, 785-799, 803-805, 809, 813-817, 876-881, 952-953, 957, 994-995, 998-999, 1087-1092, 1097-1102, 1124-1138, 1141-1143, 1192, 1196-1214, 1292, 1299, 1301, 1309, 1374, 1376, 1385, 1395-1396, 1423, 1518, 1567, 1587, 1593, 1596-1603, 1615-1631, 1652-1695, 1727, 1731, 1739-1741, 1747, 1772-1777 |
@@ -252,7 +252,7 @@
 | packages/canvod-viz/src/canvod/viz/widgets/hemisphere\_widgets.py               |       27 |        0 |    100% |           |
 | packages/canvod-vod/src/canvod/vod/\_\_init\_\_.py                              |        4 |        0 |    100% |           |
 | packages/canvod-vod/src/canvod/vod/calculator.py                                |       76 |        8 |     89% |56, 78, 122, 129-136 |
-| **TOTAL**                                                                       | **30606** | **7499** | **75%** |           |
+| **TOTAL**                                                                       | **30606** | **7498** | **76%** |           |
 
 
 ## Setup coverage badge
