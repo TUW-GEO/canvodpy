@@ -214,11 +214,13 @@ def test_website_and_version_below_the_logo(terminal, flights):
     )
 
 
-def test_no_copyright_claim(terminal, flights):
+def test_copyright_notice(terminal, flights):
     out = terminal()
     banner.show_banner()
-    assert "Copyright" not in out.getvalue()
-    assert "©" not in out.getvalue()
+    assert (
+        "Copyright © 2026 Nicolas François Bader, CLIMERS, TU Wien · Apache-2.0"
+        in out.getvalue()
+    )
 
 
 def test_cli_without_a_command_shows_the_logo_then_the_help(monkeypatch):
