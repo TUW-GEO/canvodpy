@@ -4638,19 +4638,29 @@ Private reporting via GitHub Security Advisories.</p>
 </thead>
 <tbody>
 <tr>
-<td><code>test_platforms.yml</code></td>
-<td>Push, PR</td>
-<td>Multi-platform tests (Linux/macOS on Apple silicon/Windows)</td>
-</tr>
-<tr>
-<td><code>test_coverage.yml</code></td>
-<td>Push, PR</td>
-<td>Coverage tracking <span class="arithmatex">\(\rightarrow\)</span> Coveralls</td>
+<td><code>ci.yml</code></td>
+<td>PR, push to <code>main</code>, weekly, manual</td>
+<td>Calls the four workflows below and sums them up in one check, <code>ci-ok</code>; skips what a change doesn't need (<a href="../adr/0024-ci-runs-what-a-change-needs/">ADR 0024</a>)</td>
 </tr>
 <tr>
 <td><code>code_quality.yml</code></td>
-<td>Push</td>
+<td>Called by <code>ci.yml</code></td>
 <td>Linting, formatting, type checking, building every package without the workspace sources (<code>just check-build</code>)</td>
+</tr>
+<tr>
+<td><code>docs_quality.yml</code></td>
+<td>Called by <code>ci.yml</code>; manual</td>
+<td>Vale on the changed docs pages, the reference pages, the link check of the built site</td>
+</tr>
+<tr>
+<td><code>test_platforms.yml</code></td>
+<td>Called by <code>ci.yml</code></td>
+<td>Multi-platform tests (Linux/macOS on Apple silicon/Windows); the Linux job reports the coverage to Coveralls</td>
+</tr>
+<tr>
+<td><code>test_s3.yml</code></td>
+<td>Called by <code>ci.yml</code></td>
+<td>Tests of stores on S3 against an S3 emulator</td>
 </tr>
 <tr>
 <td><code>dependency_audit.yml</code></td>
@@ -4770,7 +4780,7 @@ Private reporting via GitHub Security Advisories.</p>
       <div class="md-copyright">
   
     <div class="md-copyright__highlight">
-      2026 Nicolas François Bader, CLIMERS, TU Wien · Apache-2.0. This documentation is provided &ldquo;as is&rdquo; without warranty of any kind, express or implied, including but not limited to warranties of correctness, completeness, or fitness for a particular purpose.
+      Copyright &copy; 2026 Nicolas François Bader, CLIMERS, TU Wien · Apache-2.0. This documentation is provided &ldquo;as is&rdquo; without warranty of any kind, express or implied, including but not limited to warranties of correctness, completeness, or fitness for a particular purpose.
     </div>
   
   <a href="../impressum/">Impressum and AI disclosure</a>

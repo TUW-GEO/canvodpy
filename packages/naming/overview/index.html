@@ -4636,9 +4636,10 @@ for example <abbr title="Receiver Independent Exchange Format — standard ASCII
 <span class="w">        </span><span class="nt">recipe</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">my_site_reference</span>
 </code></pre></div>
 <p>The recipe gives each file a canonical name without renaming it on disk.
-<abbr title="Receiver Independent Exchange Format — standard ASCII format for GNSS observations, defined by IGS (Navipedia: RINEX)">RINEX</abbr> navigation files (<code>nav_directory</code>, for the broadcast ephemeris) need
-canonical names: canvod-filemap has no recipes for navigation files yet
-(<a href="../../readers/ephemeris-sources/#broadcast-ephemeris-from-rinex-navigation-files">Ephemeris sources</a>).
+<abbr title="Receiver Independent Exchange Format — standard ASCII format for GNSS observations, defined by IGS (Navipedia: RINEX)">RINEX</abbr> navigation files (<code>nav_directory</code>, for the broadcast ephemeris) take
+their own recipe, <code>nav_recipe</code>, with <code>file_type: nav</code> and <code>sampling: "00U"</code>
+(canvod-filemap 1.1.0 or later;
+<a href="../../readers/ephemeris-sources/#broadcast-ephemeris-from-rinex-navigation-files">Ephemeris sources</a>).
 Naming recipes need an optional extension; see
 <a href="../../../guides/extensions/">Optional extensions</a>.</p>
 <p>A recipe can also be read from a URL, so that every machine uses the same
@@ -4746,7 +4747,7 @@ repository needs a GitHub token with read access in <code>GH_TOKEN</code> or
       <div class="md-copyright">
   
     <div class="md-copyright__highlight">
-      2026 Nicolas François Bader, CLIMERS, TU Wien · Apache-2.0. This documentation is provided &ldquo;as is&rdquo; without warranty of any kind, express or implied, including but not limited to warranties of correctness, completeness, or fitness for a particular purpose.
+      Copyright &copy; 2026 Nicolas François Bader, CLIMERS, TU Wien · Apache-2.0. This documentation is provided &ldquo;as is&rdquo; without warranty of any kind, express or implied, including but not limited to warranties of correctness, completeness, or fitness for a particular purpose.
     </div>
   
   <a href="../../../impressum/">Impressum and AI disclosure</a>

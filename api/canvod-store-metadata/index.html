@@ -4861,6 +4861,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#canvod.store_metadata.location.store_command" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        store_command
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#canvod.store_metadata.location.store_location" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
@@ -5063,17 +5074,6 @@
     <span class="md-ellipsis">
       <span class="md-typeset">
         check_who
-      </span>
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#canvod.store_metadata.io.store_command" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        store_command
       </span>
     </span>
   </a>
@@ -6604,6 +6604,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#canvod.store_metadata.location.store_command" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        store_command
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#canvod.store_metadata.location.store_location" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
@@ -6806,17 +6817,6 @@
     <span class="md-ellipsis">
       <span class="md-typeset">
         check_who
-      </span>
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#canvod.store_metadata.io.store_command" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        store_command
       </span>
     </span>
   </a>
@@ -12286,6 +12286,36 @@ root or out of the bucket.</p>
 <div class="doc doc-object doc-function">
 
 
+<h2 id="canvod.store_metadata.location.store_command" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">store_command</span><span class="p">(</span><span class="n">command</span><span class="p">,</span> <span class="n">site_name</span><span class="p">,</span> <span class="n">store_type</span><span class="p">)</span></code>
+
+<a href="#canvod.store_metadata.location.store_command" class="headerlink" title="Permanent link">&para;</a></h2>
+
+
+    <div class="doc doc-contents ">
+
+        <p>A <code>canvodpy store</code> command line for one site's store.</p>
+<!-- Glossary: hover any abbreviation to see its definition -->
+
+<!-- GNSS fundamentals — see Navipedia (navipedia.net) for detailed articles -->
+<!-- Satellite identifiers -->
+<!-- Observation data -->
+<!-- VOD and transmissometry -->
+<!-- Ephemerides and orbits -->
+<!-- Data standards -->
+<!-- Infrastructure -->
+<!-- Coordinate systems -->
+<!-- Signal bands -->
+<!-- Software tools -->
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
 <h2 id="canvod.store_metadata.location.store_location" class="doc doc-heading">
             <code class="highlight language-python"><span class="n">store_location</span><span class="p">(</span><span class="n">location</span><span class="p">)</span></code>
 
@@ -13916,36 +13946,6 @@ for callers that pass it.</p>
 <div class="doc doc-object doc-function">
 
 
-<h2 id="canvod.store_metadata.io.store_command" class="doc doc-heading">
-            <code class="highlight language-python"><span class="n">store_command</span><span class="p">(</span><span class="n">command</span><span class="p">,</span> <span class="n">site_name</span><span class="p">,</span> <span class="n">store_type</span><span class="p">)</span></code>
-
-<a href="#canvod.store_metadata.io.store_command" class="headerlink" title="Permanent link">&para;</a></h2>
-
-
-    <div class="doc doc-contents ">
-
-        <p>A <code>canvodpy store</code> command line for one site's store.</p>
-<!-- Glossary: hover any abbreviation to see its definition -->
-
-<!-- GNSS fundamentals — see Navipedia (navipedia.net) for detailed articles -->
-<!-- Satellite identifiers -->
-<!-- Observation data -->
-<!-- VOD and transmissometry -->
-<!-- Ephemerides and orbits -->
-<!-- Data standards -->
-<!-- Infrastructure -->
-<!-- Coordinate systems -->
-<!-- Signal bands -->
-<!-- Software tools -->
-
-
-    </div>
-
-</div>
-
-<div class="doc doc-object doc-function">
-
-
 <h2 id="canvod.store_metadata.io.ensure_metadata" class="doc doc-heading">
             <code class="highlight language-python"><span class="n">ensure_metadata</span><span class="p">(</span><span class="n">store_path</span><span class="p">,</span> <span class="n">collect</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">site_name</span><span class="p">,</span> <span class="n">store_type</span><span class="p">,</span> <span class="n">config</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span></code>
 
@@ -13959,6 +13959,12 @@ for callers that pass it.</p>
 without its metadata, and this is the only step that creates a store.
 <code>collect</code> builds the metadata of a new store (<code>collect_metadata</code>);
 it is called only for a store that has none.</p>
+<p>Two runs may create one store at the same time (on S3, which has no
+commit lock): the run that loses waits up to
+:data:<code>CREATION_WAIT_SECONDS</code> for the other run's repository metadata
+and returns it, so it goes on with the other run's store; its own
+settings are then checked against that store's content settings
+(#358).</p>
 <!-- Glossary: hover any abbreviation to see its definition -->
 
 <!-- GNSS fundamentals — see Navipedia (navipedia.net) for detailed articles -->
@@ -14013,66 +14019,6 @@ settings.</p>
             </td>
             <td>
                   <code>None</code>
-            </td>
-          </tr>
-          <tr class="doc-section-item">
-            <td>
-                <code>Two</code>
-            </td>
-            <td>
-            </td>
-            <td>
-              <div class="doc-md-description">
-                
-              </div>
-            </td>
-            <td>
-                <em>required</em>
-            </td>
-          </tr>
-          <tr class="doc-section-item">
-            <td>
-                <code>commit</code>
-            </td>
-            <td>
-            </td>
-            <td>
-              <div class="doc-md-description">
-                
-              </div>
-            </td>
-            <td>
-                <em>required</em>
-            </td>
-          </tr>
-          <tr class="doc-section-item">
-            <td>
-                <code>and</code>
-            </td>
-            <td>
-            </td>
-            <td>
-              <div class="doc-md-description">
-                
-              </div>
-            </td>
-            <td>
-                <em>required</em>
-            </td>
-          </tr>
-          <tr class="doc-section-item">
-            <td>
-                <code>settings</code>
-            </td>
-            <td>
-            </td>
-            <td>
-              <div class="doc-md-description">
-                
-              </div>
-            </td>
-            <td>
-                <em>required</em>
             </td>
           </tr>
       </tbody>
@@ -16636,7 +16582,7 @@ If None, show full report.</p>
       <div class="md-copyright">
   
     <div class="md-copyright__highlight">
-      2026 Nicolas François Bader, CLIMERS, TU Wien · Apache-2.0. This documentation is provided &ldquo;as is&rdquo; without warranty of any kind, express or implied, including but not limited to warranties of correctness, completeness, or fitness for a particular purpose.
+      Copyright &copy; 2026 Nicolas François Bader, CLIMERS, TU Wien · Apache-2.0. This documentation is provided &ldquo;as is&rdquo; without warranty of any kind, express or implied, including but not limited to warranties of correctness, completeness, or fitness for a particular purpose.
     </div>
   
   <a href="../../impressum/">Impressum and AI disclosure</a>

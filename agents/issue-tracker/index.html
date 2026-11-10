@@ -4296,6 +4296,8 @@
 <h2 id="conventions">Conventions<a class="headerlink" href="#conventions" title="Permanent link">&para;</a></h2>
 <ul>
 <li><strong>Create an issue</strong>: <code>gh issue create --title "..." --body "..."</code>. Write a body of several lines to a file and pass it with <code>--body-file</code>.</li>
+<li><strong>Bug reports and feature requests</strong>: <code>gh issue create</code> skips the issue forms in <code>.github/ISSUE_TEMPLATE/</code>, so write the body with the headings of the bug form (What happened, Steps to reproduce, Error output, Output of <code>canvodpy doctor</code>, Installed <code>canvod</code> packages, Receiver and file format, Operating system) or of the feature form (Problem, Proposed behavior, Alternatives) and add the form's labels (<code>bug</code> or <code>enhancement</code>, and <code>needs-triage</code>). Specs and tickets from the planning skills keep their own format.</li>
+<li><strong>Pull requests</strong>: the body follows <code>.github/pull_request_template.md</code> (Summary, Evidence, Merge danger, Checklist); <code>gh pr create --fill</code> does not use it, so pass the body with <code>--body-file</code>.</li>
 <li><strong>Read an issue</strong>: <code>gh issue view &lt;number&gt; --comments</code>, filtering comments by <code>jq</code> and also fetching labels.</li>
 <li><strong>List issues</strong>: <code>gh issue list --state open --json number,title,body,labels,comments --jq '[.[] | {number, title, body, labels: [.labels[].name], comments: [.comments[].body]}]'</code> with appropriate <code>--label</code> and <code>--state</code> filters.</li>
 <li><strong>Make an issue a sub-issue of a parent</strong>: <code>gh issue create --parent &lt;parent&gt; ...</code>, or <code>gh issue edit &lt;parent&gt; --add-sub-issue &lt;child&gt;</code> afterwards (<code>gh</code> 2.94+). Older <code>gh</code>: <code>gh api --method POST repos/&lt;owner&gt;/&lt;repo&gt;/issues/&lt;parent&gt;/sub_issues -F sub_issue_id=&lt;child-db-id&gt;</code> (database id, as in <strong>Blocking</strong> below). Without sub-issues, put <code>Part of #&lt;parent&gt;</code> at the top of the child body.</li>
@@ -4418,7 +4420,7 @@
       <div class="md-copyright">
   
     <div class="md-copyright__highlight">
-      2026 Nicolas François Bader, CLIMERS, TU Wien · Apache-2.0. This documentation is provided &ldquo;as is&rdquo; without warranty of any kind, express or implied, including but not limited to warranties of correctness, completeness, or fitness for a particular purpose.
+      Copyright &copy; 2026 Nicolas François Bader, CLIMERS, TU Wien · Apache-2.0. This documentation is provided &ldquo;as is&rdquo; without warranty of any kind, express or implied, including but not limited to warranties of correctness, completeness, or fitness for a particular purpose.
     </div>
   
   <a href="../../impressum/">Impressum and AI disclosure</a>

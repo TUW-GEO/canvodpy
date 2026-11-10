@@ -4591,6 +4591,17 @@ could not resolve the code, and identical where it could (<code>G05|L1|C</code>)
 <p><abbr title="Receiver Independent Exchange Format — standard ASCII format for GNSS observations, defined by IGS (Navipedia: RINEX)">RINEX</abbr> 2.11 Table A1 defines <code>S</code> as "raw signal strengths or <abbr title="Signal-to-Noise Ratio — carrier power relative to noise floor, in dB-Hz. Key observable for GNSS transmissometry. (Navipedia: GNSS Measurements)">SNR</abbr> values as given by the receiver" and declares no unit. <code>SNR</code> is labeled dB, and its <code>description</code> attribute states the assumption.</p>
 <hr />
 <h2 id="header">Header<a class="headerlink" href="#header" title="Permanent link">&para;</a></h2>
+<p>The date of <code>PGM / RUN BY / DATE</code> has no fixed form in <abbr title="Receiver Independent Exchange Format — standard ASCII format for GNSS observations, defined by IGS (Navipedia: RINEX)">RINEX</abbr> 2.11
+(Table A1). The reader takes the forms producers write, for example
+<code>20250102 03:04:05UTC</code> (<code>teqc</code>), <code>20250101 000012 UTC</code> and
+<code>24-MAR-01 14:43</code>. A date without a zone gives a date without a time zone,
+as the zone <code>LCL</code> (local time, zone unknown, as in <abbr title="Receiver Independent Exchange Format — standard ASCII format for GNSS observations, defined by IGS (Navipedia: RINEX)">RINEX</abbr> 3) does. A missing record or a date in no known form
+raises <code>CorruptedFileError</code> naming the file, and so does an entry of
+<code># / TYPES OF OBSERV</code> that is not a two-character code.</p>
+<p>An epoch header whose date and time don't exist (month 13, for example) is
+skipped like an epoch header that can't be read; the <code>Rnxv3Obs</code> reader
+rejects such a file instead. A file without epochs gives a dataset with no
+epochs and every signal ID, as in <abbr title="Receiver Independent Exchange Format — standard ASCII format for GNSS observations, defined by IGS (Navipedia: RINEX)">RINEX</abbr> 3.</p>
 <p><code>obs_codes_per_system</code> lists the observation codes in <abbr title="Receiver Independent Exchange Format — standard ASCII format for GNSS observations, defined by IGS (Navipedia: RINEX)">RINEX</abbr> 3 notation per system, with the resolved code or marker in the attribute position, for a mixed <abbr title="Global Positioning System — US satellite navigation constellation, 31 SVs in 6 orbital planes (Navipedia: GPS)">GPS</abbr>/<abbr title="GLObal NAvigation Satellite System — Russian constellation using FDMA and CDMA signals (Navipedia: GLONASS)">GLONASS</abbr> file with <code>L1 L2 C1 P1 P2 S1 S2</code>:</p>
 <div class="highlight"><pre><span></span><code><span class="p">{</span>
     <span class="s2">"G"</span><span class="p">:</span> <span class="p">[</span><span class="s2">"L1u"</span><span class="p">,</span> <span class="s2">"L2u"</span><span class="p">,</span> <span class="s2">"C1C"</span><span class="p">,</span> <span class="s2">"C1p"</span><span class="p">,</span> <span class="s2">"C2p"</span><span class="p">,</span> <span class="s2">"S1u"</span><span class="p">,</span> <span class="s2">"S2u"</span><span class="p">],</span>
@@ -4688,7 +4699,7 @@ could not resolve the code, and identical where it could (<code>G05|L1|C</code>)
       <div class="md-copyright">
   
     <div class="md-copyright__highlight">
-      2026 Nicolas François Bader, CLIMERS, TU Wien · Apache-2.0. This documentation is provided &ldquo;as is&rdquo; without warranty of any kind, express or implied, including but not limited to warranties of correctness, completeness, or fitness for a particular purpose.
+      Copyright &copy; 2026 Nicolas François Bader, CLIMERS, TU Wien · Apache-2.0. This documentation is provided &ldquo;as is&rdquo; without warranty of any kind, express or implied, including but not limited to warranties of correctness, completeness, or fitness for a particular purpose.
     </div>
   
   <a href="../../../impressum/">Impressum and AI disclosure</a>

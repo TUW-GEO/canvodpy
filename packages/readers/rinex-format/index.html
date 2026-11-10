@@ -4985,11 +4985,21 @@ record's <code>F11.7</code> field.</p>
 <span class="k">except</span> <span class="ne">ValueError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
     <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Invalid epoch date or time: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
 </code></pre></div>
+<p>A damaged header raises <code>CorruptedFileError</code> naming the file: a header
+line too short for its fixed columns, a missing <code>PGM / RUN BY / DATE</code>
+record, or a date there that can't be read. The date is
+<code>yyyymmdd hhmmss zone</code> (<abbr title="Receiver Independent Exchange Format — standard ASCII format for GNSS observations, defined by IGS (Navipedia: RINEX)">RINEX</abbr> 3.04, Table A2). The zone <code>LCL</code>, local time
+with the zone unknown, gives a date without a time zone; any other zone
+must be a known time zone name such as <code>UTC</code>.</p>
+<p>A file with a header and no epochs gives a dataset with no epochs and
+every signal ID.</p>
 <div class="admonition info">
 <p class="admonition-title">Exception hierarchy</p>
 <p>All reader-specific exceptions inherit from <code>RinexError</code>, allowing
 broad <code>except RinexError</code> handling when needed alongside specific
-sub-class recovery.</p>
+sub-class recovery. The navigation file reader raises
+<code>RinexNavError</code>, a <code>RinexError</code> and a <code>ValueError</code>, naming the file
+and, for a record that can't be read, its line.</p>
 </div>
 <!-- Glossary: hover any abbreviation to see its definition -->
 
@@ -5082,7 +5092,7 @@ sub-class recovery.</p>
       <div class="md-copyright">
   
     <div class="md-copyright__highlight">
-      2026 Nicolas François Bader, CLIMERS, TU Wien · Apache-2.0. This documentation is provided &ldquo;as is&rdquo; without warranty of any kind, express or implied, including but not limited to warranties of correctness, completeness, or fitness for a particular purpose.
+      Copyright &copy; 2026 Nicolas François Bader, CLIMERS, TU Wien · Apache-2.0. This documentation is provided &ldquo;as is&rdquo; without warranty of any kind, express or implied, including but not limited to warranties of correctness, completeness, or fitness for a particular purpose.
     </div>
   
   <a href="../../../impressum/">Impressum and AI disclosure</a>

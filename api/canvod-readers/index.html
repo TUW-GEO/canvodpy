@@ -11711,34 +11711,6 @@ post-filtering.</p>
       <tbody>
           <tr class="doc-section-item">
             <td>
-                <code>outname</code>
-            </td>
-            <td>
-                  <code><span title="pathlib.Path">Path</span> or <span title="str">str</span></code>
-            </td>
-            <td>
-              <div class="doc-md-description">
-                <p>If provided, saves dataset to this file path</p>
-<!-- Glossary: hover any abbreviation to see its definition -->
-
-<!-- GNSS fundamentals — see Navipedia (navipedia.net) for detailed articles -->
-<!-- Satellite identifiers -->
-<!-- Observation data -->
-<!-- VOD and transmissometry -->
-<!-- Ephemerides and orbits -->
-<!-- Data standards -->
-<!-- Infrastructure -->
-<!-- Coordinate systems -->
-<!-- Signal bands -->
-<!-- Software tools -->
-              </div>
-            </td>
-            <td>
-                <em>required</em>
-            </td>
-          </tr>
-          <tr class="doc-section-item">
-            <td>
                 <code>keep_data_vars</code>
             </td>
             <td>
@@ -11770,10 +11742,45 @@ variable does not drop its epoch.</p>
                   <code>None</code>
             </td>
           </tr>
+      </tbody>
+    </table>
+
+
+<p><span class="doc-section-title">Other Parameters:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
           <tr class="doc-section-item">
+            <td><code>outname</code></td>
             <td>
-                <code>write_global_attrs</code>
+                  <code><span title="pathlib.Path">Path</span> or <span title="str">str</span></code>
             </td>
+            <td>
+              <div class="doc-md-description">
+                <p>If provided, saves dataset to this file path</p>
+<!-- Glossary: hover any abbreviation to see its definition -->
+
+<!-- GNSS fundamentals — see Navipedia (navipedia.net) for detailed articles -->
+<!-- Satellite identifiers -->
+<!-- Observation data -->
+<!-- VOD and transmissometry -->
+<!-- Ephemerides and orbits -->
+<!-- Data standards -->
+<!-- Infrastructure -->
+<!-- Coordinate systems -->
+<!-- Signal bands -->
+<!-- Software tools -->
+              </div>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code>write_global_attrs</code></td>
             <td>
                   <code><span title="bool">bool</span></code>
             </td>
@@ -11794,14 +11801,9 @@ variable does not drop its epoch.</p>
 <!-- Software tools -->
               </div>
             </td>
-            <td>
-                  <code>False</code>
-            </td>
           </tr>
           <tr class="doc-section-item">
-            <td>
-                <code>pad_global_sid</code>
-            </td>
+            <td><code>pad_global_sid</code></td>
             <td>
                   <code><span title="bool">bool</span></code>
             </td>
@@ -11822,14 +11824,9 @@ variable does not drop its epoch.</p>
 <!-- Software tools -->
               </div>
             </td>
-            <td>
-                  <code>True</code>
-            </td>
           </tr>
           <tr class="doc-section-item">
-            <td>
-                <code>strip_fillval</code>
-            </td>
+            <td><code>strip_fillval</code></td>
             <td>
                   <code><span title="bool">bool</span></code>
             </td>
@@ -11850,14 +11847,9 @@ variable does not drop its epoch.</p>
 <!-- Software tools -->
               </div>
             </td>
-            <td>
-                  <code>True</code>
-            </td>
           </tr>
           <tr class="doc-section-item">
-            <td>
-                <code>add_future_datavars</code>
-            </td>
+            <td><code>add_future_datavars</code></td>
             <td>
                   <code><span title="bool">bool</span></code>
             </td>
@@ -11878,14 +11870,9 @@ variable does not drop its epoch.</p>
 <!-- Software tools -->
               </div>
             </td>
-            <td>
-                  <code>True</code>
-            </td>
           </tr>
           <tr class="doc-section-item">
-            <td>
-                <code>keep_sids</code>
-            </td>
+            <td><code>keep_sids</code></td>
             <td>
                   <code>list of str or None</code>
             </td>
@@ -11907,14 +11894,9 @@ If None and pad_global_sid=True, pads to all possible SIDs.</p>
 <!-- Software tools -->
               </div>
             </td>
-            <td>
-                  <code>None</code>
-            </td>
           </tr>
           <tr class="doc-section-item">
-            <td>
-                <code>parser</code>
-            </td>
+            <td><code>parser</code></td>
             <td>
                   <code>(<span title="validated">validated</span>, <span title="unvalidated_fast">unvalidated_fast</span>)</code>
             </td>
@@ -11943,9 +11925,6 @@ Both give the same dataset for a valid file. A run passes the
 <!-- Signal bands -->
 <!-- Software tools -->
               </div>
-            </td>
-            <td>
-                  <code>&#34;validated&#34;</code>
             </td>
           </tr>
       </tbody>
@@ -12209,21 +12188,18 @@ Both give the same dataset for a valid file. A run passes the
 <!-- Software tools -->
 
 
-<p><span class="doc-section-title">Parameters:</span></p>
+<p><span class="doc-section-title">Attributes:</span></p>
     <table>
       <thead>
         <tr>
           <th>Name</th>
           <th>Type</th>
           <th>Description</th>
-          <th>Default</th>
         </tr>
       </thead>
       <tbody>
           <tr class="doc-section-item">
-            <td>
-                <code>fpath</code>
-            </td>
+            <td><code><span title="canvod.readers.SbfReader.fpath">fpath</span></code></td>
             <td>
                   <code><span title="pathlib.Path">Path</span></code>
             </td>
@@ -12244,16 +12220,11 @@ Both give the same dataset for a valid file. A run passes the
 <!-- Software tools -->
               </div>
             </td>
-            <td>
-                <em>required</em>
-            </td>
           </tr>
           <tr class="doc-section-item">
+            <td><code><span title="canvod.readers.SbfReader.aggregate_glonass_fdma">aggregate_glonass_fdma</span></code></td>
             <td>
-                <code>aggregate_glonass_fdma</code>
-            </td>
-            <td>
-                  <code><span title="bool">bool</span></code>
+                  <code>bool, default True</code>
             </td>
             <td>
               <div class="doc-md-description">
@@ -12272,9 +12243,6 @@ aggregated G1/G2 bands; <code>False</code> is refused.</p>
 <!-- Signal bands -->
 <!-- Software tools -->
               </div>
-            </td>
-            <td>
-                  <code>True</code>
             </td>
           </tr>
       </tbody>
@@ -12497,11 +12465,12 @@ aggregated G1/G2 bands; <code>False</code> is refused.</p>
       <tbody>
           <tr class="doc-section-item">
             <td>
-                  <code><span title="LookupError">LookupError</span></code>
+                  <code><span title="canvod.readers.gnss_specs.exceptions.SbfError">SbfError</span></code>
             </td>
             <td>
               <div class="doc-md-description">
-                <p>If the file contains no decodable epochs.</p>
+                <p>If the file contains no decodable epochs. It is a
+<code>LookupError</code> too.</p>
 <!-- Glossary: hover any abbreviation to see its definition -->
 
 <!-- GNSS fundamentals — see Navipedia (navipedia.net) for detailed articles -->
@@ -12602,11 +12571,12 @@ aggregated G1/G2 bands; <code>False</code> is refused.</p>
       <tbody>
           <tr class="doc-section-item">
             <td>
-                  <code><span title="LookupError">LookupError</span></code>
+                  <code><span title="canvod.readers.gnss_specs.exceptions.SbfError">SbfError</span></code>
             </td>
             <td>
               <div class="doc-md-description">
-                <p>If the file contains no decodable epochs.</p>
+                <p>If the file contains no decodable epochs. It is a
+<code>LookupError</code> too.</p>
 <!-- Glossary: hover any abbreviation to see its definition -->
 
 <!-- GNSS fundamentals — see Navipedia (navipedia.net) for detailed articles -->
@@ -12946,11 +12916,12 @@ aggregated G1/G2 bands; <code>False</code> is refused.</p>
       <tbody>
           <tr class="doc-section-item">
             <td>
-                  <code><span title="LookupError">LookupError</span></code>
+                  <code><span title="canvod.readers.gnss_specs.exceptions.SbfError">SbfError</span></code>
             </td>
             <td>
               <div class="doc-md-description">
-                <p>If no ReceiverSetup block is found.</p>
+                <p>If no intact ReceiverSetup block is found. It is a
+<code>LookupError</code> too.</p>
 <!-- Glossary: hover any abbreviation to see its definition -->
 
 <!-- GNSS fundamentals — see Navipedia (navipedia.net) for detailed articles -->
@@ -16990,34 +16961,6 @@ post-filtering.</p>
       <tbody>
           <tr class="doc-section-item">
             <td>
-                <code>outname</code>
-            </td>
-            <td>
-                  <code><span title="pathlib.Path">Path</span> or <span title="str">str</span></code>
-            </td>
-            <td>
-              <div class="doc-md-description">
-                <p>If provided, saves dataset to this file path</p>
-<!-- Glossary: hover any abbreviation to see its definition -->
-
-<!-- GNSS fundamentals — see Navipedia (navipedia.net) for detailed articles -->
-<!-- Satellite identifiers -->
-<!-- Observation data -->
-<!-- VOD and transmissometry -->
-<!-- Ephemerides and orbits -->
-<!-- Data standards -->
-<!-- Infrastructure -->
-<!-- Coordinate systems -->
-<!-- Signal bands -->
-<!-- Software tools -->
-              </div>
-            </td>
-            <td>
-                <em>required</em>
-            </td>
-          </tr>
-          <tr class="doc-section-item">
-            <td>
                 <code>keep_data_vars</code>
             </td>
             <td>
@@ -17049,10 +16992,45 @@ variable does not drop its epoch.</p>
                   <code>None</code>
             </td>
           </tr>
+      </tbody>
+    </table>
+
+
+<p><span class="doc-section-title">Other Parameters:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
           <tr class="doc-section-item">
+            <td><code>outname</code></td>
             <td>
-                <code>write_global_attrs</code>
+                  <code><span title="pathlib.Path">Path</span> or <span title="str">str</span></code>
             </td>
+            <td>
+              <div class="doc-md-description">
+                <p>If provided, saves dataset to this file path</p>
+<!-- Glossary: hover any abbreviation to see its definition -->
+
+<!-- GNSS fundamentals — see Navipedia (navipedia.net) for detailed articles -->
+<!-- Satellite identifiers -->
+<!-- Observation data -->
+<!-- VOD and transmissometry -->
+<!-- Ephemerides and orbits -->
+<!-- Data standards -->
+<!-- Infrastructure -->
+<!-- Coordinate systems -->
+<!-- Signal bands -->
+<!-- Software tools -->
+              </div>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code>write_global_attrs</code></td>
             <td>
                   <code><span title="bool">bool</span></code>
             </td>
@@ -17073,14 +17051,9 @@ variable does not drop its epoch.</p>
 <!-- Software tools -->
               </div>
             </td>
-            <td>
-                  <code>False</code>
-            </td>
           </tr>
           <tr class="doc-section-item">
-            <td>
-                <code>pad_global_sid</code>
-            </td>
+            <td><code>pad_global_sid</code></td>
             <td>
                   <code><span title="bool">bool</span></code>
             </td>
@@ -17101,14 +17074,9 @@ variable does not drop its epoch.</p>
 <!-- Software tools -->
               </div>
             </td>
-            <td>
-                  <code>True</code>
-            </td>
           </tr>
           <tr class="doc-section-item">
-            <td>
-                <code>strip_fillval</code>
-            </td>
+            <td><code>strip_fillval</code></td>
             <td>
                   <code><span title="bool">bool</span></code>
             </td>
@@ -17129,14 +17097,9 @@ variable does not drop its epoch.</p>
 <!-- Software tools -->
               </div>
             </td>
-            <td>
-                  <code>True</code>
-            </td>
           </tr>
           <tr class="doc-section-item">
-            <td>
-                <code>add_future_datavars</code>
-            </td>
+            <td><code>add_future_datavars</code></td>
             <td>
                   <code><span title="bool">bool</span></code>
             </td>
@@ -17157,14 +17120,9 @@ variable does not drop its epoch.</p>
 <!-- Software tools -->
               </div>
             </td>
-            <td>
-                  <code>True</code>
-            </td>
           </tr>
           <tr class="doc-section-item">
-            <td>
-                <code>keep_sids</code>
-            </td>
+            <td><code>keep_sids</code></td>
             <td>
                   <code>list of str or None</code>
             </td>
@@ -17186,14 +17144,9 @@ If None and pad_global_sid=True, pads to all possible SIDs.</p>
 <!-- Software tools -->
               </div>
             </td>
-            <td>
-                  <code>None</code>
-            </td>
           </tr>
           <tr class="doc-section-item">
-            <td>
-                <code>parser</code>
-            </td>
+            <td><code>parser</code></td>
             <td>
                   <code>(<span title="validated">validated</span>, <span title="unvalidated_fast">unvalidated_fast</span>)</code>
             </td>
@@ -17222,9 +17175,6 @@ Both give the same dataset for a valid file. A run passes the
 <!-- Signal bands -->
 <!-- Software tools -->
               </div>
-            </td>
-            <td>
-                  <code>&#34;validated&#34;</code>
             </td>
           </tr>
       </tbody>
@@ -20757,7 +20707,7 @@ pairs may exist at the same site.</p>
       <div class="md-copyright">
   
     <div class="md-copyright__highlight">
-      2026 Nicolas François Bader, CLIMERS, TU Wien · Apache-2.0. This documentation is provided &ldquo;as is&rdquo; without warranty of any kind, express or implied, including but not limited to warranties of correctness, completeness, or fitness for a particular purpose.
+      Copyright &copy; 2026 Nicolas François Bader, CLIMERS, TU Wien · Apache-2.0. This documentation is provided &ldquo;as is&rdquo; without warranty of any kind, express or implied, including but not limited to warranties of correctness, completeness, or fitness for a particular purpose.
     </div>
   
   <a href="../../impressum/">Impressum and AI disclosure</a>

@@ -4785,7 +4785,7 @@
 <p><strong>Application URL:</strong> <a href="https://bestpractices.coreinfrastructure.org/">https://bestpractices.coreinfrastructure.org/</a></p>
 <h2 id="badge-levels">Badge levels<a class="headerlink" href="#badge-levels" title="Permanent link">&para;</a></h2>
 <ol>
-<li><strong>Passing</strong> (60%+ criteria) - Basic best practices</li>
+<li><strong>Passing</strong> (every MUST criterion met; every SHOULD criterion met or explained) - Basic best practices</li>
 <li><strong>Silver</strong> (100% passing + additional criteria) - Advanced practices</li>
 <li><strong>Gold</strong> (100% silver + highest standards) - Exemplary practices</li>
 </ol>
@@ -4819,7 +4819,7 @@
 <ul class="task-list">
 <li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled checked/><span class="task-list-indicator"></span></label> Coding standards (<abbr title="Fast Python linter and formatter written in Rust — replaces flake8, black, isort">ruff</abbr>, PEP 8)</li>
 <li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled checked/><span class="task-list-indicator"></span></label> Automated test suite (pytest on Linux, macOS and Windows)</li>
-<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled checked/><span class="task-list-indicator"></span></label> Code coverage (test_coverage.yml workflow)</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled checked/><span class="task-list-indicator"></span></label> Code coverage (Linux job of test_platforms.yml, Coveralls)</li>
 <li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled checked/><span class="task-list-indicator"></span></label> Build reproducibility (<abbr title="Fast Python package manager written in Rust — replaces pip, pip-tools, virtualenv">uv</abbr>.lock, pinned dependencies)</li>
 <li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled checked/><span class="task-list-indicator"></span></label> Continuous integration (GitHub Actions, <code>.github/workflows/</code>)</li>
 </ul>
@@ -4857,7 +4857,7 @@
 - ✅ Coding standards (<abbr title="Fast Python linter and formatter written in Rust — replaces flake8, black, isort">ruff</abbr> with 50+ rule sets, PEP 8 compliant)
 - ✅ Type checking (ty with type budget enforcement)
 - ✅ Test suite (pytest on Linux, macOS and Windows, with coverage)
-- ✅ Test coverage (test_coverage.yml)
+- ✅ Test coverage (Linux job of test_platforms.yml, Coveralls)
 - ✅ <abbr title="Continuous Integration — automated build and test on every commit">CI</abbr>/CD (GitHub Actions: tests, coverage, code quality, CodeQL, docs quality, <abbr title="Findable, Accessible, Interoperable, Reusable — guiding principles for scientific data stewardship (Wilkinson et al. 2016)">FAIR</abbr>, releases)
 - ✅ Reproducible builds (<abbr title="Fast Python package manager written in Rust — replaces pip, pip-tools, virtualenv">uv</abbr>.lock with pinned dependencies)
 - ✅ Pre-commit hooks (<abbr title="Fast Python linter and formatter written in Rust — replaces flake8, black, isort">ruff</abbr>, ty, conventional commits)</p>
@@ -5034,7 +5034,7 @@ Settings<span class="w"> </span>→<span class="w"> </span>Security<span class="
       <div class="md-copyright">
   
     <div class="md-copyright__highlight">
-      2026 Nicolas François Bader, CLIMERS, TU Wien · Apache-2.0. This documentation is provided &ldquo;as is&rdquo; without warranty of any kind, express or implied, including but not limited to warranties of correctness, completeness, or fitness for a particular purpose.
+      Copyright &copy; 2026 Nicolas François Bader, CLIMERS, TU Wien · Apache-2.0. This documentation is provided &ldquo;as is&rdquo; without warranty of any kind, express or implied, including but not limited to warranties of correctness, completeness, or fitness for a particular purpose.
     </div>
   
   <a href="../impressum/">Impressum and AI disclosure</a>

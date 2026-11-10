@@ -5665,7 +5665,9 @@ git<span class="w"> </span>commit<span class="w"> </span>-m<span class="w"> </sp
 <li>Go to your fork on GitHub. You'll see a banner suggesting to open a pull request.</li>
 <li>Click <strong>Compare &amp; pull request</strong>.</li>
 <li>Set the <strong>base</strong> branch to your team branch (or the develop branch, depending on your workflow).</li>
-<li>Add a title and description, then click <strong>Create pull request</strong>.</li>
+<li>Add a title, and fill in the description that the pull request template
+   gives: a summary, the evidence that the change works, the merge danger,
+   and the checklist. Then click <strong>Create pull request</strong>.</li>
 </ol>
 <hr />
 <h2 id="14-pre-commit-hooks-and-why-your-commit-may-be-rejected">14. Pre-commit hooks and why your commit may be rejected<a class="headerlink" href="#14-pre-commit-hooks-and-why-your-commit-may-be-rejected" title="Permanent link">&para;</a></h2>
@@ -5828,7 +5830,7 @@ a genuine code quality issue.</p>
 </div>
 <hr />
 <h2 id="15-continuous-integration-and-test-coverage">15. Continuous integration and test coverage<a class="headerlink" href="#15-continuous-integration-and-test-coverage" title="Permanent link">&para;</a></h2>
-<p>Every push to a branch and every pull request triggers automated checks on GitHub Actions. These are the same checks that run locally via <code>just check</code> and <code>just test</code>, but they execute in a clean environment to ensure reproducibility.</p>
+<p>Every pull request and every push to <code>main</code> triggers automated checks on GitHub Actions; a branch without a pull request runs none. These are the same checks that run locally via <code>just check</code> and <code>just test</code>, but they execute in a clean environment to ensure reproducibility.</p>
 <h3 id="ci-pipelines"><abbr title="Continuous Integration — automated build and test on every commit">CI</abbr> pipelines<a class="headerlink" href="#ci-pipelines" title="Permanent link">&para;</a></h3>
 <table>
 <thead>
@@ -5840,29 +5842,29 @@ a genuine code quality issue.</p>
 </thead>
 <tbody>
 <tr>
+<td><strong><abbr title="Continuous Integration — automated build and test on every commit">CI</abbr></strong></td>
+<td>Push to <code>main</code>, every pull request, weekly, or started by hand</td>
+<td>Calls Code Quality, Docs Quality, Platform Tests, and S3 Tests and sums them up in one check, <code>ci-ok</code>; the Ubuntu platform job also reports the coverage. A pull request that changes only docs skips the type check, the package build, the package-import check, and the platform tests; one that changes no store code skips the S3 tests (<a href="../../adr/0024-ci-runs-what-a-change-needs/">ADR 0024</a>)</td>
+</tr>
+<tr>
 <td><strong>Code Quality</strong></td>
-<td>Push to <code>main</code>, every pull request, weekly</td>
+<td>Called by <abbr title="Continuous Integration — automated build and test on every commit">CI</abbr></td>
 <td>Checks lockfile consistency, runs <abbr title="Fast Python linter and formatter written in Rust — replaces flake8, black, isort">ruff</abbr> linting, checks formatting, runs type checking with ty, checks the agent instruction files</td>
 </tr>
 <tr>
-<td><strong>Test with Coverage</strong></td>
-<td>Push to <code>main</code>, all pull requests, weekly</td>
-<td>Runs <code>uv run pytest</code> (coverage is on by default in <code>pyproject.toml</code>), uploads results to Coveralls, posts a coverage summary comment on the PR</td>
-</tr>
-<tr>
 <td><strong>Platform Tests</strong></td>
-<td>Push to <code>main</code>, every pull request, weekly</td>
-<td>Runs the test suite on Linux, macOS, and Windows with Python 3.14</td>
+<td>Called by <abbr title="Continuous Integration — automated build and test on every commit">CI</abbr></td>
+<td>Runs the test suite on Linux, macOS, and Windows with Python 3.14; on Linux runs <code>uv run pytest</code> (coverage is on by default in <code>pyproject.toml</code>), uploads the coverage to Coveralls and posts a coverage comment on the pull request</td>
 </tr>
 <tr>
 <td><strong>S3 Tests</strong></td>
-<td>Push to <code>main</code>, every pull request</td>
+<td>Called by <abbr title="Continuous Integration — automated build and test on every commit">CI</abbr></td>
 <td>Runs the tests of stores on S3 against an S3 emulator (RustFS) on Linux; elsewhere these tests are skipped</td>
 </tr>
 <tr>
 <td><strong>Docs Quality</strong></td>
-<td>Push to <code>main</code>, every pull request, weekly, or started by hand</td>
-<td>Checks the language of the docs pages a pull request changes with Vale, and the links of the built site with lychee: links between our pages on every push and pull request, external links too in the weekly run, which opens an issue when one fails</td>
+<td>Called by <abbr title="Continuous Integration — automated build and test on every commit">CI</abbr>, or started by hand</td>
+<td>Checks the language of the docs pages a pull request changes with Vale, and the links of the built site with lychee: links between our pages on every push and pull request, external links too in the weekly run and in a run by hand, which open an issue when one fails</td>
 </tr>
 <tr>
 <td><strong>Deploy Docs</strong></td>
@@ -6121,7 +6123,7 @@ they run the same on every machine.</p>
       <div class="md-copyright">
   
     <div class="md-copyright__highlight">
-      2026 Nicolas François Bader, CLIMERS, TU Wien · Apache-2.0. This documentation is provided &ldquo;as is&rdquo; without warranty of any kind, express or implied, including but not limited to warranties of correctness, completeness, or fitness for a particular purpose.
+      Copyright &copy; 2026 Nicolas François Bader, CLIMERS, TU Wien · Apache-2.0. This documentation is provided &ldquo;as is&rdquo; without warranty of any kind, express or implied, including but not limited to warranties of correctness, completeness, or fitness for a particular purpose.
     </div>
   
   <a href="../../impressum/">Impressum and AI disclosure</a>

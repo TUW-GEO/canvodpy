@@ -4851,9 +4851,9 @@ reads, and still emits (with <code>status="error"</code>) if the block raises.</
 <p>When one block has several sequential checkpoints, each a dashboard stage
 of its own, measure them yourself and emit each with
 <code>record_stage_timing(stage, seconds, ...)</code> (see <code>_preprocess_file</code> in
-<code>processor.py</code>). Checkpoints that are not dashboard stages belong in one
+<code>orchestrator/file_worker.py</code>). Checkpoints that are not dashboard stages belong in one
 specific, well-named event with their own rich context (see
-<code>_preprocess_aux_data</code> in <code>processor.py</code>), which is more useful
+<code>_preprocess_aux_data</code> in <code>orchestrator/processor.py</code>), which is more useful
 than forcing everything through one generic name.</p>
 <p>Only the main process adds stages to the <code>run_summary</code>; stages timed in a
 worker process reach the log and the dashboard only.</p>
@@ -5019,7 +5019,8 @@ git<span class="w"> </span>push<span class="w"> </span>origin<span class="w"> </
 <p><code>readers</code> · <code>aux</code> · <code>grids</code> · <code>vod</code> · <code>store</code> · <code>viz</code> · <code>utils</code> · <code>naming</code> · <code>ops</code> · <code>docs</code> · <code>ci</code> · <code>deps</code></p>
 <hr />
 <h2 id="continuous-integration">Continuous Integration<a class="headerlink" href="#continuous-integration" title="Permanent link">&para;</a></h2>
-<p>Every push and PR triggers GitHub Actions workflows:</p>
+<p>Every PR and every push to <code>main</code> runs the <abbr title="Continuous Integration — automated build and test on every commit">CI</abbr> workflow, which calls these
+workflows and sums them up in one check, <code>ci-ok</code>:</p>
 <table>
 <thead>
 <tr>
@@ -5033,12 +5034,16 @@ git<span class="w"> </span>push<span class="w"> </span>origin<span class="w"> </
 <td><abbr title="Fast Python linter and formatter written in Rust — replaces flake8, black, isort">ruff</abbr> lint, <abbr title="Fast Python linter and formatter written in Rust — replaces flake8, black, isort">ruff</abbr> format, ty type-check, lockfile consistency</td>
 </tr>
 <tr>
-<td><strong>Test with Coverage</strong></td>
-<td>pytest <span class="arithmatex">\(\rightarrow\)</span> coverage.lcov <span class="arithmatex">\(\rightarrow\)</span> <a href="https://coveralls.io/github/TUW-GEO/canvodpy">Coveralls</a></td>
+<td><strong>Docs Quality</strong></td>
+<td>Vale on the changed docs pages, the link check of the built site</td>
 </tr>
 <tr>
 <td><strong>Platform Tests</strong></td>
-<td>Multi-OS, multi-Python-version test matrix</td>
+<td>The tests on Linux, macOS and Windows; on Linux pytest <span class="arithmatex">\(\rightarrow\)</span> coverage.lcov <span class="arithmatex">\(\rightarrow\)</span> <a href="https://coveralls.io/github/TUW-GEO/canvodpy">Coveralls</a></td>
+</tr>
+<tr>
+<td><strong>S3 Tests</strong></td>
+<td>Tests of stores on S3 against an S3 emulator</td>
 </tr>
 </tbody>
 </table>
@@ -5237,7 +5242,7 @@ pattern to exclude it and regenerate the lock.</p>
       <div class="md-copyright">
   
     <div class="md-copyright__highlight">
-      2026 Nicolas François Bader, CLIMERS, TU Wien · Apache-2.0. This documentation is provided &ldquo;as is&rdquo; without warranty of any kind, express or implied, including but not limited to warranties of correctness, completeness, or fitness for a particular purpose.
+      Copyright &copy; 2026 Nicolas François Bader, CLIMERS, TU Wien · Apache-2.0. This documentation is provided &ldquo;as is&rdquo; without warranty of any kind, express or implied, including but not limited to warranties of correctness, completeness, or fitness for a particular purpose.
     </div>
   
   <a href="../../impressum/">Impressum and AI disclosure</a>

@@ -4797,11 +4797,18 @@ names the systems with angles for each receiver and day. The files sit in
 the folder <code>nav_directory</code> names, relative to the site data root like
 <code>directory</code> (it may be the same folder), and need canonical names of type
 <code>nav</code> with sampling <code>00U</code>, for example
-<code>FANA01INK_R_20250010000_15M_00U_AA.nav</code>. Navigation files with other
-names must be renamed or linked under their canonical names: canvod-filemap
-has no naming recipes for navigation files yet, and a receiver with a
-<code>nav_recipe</code> stops with an error that says so.
-In per-receiver mode (<code>receiver_position_mode: per_receiver</code>) every
+<code>FANA01INK_R_20250010000_15M_00U_AA.nav</code>. For navigation files with other
+names, such as the <abbr title="Receiver Independent Exchange Format — standard ASCII format for GNSS observations, defined by IGS (Navipedia: RINEX)">RINEX</abbr> short names <code>fana001a00.25p</code>, set a naming recipe
+with <code>file_type: nav</code> and <code>sampling: "00U"</code> in the receiver's <code>nav_recipe</code>
+(canvod-filemap 1.1.0 or later):</p>
+<div class="highlight"><pre><span></span><code><span class="nt">sites</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">my_site</span><span class="p">:</span>
+<span class="w">    </span><span class="nt">receivers</span><span class="p">:</span>
+<span class="w">      </span><span class="nt">canopy_01</span><span class="p">:</span>
+<span class="w">        </span><span class="nt">nav_directory</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">canopy_01_nav</span>
+<span class="w">        </span><span class="nt">nav_recipe</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">my_site_canopy_nav</span>
+</code></pre></div>
+<p>In per-receiver mode (<code>receiver_position_mode: per_receiver</code>) every
 receiver with <abbr title="Receiver Independent Exchange Format — standard ASCII format for GNSS observations, defined by IGS (Navipedia: RINEX)">RINEX</abbr> files reads its own navigation files.</p>
 <h3 id="how-it-works_1">How it works<a class="headerlink" href="#how-it-works_1" title="Permanent link">&para;</a></h3>
 <div class="highlight"><pre><span></span><code>1. Read the day's navigation files of the receiver (canvod-readers, rinex/nav.py)
@@ -5053,7 +5060,7 @@ fixes (<a href="../overview/">readers overview</a>).</p>
       <div class="md-copyright">
   
     <div class="md-copyright__highlight">
-      2026 Nicolas François Bader, CLIMERS, TU Wien · Apache-2.0. This documentation is provided &ldquo;as is&rdquo; without warranty of any kind, express or implied, including but not limited to warranties of correctness, completeness, or fitness for a particular purpose.
+      Copyright &copy; 2026 Nicolas François Bader, CLIMERS, TU Wien · Apache-2.0. This documentation is provided &ldquo;as is&rdquo; without warranty of any kind, express or implied, including but not limited to warranties of correctness, completeness, or fitness for a particular purpose.
     </div>
   
   <a href="../../../impressum/">Impressum and AI disclosure</a>

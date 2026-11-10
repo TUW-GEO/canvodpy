@@ -1914,6 +1914,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#damaged-files" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Damaged files
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#differences-vs-rinex-rnxv3obs" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
@@ -4490,6 +4501,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#damaged-files" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Damaged files
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#differences-vs-rinex-rnxv3obs" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
@@ -5443,6 +5465,25 @@ TX power, mass, and orbital plane as coordinates:</p>
 </code></pre></div>
 <p>See <a href="../satellite-catalog/"><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13.22 19.03a.75.75 0 0 1 0-1.06L18.19 13H3.75a.75.75 0 0 1 0-1.5h14.44l-4.97-4.97a.749.749 0 0 1 .326-1.275.75.75 0 0 1 .734.215l6.25 6.25a.75.75 0 0 1 0 1.06l-6.25 6.25a.75.75 0 0 1-1.06 0"/></svg></span> Satellite Catalog</a> for the full API.</p>
 <hr />
+<h2 id="damaged-files">Damaged files<a class="headerlink" href="#damaged-files" title="Permanent link">&para;</a></h2>
+<p>The reader decodes only intact blocks: Length a multiple of 4 and more than
+the 8 header bytes, inside the file, and a matching CRC (Septentrio
+reference guide, Section 4.1.1). Bytes outside an intact block, such as a
+block damaged on disk, are skipped, and the reader logs
+<code>sbf_damaged_bytes_skipped</code> once, with the file, the number of skipped
+stretches and bytes. An epoch whose <code>MeasEpoch</code> block is skipped is
+missing from the dataset.</p>
+<p>Blocks the reader doesn't read, <code>DiffCorrIn</code> among them, are never
+decoded. The <abbr title="Septentrio Binary Format — proprietary binary telemetry from Septentrio receivers; embeds satellite geometry">SBF</abbr> library crashes the Python process on a block header
+with Length 0 or 4 and on a <code>DiffCorrIn</code> block (canvodpy #678), so a
+receiver that logs differential corrections writes files the reader
+still reads.</p>
+<p>A file with no intact block raises <code>SbfError</code> naming the file, and so
+does a file without a <code>ReceiverSetup</code> block. <code>SbfError</code> is a <code>ValueError</code>
+and a <code>LookupError</code>. <code>to_ds()</code> of a file without epochs gives a dataset
+with no epochs and every signal ID, as the <abbr title="Receiver Independent Exchange Format — standard ASCII format for GNSS observations, defined by IGS (Navipedia: RINEX)">RINEX</abbr> readers do; its
+<code>start_time</code> and <code>end_time</code> raise <code>SbfError</code>.</p>
+<hr />
 <h2 id="differences-vs-rinex-rnxv3obs">Differences vs. <abbr title="Receiver Independent Exchange Format — standard ASCII format for GNSS observations, defined by IGS (Navipedia: RINEX)">RINEX</abbr> (<code>Rnxv3Obs</code>)<a class="headerlink" href="#differences-vs-rinex-rnxv3obs" title="Permanent link">&para;</a></h2>
 <table>
 <thead>
@@ -5636,7 +5677,7 @@ file on. Type2 sub-blocks take it from their Type1 sub-block.</p>
       <div class="md-copyright">
   
     <div class="md-copyright__highlight">
-      2026 Nicolas François Bader, CLIMERS, TU Wien · Apache-2.0. This documentation is provided &ldquo;as is&rdquo; without warranty of any kind, express or implied, including but not limited to warranties of correctness, completeness, or fitness for a particular purpose.
+      Copyright &copy; 2026 Nicolas François Bader, CLIMERS, TU Wien · Apache-2.0. This documentation is provided &ldquo;as is&rdquo; without warranty of any kind, express or implied, including but not limited to warranties of correctness, completeness, or fitness for a particular purpose.
     </div>
   
   <a href="../../../impressum/">Impressum and AI disclosure</a>
