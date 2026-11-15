@@ -455,7 +455,7 @@ store.compare_snapshots(snapshot_id_1, snapshot_id_2)
 
 ## Command line
 
-`canvodpy store` shows the stores of a configured site; `store log --path` also shows a store outside the settings:
+`canvodpy store` shows the stores of a configured site; with `--path`, `store info`, `store log` and `store interact` also open a store outside the settings, without a settings file:
 
 ```bash
 canvodpy store list                                 # GNSS and VOD store paths of every site
@@ -464,6 +464,8 @@ canvodpy store info ExampleSite --group canopy_01   # the dataset and log book o
 canvodpy store log ExampleSite                      # commit graph
 canvodpy store log ExampleSite --ops                # operations on the store
 canvodpy store log --path /data/copy/gnss           # commit graph of a store outside the settings
+canvodpy store info --path /data/copy/gnss          # branches, groups, and statistics of a store outside the settings
+canvodpy store interact --path /data/copy/gnss      # the store, read-only, in a marimo notebook of its own
 canvodpy store log ExampleSite --svg history.svg    # commit graph as an SVG file
 canvodpy store log ExampleSite --plain              # commit graph without colors, for files and CI logs
 canvodpy store maintain ExampleSite                 # what expiry and garbage collection would delete
@@ -471,7 +473,12 @@ canvodpy store migrate-layout ExampleSite           # move a store written by ap
 ```
 
 `--store vod` opens the VOD store instead of the GNSS store, and `--branch`
-selects a branch other than `main`. For every option, see the
+selects a branch other than `main`. `store interact` writes a notebook that opens
+the store and starts it with marimo's `--sandbox`: uv installs the same
+canvodpy version into an environment of the notebook's own, the store is
+opened without settings, so canvodpy refuses every write to it, and the
+notebook is deleted when marimo stops. It needs
+[uv](https://docs.astral.sh/uv/) on the PATH. For every option, see the
 [command-line reference](../../api/cli.md).
 
 On a store on S3, maintenance is a dry run only: another machine may be
