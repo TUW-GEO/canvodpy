@@ -2470,26 +2470,34 @@ class MyIcechunkStore:
         Returns
         -------
         dict[str, Any]
-            Store statistics.
+            Store statistics. ``total_groups`` counts the groups that hold
+            data on any branch: the receivers of a GNSS store, the
+            analyses of a VOD store (``tau_omega/canopy_01_vs_reference_01``).
+            The compression is the one the store keeps with its
+            repository, not the one of the settings; ``None`` if the store
+            keeps none.
         """
         groups = self.get_group_names()
-        # groups maps branch name -> list of group names (e.g. {"main": ["canopy_01"]});
-        # flatten + dedup to count distinct groups rather than branches.
-        all_group_names = {name for names in groups.values() for name in names}
+        # Data groups per branch: in a VOD store they sit below their
+        # calculator, so the top-level names of ``groups`` miss them.
+        data = {branch: self.list_data_groups(branch) for branch in groups}
+        compression = self._stored_compression()
         stats = {
             "store_path": str(self.store_path),
             "store_type": self.store_type,
-            "compression_level": self.compression_level,
+            "compression_level": None if compression is None else compression.level,
             # icechunk v2's CompressionAlgorithm has no .name attribute
             # (PyO3 enum wrapper, unlike Python's enum.Enum): str() gives
             # "CompressionAlgorithm.Zstd"; take the part after the dot.
-            "compression_algorithm": str(self.compression_algorithm).rsplit(".", 1)[-1],
-            "total_groups": len(all_group_names),
+            "compression_algorithm": None
+            if compression is None or compression.algorithm is None
+            else str(compression.algorithm).rsplit(".", 1)[-1],
+            "total_groups": len({name for names in data.values() for name in names}),
             "groups": groups,
         }
 
         # Add group-specific stats (from "main": get_group_info()'s default branch)
-        for group_name in groups.get("main", []):
+        for group_name in data.get("main", []):
             try:
                 info = self.get_group_info(group_name)
                 stats[f"group_{group_name}"] = {
@@ -2503,6 +2511,16 @@ class MyIcechunkStore:
                 )
 
         return stats
+
+    def _stored_compression(self) -> icechunk.CompressionConfig | None:
+        """The compression the store keeps with its repository.
+
+        Read from the storage, not from ``self.repo``: a store opened with
+        settings carries the settings' configuration, whatever the store
+        was created with.
+        """
+        stored = icechunk.Repository.fetch_config(self.location.storage())
+        return None if stored is None else stored.compression
 
     @deprecated(
         "`append_to_group()` is left over from development and will be removed "

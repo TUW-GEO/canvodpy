@@ -175,9 +175,10 @@ def info(
         console.print(f"\n[bold]{store_type or 'store of unknown type'}[/bold]")
     console.print(f"  Path:        {stats['store_path']}")
     console.print(f"  Groups:      {stats['total_groups']}")
-    level = stats["compression_level"]
+    algorithm, level = stats["compression_algorithm"], stats["compression_level"]
     console.print(
-        f"  Compression: {stats['compression_algorithm']}"
+        "  Compression: "
+        + ("not kept with the store" if algorithm is None else algorithm)
         + ("" if level is None else f" (level {level})")
     )
     console.print(
