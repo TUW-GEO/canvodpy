@@ -31,7 +31,6 @@ dev = [
     "commitizen>=4.19.2",
     "compliance-checker>=6.1.0",
     "hypothesis>=6.170.0",
-    "ipykernel>=7.4.0",
     "loky>=3.7.0",
     "marimo>=0.25.1",
     "mkdocstrings-python>=2.0.9",
