@@ -41,12 +41,10 @@ dev = [
     { name = "loky", specifier = ">=3.7.0" },
     { name = "marimo", specifier = ">=0.25.1" },
     { name = "mkdocstrings-python", specifier = ">=2.0.9" },
-    { name = "mystmd", specifier = ">=1.11.0" },
     { name = "pre-commit", specifier = ">=4.7.0" },
     { name = "psutil", specifier = ">=7.2.2" },
     { name = "pytest", specifier = ">=9.1.1" },
     { name = "pytest-cov", specifier = ">=7.1.0" },
-    { name = "pytest-mock", specifier = ">=3.16.0" },
     { name = "ruff", specifier = ">=0.17.1" },
     { name = "traitlets", specifier = ">=5.16.1" },
     { name = "ty", specifier = ">=0.0.88" },
@@ -195,19 +193,14 @@ dependencies = [
     { name = "pint" },
     { name = "pydantic" },
     { name = "pymap3d" },
-    { name = "requests" },
     { name = "rich" },
     { name = "scipy" },
     { name = "structlog" },
-    { name = "tqdm" },
     { name = "xarray" },
 ]
 
 [package.dev-dependencies]
 dev = [
-    { name = "marimo" },
-    { name = "matplotlib" },
-    { name = "polars" },
     { name = "pytest" },
     { name = "pytest-cov" },
     { name = "ruff" },
@@ -223,19 +216,14 @@ requires-dist = [
     { name = "pint", specifier = ">=0.23" },
     { name = "pydantic", specifier = ">=2.5.0" },
     { name = "pymap3d", specifier = ">=3.0.0" },
-    { name = "requests", specifier = ">=2.31.0" },
     { name = "rich", specifier = ">=13.0" },
     { name = "scipy", specifier = ">=1.15.0" },
     { name = "structlog", specifier = ">=24.1.0" },
-    { name = "tqdm", specifier = ">=4.67.1" },
     { name = "xarray", specifier = ">=2023.12.0" },
 ]
 
 [package.metadata.requires-dev]
 dev = [
-    { name = "marimo", specifier = ">=0.9.0" },
-    { name = "matplotlib", specifier = ">=3.8.0" },
-    { name = "polars", specifier = ">=1.0.0" },
     { name = "pytest", specifier = ">=8.0" },
     { name = "pytest-cov", specifier = ">=5.0" },
     { name = "ruff", specifier = ">=0.14" },
@@ -288,11 +276,11 @@ source = { editable = "packages/canvod-grids" }
 dependencies = [
     { name = "canvod-utils" },
     { name = "dask" },
-    { name = "loguru" },
     { name = "matplotlib" },
     { name = "numpy" },
     { name = "pandas" },
     { name = "polars" },
+    { name = "pyarrow" },
     { name = "scipy" },
     { name = "structlog" },
     { name = "tqdm" },
@@ -312,11 +300,11 @@ optional = [
 requires-dist = [
     { name = "canvod-utils", editable = "packages/canvod-utils" },
     { name = "dask", specifier = ">=2024.1.0" },
-    { name = "loguru", specifier = ">=0.7.0" },
     { name = "matplotlib", specifier = ">=3.8.0" },
     { name = "numpy", specifier = ">=1.26.0" },
     { name = "pandas", specifier = ">=2.1.0" },
     { name = "polars", specifier = ">=1.0.0" },
+    { name = "pyarrow", specifier = ">=23.0.1" },
     { name = "scipy", specifier = ">=1.11.0" },
     { name = "structlog", specifier = ">=24.1.0" },
     { name = "tqdm", specifier = ">=4.66.0" },
@@ -408,7 +396,6 @@ dependencies = [
 
 [package.dev-dependencies]
 dev = [
-    { name = "marimo" },
     { name = "pytest" },
     { name = "pytest-cov" },
     { name = "ruff" },
@@ -434,7 +421,6 @@ requires-dist = [
 
 [package.metadata.requires-dev]
 dev = [
-    { name = "marimo", specifier = ">=0.9.0" },
     { name = "pytest", specifier = ">=8.0" },
     { name = "pytest-cov", specifier = ">=5.0" },
     { name = "ruff", specifier = ">=0.14" },
@@ -455,10 +441,10 @@ dependencies = [
     { name = "canvod-vod" },
     { name = "dask" },
     { name = "icechunk" },
-    { name = "networkx" },
     { name = "numpy" },
     { name = "polars" },
     { name = "structlog" },
+    { name = "tqdm" },
     { name = "xarray" },
     { name = "zarr" },
 ]
@@ -482,10 +468,10 @@ requires-dist = [
     { name = "canvod-vod", editable = "packages/canvod-vod" },
     { name = "dask", specifier = ">=2024.1.0" },
     { name = "icechunk", specifier = ">=2.0.0" },
-    { name = "networkx", specifier = ">=3.6.1" },
     { name = "numpy", specifier = ">=1.24.0" },
     { name = "polars", specifier = ">=1.0.0" },
     { name = "structlog", specifier = ">=24.1.0" },
+    { name = "tqdm", specifier = ">=4.66.0" },
     { name = "xarray", specifier = ">=2023.12.0" },
     { name = "zarr", specifier = ">=3.1.2" },
 ]
@@ -1805,19 +1791,6 @@ wheels = [
 ]
 
 [[package]]
-name = "loguru"
-version = "0.7.3"
-source = { registry = "https://pypi.org/simple" }
-dependencies = [
-    { name = "colorama", marker = "sys_platform == 'win32'" },
-    { name = "win32-setctime", marker = "sys_platform == 'win32'" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/3a/05/a1dae3dffd1116099471c643b8924f5aa6524411dc6c63fdae648c4f1aca/loguru-0.7.3.tar.gz", hash = "sha256:19480589e77d47b8d85b2c827ad95d49bf31b0dcde16593892eb51dd18706eb6", size = 63559, upload-time = "2024-12-06T11:20:56.608Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/0c/29/0348de65b8cc732daa3e33e67806420b2ae89bdce2b04af740289c5c6c8c/loguru-0.7.3-py3-none-any.whl", hash = "sha256:31a33c10c8e1e10422bfd431aeb5d351c7cf7fa671e3c4df004162264b28220c", size = 61595, upload-time = "2024-12-06T11:20:54.538Z" },
-]
-
-[[package]]
 name = "loky"
 version = "3.7.0"
 source = { registry = "https://pypi.org/simple" }
@@ -2283,19 +2256,6 @@ wheels = [
 ]
 
 [[package]]
-name = "mystmd"
-version = "1.11.0"
-source = { registry = "https://pypi.org/simple" }
-dependencies = [
-    { name = "nodeenv" },
-    { name = "platformdirs" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/00/e0/05c4acc244e317a83cf8da27c2f29b62f86c8ee00d42c3668bf316461b1d/mystmd-1.11.0.tar.gz", hash = "sha256:afc8ca35bcf34cd694b2d5f275dba5baa2e78cf72b4a770369f9a2b6183d7d59", size = 2750170, upload-time = "2026-09-21T16:32:28.084Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/a2/5e/4566006965545a6461d4b250faafd57a3ff04a193ed664790fbbfe7ba91d/mystmd-1.11.0-py3-none-any.whl", hash = "sha256:52ece5bff807e24e979ca86a806153a3c00247df32321547adc533b8720edab6", size = 2780949, upload-time = "2026-09-21T16:32:26.306Z" },
-]
-
-[[package]]
 name = "narwhals"
 version = "2.27.1"
 source = { registry = "https://pypi.org/simple" }
@@ -2367,15 +2327,6 @@ wheels = [
     { url = "https://files.pythonhosted.org/packages/e0/65/a53b21581f60a582667679371c7e1cda6f8e382523e1b76f071bf6f091bf/netcdf4-1.7.5-cp315-cp315t-manylinux_2_28_x86_64.whl", hash = "sha256:743de01bfecfe89a14c89f37e7f7919ae988a2692e738e5e98004217aeaccffa", size = 10869976, upload-time = "2026-10-15T14:47:41.47Z" },
     { url = "https://files.pythonhosted.org/packages/94/a2/c29c58473ff45d892e7f15c0f7ed57e9418ccdcc6fdfa7f41ce9ec170ac8/netcdf4-1.7.5-cp315-cp315t-win_amd64.whl", hash = "sha256:3405f0cd57fa89881a364e90f7ada81fde0a073f443f66e9da8f0eda8873349b", size = 23372265, upload-time = "2026-10-15T14:47:44.975Z" },
     { url = "https://files.pythonhosted.org/packages/30/43/3f146cfff0da67baf957ef7f65002a234845321cdfe77ec31c5730950b4e/netcdf4-1.7.5-cp315-cp315t-win_arm64.whl", hash = "sha256:f262d6c0e7fd535e6ef92b18674240c74f3a25e573c048a4d0586c0f74014d5e", size = 2945186, upload-time = "2026-10-15T14:47:47.261Z" },
-]
-
-[[package]]
-name = "networkx"
-version = "3.7"
-source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/dc/76/3af777226b63a5e64a6b36b1ec5855c14e2b94a37096d4760e595fc43511/networkx-3.7.tar.gz", hash = "sha256:fd77a511bd90f39f3d016351345b52cf5319b813bdca01de3f755d3cca62e96a", size = 1866482, upload-time = "2026-09-21T16:45:16.974Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/7e/cd/fe58041e9011f307c490e3e17dd48cc516448f7c698a3f2d9d9d65d7e6a8/networkx-3.7-py3-none-any.whl", hash = "sha256:e3fd2c13a7814cee3746340d8d7f8598a67f16a58bf47fb7f8793fab6efca1b0", size = 2142205, upload-time = "2026-09-21T16:45:14.609Z" },
 ]
 
 [[package]]
@@ -3442,18 +3393,6 @@ wheels = [
 ]
 
 [[package]]
-name = "pytest-mock"
-version = "3.17.0"
-source = { registry = "https://pypi.org/simple" }
-dependencies = [
-    { name = "pytest" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/97/c2/28b9f5b955ff2bcd4727a6f768e2ca9b586cd7c37b95ea5f7b9b873ac7b3/pytest_mock-3.17.0.tar.gz", hash = "sha256:e36576e0985e01027e999891e7a966c67822d40c89ef1b4c8b6e22737e3590b4", size = 43064, upload-time = "2026-10-17T16:21:42.435Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/e8/ea/47fbdc8f37410956fd445720e927589b1e2a47772c5f28109f0ce2fa26d9/pytest_mock-3.17.0-py3-none-any.whl", hash = "sha256:1b82aa4b37137248bd687055e109723debeb07b489de1565297dc9589c5f2d6b", size = 11248, upload-time = "2026-10-17T16:21:41.265Z" },
-]
-
-[[package]]
 name = "python-dateutil"
 version = "2.9.0.post0"
 source = { registry = "https://pypi.org/simple" }
@@ -4381,15 +4320,6 @@ source = { registry = "https://pypi.org/simple" }
 sdist = { url = "https://files.pythonhosted.org/packages/bf/60/bc7a980fc78837d6ef8f5940cca4cadc433364503a4c4d42e2a7a0de3231/widgetsnbextension-4.0.16.tar.gz", hash = "sha256:adeea0ae78f0856ee4945f413299801b82a0a01416303301f39a704282a37b73", size = 1111094, upload-time = "2026-08-18T08:52:55.859Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/34/95/40e17e20046b7bc820d29d09ae84ec157ec8dd6e6f6cd722626292c31b2e/widgetsnbextension-4.0.16-py3-none-any.whl", hash = "sha256:a31a8774885b96fe825462f5d6496166f0c7cae111195b6465c801d230eb5a4e", size = 2225148, upload-time = "2026-08-18T08:52:53.736Z" },
-]
-
-[[package]]
-name = "win32-setctime"
-version = "1.2.0"
-source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/b3/8f/705086c9d734d3b663af0e9bb3d4de6578d08f46b1b101c2442fd9aecaa2/win32_setctime-1.2.0.tar.gz", hash = "sha256:ae1fdf948f5640aae05c511ade119313fb6a30d7eabe25fef9764dca5873c4c0", size = 4867, upload-time = "2024-12-07T15:28:28.314Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/e1/07/c6fe3ad3e685340704d314d765b7912993bcb8dc198f0e7a89382d37974b/win32_setctime-1.2.0-py3-none-any.whl", hash = "sha256:95d644c4e708aba81dc3704a116d8cbc974d70b3bdb8be1d150e36be6e9d1390", size = 4083, upload-time = "2024-12-07T15:28:26.465Z" },
 ]
 
 [[package]]
