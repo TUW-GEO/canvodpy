@@ -77,7 +77,7 @@ jobs:
                   file: coverage.lcov
             - name: Coverage comment
               if: inputs.coverage && matrix.os == 'ubuntu-latest'
-              uses: py-cov-action/python-coverage-comment-action@b793387c4867d2376a239fc12a81ea89219e36fa # v3
+              uses: py-cov-action/python-coverage-comment-action@f61e5cd43688fff694a32299b5098c81728388cf # v3
               with:
                   GITHUB_TOKEN: ${{ github.token }}
                   VERBOSE: false
