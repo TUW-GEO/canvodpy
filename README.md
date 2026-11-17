@@ -119,7 +119,7 @@
 | packages/canvod-grids/src/canvod/grids/\_internal/\_\_init\_\_.py               |        2 |        0 |    100% |           |
 | packages/canvod-grids/src/canvod/grids/\_internal/cell\_lookup.py               |      119 |       10 |     92% |134-138, 147, 164, 167-168, 187, 189, 218 |
 | packages/canvod-grids/src/canvod/grids/\_internal/geometry.py                   |       14 |        0 |    100% |           |
-| packages/canvod-grids/src/canvod/grids/aggregation.py                           |      198 |      123 |     38% |230-352, 470, 481, 497-501, 509-521, 530-547, 560-623, 635-647, 664-681 |
+| packages/canvod-grids/src/canvod/grids/aggregation.py                           |      190 |       21 |     89% |231, 244-245, 248, 301, 470, 481, 498, 500, 514, 518, 541-545, 565-566, 612, 621-623 |
 | packages/canvod-grids/src/canvod/grids/analysis/\_\_init\_\_.py                 |       10 |        0 |    100% |           |
 | packages/canvod-grids/src/canvod/grids/analysis/analysis\_storage.py            |       11 |        2 |     82% |     40-41 |
 | packages/canvod-grids/src/canvod/grids/analysis/filtering.py                    |      215 |      130 |     40% |132, 155-171, 179, 202-223, 231, 257-264, 272, 298-303, 329-330, 338, 383, 412, 478-480, 499-511, 534-657, 661-666, 681, 692 |
@@ -252,7 +252,7 @@
 | packages/canvod-viz/src/canvod/viz/widgets/hemisphere\_widgets.py               |       27 |        0 |    100% |           |
 | packages/canvod-vod/src/canvod/vod/\_\_init\_\_.py                              |        4 |        0 |    100% |           |
 | packages/canvod-vod/src/canvod/vod/calculator.py                                |       76 |        8 |     89% |56, 78, 122, 129-136 |
-| **TOTAL**                                                                       | **30606** | **7498** | **76%** |           |
+| **TOTAL**                                                                       | **30598** | **7396** | **76%** |           |
 
 
 ## Setup coverage badge
