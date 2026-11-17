@@ -661,22 +661,10 @@ def _create_percell_dataset(
     chunk_days: int,
 ) -> xr.Dataset:
     """Assemble the final xr.Dataset from result arrays."""
+    # selected_cells are row positions in the grid table
     grid_df = grid.grid
-
-    # Convert to pandas for .loc indexing if needed
-    if hasattr(grid_df, "to_pandas"):
-        grid_df_pd = grid_df.to_pandas()
-    else:
-        grid_df_pd = grid_df
-
-    if hasattr(grid_df_pd, "loc"):
-        cell_theta = np.degrees(grid_df_pd.loc[selected_cells, "theta"].values)
-        cell_phi = np.degrees(grid_df_pd.loc[selected_cells, "phi"].values)
-    else:
-        theta_all = np.degrees(grid_df["theta"].to_numpy())
-        phi_all = np.degrees(grid_df["phi"].to_numpy())
-        cell_theta = theta_all[selected_cells]
-        cell_phi = phi_all[selected_cells]
+    cell_theta = np.degrees(grid_df["theta"].to_numpy()[selected_cells])
+    cell_phi = np.degrees(grid_df["phi"].to_numpy()[selected_cells])
 
     return xr.Dataset(
         data_vars={
