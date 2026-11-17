@@ -1,5 +1,7 @@
 """Tests for canvod.grids.aggregation module."""
 
+import sys
+
 import numpy as np
 import pandas as pd
 import polars as pl
@@ -12,6 +14,7 @@ from canvod.grids.aggregation import (
     analyze_diurnal_patterns,
     analyze_spatial_patterns,
     compute_global_average,
+    compute_percell_timeseries,
     compute_regional_average,
 )
 
@@ -256,3 +259,46 @@ class TestAnalysisFunctions:
         result = analyze_spatial_patterns(percell_ds)
         assert "time" not in result.dims
         assert "cell" in result.dims
+
+
+# ---------------------------------------------------------------------------
+# compute_percell_timeseries
+# ---------------------------------------------------------------------------
+
+
+class _PolarsGrid:
+    """Grid with a polars cell table, as GridData holds it (radians)."""
+
+    def __init__(self, theta_deg: list[float], phi_deg: list[float]):
+        self.grid = pl.DataFrame(
+            {"theta": np.radians(theta_deg), "phi": np.radians(phi_deg)}
+        )
+
+    @property
+    def ncells(self) -> int:
+        return self.grid.height
+
+
+class TestComputePercellTimeseries:
+    """Cell angles of the per-cell time series, in degrees."""
+
+    @pytest.fixture()
+    def grid(self):
+        return _PolarsGrid([10.0, 30.0, 50.0, 70.0], [0.0, 90.0, 180.0, 270.0])
+
+    def test_cell_angles_of_all_cells(self, grid):
+        result = compute_percell_timeseries(_make_vod_dataset(), grid)
+        np.testing.assert_allclose(result["cell_theta"], [10.0, 30.0, 50.0, 70.0])
+        np.testing.assert_allclose(result["cell_phi"], [0.0, 90.0, 180.0, 270.0])
+
+    def test_cell_angles_of_a_theta_range(self, grid):
+        result = compute_percell_timeseries(
+            _make_vod_dataset(), grid, theta_range=(25.0, 55.0)
+        )
+        np.testing.assert_allclose(result["cell_theta"], [30.0, 50.0])
+        np.testing.assert_allclose(result["cell_phi"], [90.0, 180.0])
+
+    def test_runs_without_pyarrow(self, grid, monkeypatch):
+        monkeypatch.setitem(sys.modules, "pyarrow", None)
+        result = compute_percell_timeseries(_make_vod_dataset(), grid)
+        np.testing.assert_allclose(result["cell_theta"], [10.0, 30.0, 50.0, 70.0])
