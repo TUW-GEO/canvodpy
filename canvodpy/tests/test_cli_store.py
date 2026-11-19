@@ -3,6 +3,9 @@
 from __future__ import annotations
 
 import hashlib
+import os
+from pathlib import Path
+from typing import ClassVar
 
 import numpy as np
 import pytest
@@ -190,6 +193,59 @@ class TestStoreInfo:
 
         assert result.exit_code == 1
         assert "--store must be one of" in result.output
+
+    def test_opens_a_store_by_path_without_settings(self, tmp_path):
+        store_path = tmp_path / "copy" / "gnss"
+        _write_synthetic_store(store_path)
+
+        result = runner.invoke(
+            main_app,
+            ["store", "info", "--path", str(store_path), "--group", "canopy_01"],
+            env=_env(tmp_path / "no-settings"),
+        )
+
+        assert result.exit_code == 0, result.output
+        assert "Groups:      1" in result.output
+        assert "S1C" in result.output
+        assert "level None" not in result.output
+
+    def test_a_missing_path_is_refused_by_name(self, tmp_path):
+        result = runner.invoke(
+            main_app,
+            ["store", "info", "--path", str(tmp_path / "nowhere")],
+            env=_env(tmp_path / "no-settings"),
+        )
+
+        assert result.exit_code == 1
+        assert "No store at" in result.output
+        assert "Traceback" not in result.output
+
+    @pytest.mark.parametrize("site_and_path", [True, False])
+    def test_exactly_one_of_site_or_path(self, tmp_path, site_and_path):
+        config_dir = tmp_path / "config"
+        stores_root = tmp_path / "stores"
+        _write_config(config_dir, stores_root)
+        store_path = stores_root / "TestSite" / "gnss"
+        _write_synthetic_store(store_path)
+        args = ["TestSite", "--path", str(store_path)] if site_and_path else []
+
+        result = runner.invoke(main_app, ["store", "info", *args], env=_env(config_dir))
+
+        assert result.exit_code == 1
+        assert "a site or --path" in result.output
+
+    def test_store_does_not_go_with_path(self, tmp_path):
+        store_path = tmp_path / "copy" / "gnss"
+        _write_synthetic_store(store_path)
+
+        result = runner.invoke(
+            main_app,
+            ["store", "info", "--path", str(store_path), "--store", "vod"],
+            env=_env(tmp_path / "no-settings"),
+        )
+
+        assert result.exit_code == 1
+        assert "--store doesn't go with --path" in result.output
 
 
 class TestStoreLog:
@@ -1767,3 +1823,122 @@ class TestStoreMigrateLayout:
 
         assert result.exit_code == 0, result.output
         assert "day blocks already" in result.output
+
+
+class TestStoreInteract:
+    """`store interact` writes a notebook and hands it to marimo --sandbox.
+
+    marimo itself is not started here: Popen is replaced, and the notebook
+    is run as a script in this environment instead.
+    """
+
+    class _FakePopen:
+        calls: ClassVar[list] = []
+
+        def __init__(self, args, env):
+            self.calls.append((args, env, Path(args[-1]).read_text()))
+
+        def wait(self):
+            return 0
+
+    def _invoke(self, monkeypatch, args, env):
+        import canvodpy.cli.store_interact as si
+
+        self._FakePopen.calls = []
+        monkeypatch.setattr(si, "Popen", self._FakePopen)
+        monkeypatch.setattr(si.shutil, "which", lambda _: "/usr/bin/uv")
+        return runner.invoke(main_app, ["store", "interact", *args], env=env)
+
+    def test_opens_a_store_by_path_in_a_sandboxed_notebook(self, tmp_path, monkeypatch):
+        from importlib.metadata import version
+
+        store_path = tmp_path / "copy" / "gnss"
+        _write_synthetic_store(store_path)
+
+        result = self._invoke(
+            monkeypatch, ["--path", str(store_path)], _env(tmp_path / "no-settings")
+        )
+
+        assert result.exit_code == 0, result.output
+        [(args, env, notebook)] = self._FakePopen.calls
+        assert args[-4:-1] == ["marimo", "edit", "--sandbox"]
+        assert f'"canvodpy=={version("canvodpy")}"' in notebook
+        assert repr(str(store_path)) in notebook
+        # opened without settings: the folder exists and holds none
+        no_settings = Path(env["CANVOD_CONFIG_DIR"])
+        assert not (no_settings / "canvod-settings.yaml").exists()
+
+    def test_the_notebook_opens_the_store(self, tmp_path, monkeypatch):
+        import subprocess
+        import sys
+
+        store_path = tmp_path / "copy" / "gnss"
+        _write_synthetic_store(store_path)
+        self._invoke(
+            monkeypatch, ["--path", str(store_path)], _env(tmp_path / "no-settings")
+        )
+        [(_args, _env_used, notebook)] = self._FakePopen.calls
+        nb = tmp_path / "nb.py"
+        nb.write_text(notebook)
+
+        run = subprocess.run(
+            [sys.executable, str(nb)],
+            env={**os.environ, "CANVOD_CONFIG_DIR": str(tmp_path / "empty")},
+            capture_output=True,
+            text=True,
+        )
+
+        assert run.returncode == 0, run.stderr
+
+    def test_a_site_store_is_opened_by_its_path(self, tmp_path, monkeypatch):
+        config_dir = tmp_path / "config"
+        stores_root = tmp_path / "stores"
+        _write_config(config_dir, stores_root)
+        _write_synthetic_store(stores_root / "TestSite" / "gnss")
+
+        result = self._invoke(monkeypatch, ["TestSite"], _env(config_dir))
+
+        assert result.exit_code == 0, result.output
+        [(_args, env, notebook)] = self._FakePopen.calls
+        assert "TestSite" in notebook
+        assert env["CANVOD_CONFIG_DIR"] != str(config_dir)
+
+    def test_a_relative_path_reaches_the_notebook_absolute(self, tmp_path, monkeypatch):
+        """marimo's kernel may run elsewhere than the command was started."""
+        _write_synthetic_store(tmp_path / "copy" / "gnss")
+        monkeypatch.chdir(tmp_path)
+
+        result = self._invoke(
+            monkeypatch, ["--path", "copy/gnss"], _env(tmp_path / "no-settings")
+        )
+
+        assert result.exit_code == 0, result.output
+        [(_args, _env_used, notebook)] = self._FakePopen.calls
+        assert repr(str((tmp_path / "copy" / "gnss").resolve())) in notebook
+
+    def test_without_uv_it_says_so(self, tmp_path, monkeypatch):
+        import canvodpy.cli.store_interact as si
+
+        store_path = tmp_path / "copy" / "gnss"
+        _write_synthetic_store(store_path)
+        monkeypatch.setattr(si.shutil, "which", lambda _: None)
+
+        result = runner.invoke(
+            main_app,
+            ["store", "interact", "--path", str(store_path)],
+            env=_env(tmp_path / "no-settings"),
+        )
+
+        assert result.exit_code == 1
+        assert "needs uv" in result.output
+
+    def test_a_missing_path_is_refused_by_name(self, tmp_path, monkeypatch):
+        result = self._invoke(
+            monkeypatch,
+            ["--path", str(tmp_path / "nowhere")],
+            _env(tmp_path / "no-settings"),
+        )
+
+        assert result.exit_code == 1
+        assert "No store at" in result.output
+        assert self._FakePopen.calls == []

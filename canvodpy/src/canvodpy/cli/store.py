@@ -126,14 +126,31 @@ def list_stores(
 @store_app.command()
 def info(
     site: Annotated[
-        str,
+        str | None,
         typer.Argument(
-            help="Site name, as defined under sites: in canvod-settings.yaml"
+            help="Site name, as defined under sites: in canvod-settings.yaml. Omit when using --path."
         ),
-    ],
+    ] = None,
     store: Annotated[
-        str, typer.Option("--store", metavar="gnss|vod", help="Store to open.")
-    ] = "gnss",
+        str | None,
+        typer.Option(
+            "--store",
+            metavar="gnss|vod",
+            help="Store of the site to open. Default: gnss. Not with --path.",
+            show_default=False,
+        ),
+    ] = None,
+    path: Annotated[
+        str | None,
+        typer.Option(
+            "--path",
+            metavar="STORE",
+            help=(
+                "Open the store at this local path or s3://bucket/prefix "
+                "instead of a site's store, for example a copy. Needs no settings file."
+            ),
+        ),
+    ] = None,
     branch: Annotated[str, typer.Option("--branch", help="Branch to inspect")] = "main",
     group: Annotated[
         str | None,
@@ -144,21 +161,25 @@ def info(
     ] = None,
     config_dir: Annotated[Path | None, CONFIG_DIR_OPTION] = None,
 ) -> None:
-    """Show branches, groups, and stats for one site's store."""
-    if store not in _STORE_KINDS:
-        console.print(
-            f"[canvod.error]❌ --store must be one of: {', '.join(_STORE_KINDS)}[/canvod.error]"
-        )
-        raise typer.Exit(1)
+    """Show branches, groups, and stats for one site's store or the store at --path."""
+    from canvod.store import MyIcechunkStore
 
-    icestore = _open_store(site, store)
+    location, store_type = _locate_site_or_path(site, store, path)
+    # Read only: the type only picks the chunking of writes (_open_site_or_path).
+    icestore = MyIcechunkStore(location, store_type=store_type or "gnss_store")
     stats = icestore.get_store_stats()
 
-    console.print(f"\n[bold]{site}[/bold]: {store} store")
+    if site is not None:
+        console.print(f"\n[bold]{site}[/bold]: {store or 'gnss'} store")
+    else:
+        console.print(f"\n[bold]{store_type or 'store of unknown type'}[/bold]")
     console.print(f"  Path:        {stats['store_path']}")
     console.print(f"  Groups:      {stats['total_groups']}")
+    algorithm, level = stats["compression_algorithm"], stats["compression_level"]
     console.print(
-        f"  Compression: {stats['compression_algorithm']} (level {stats['compression_level']})"
+        "  Compression: "
+        + ("not kept with the store" if algorithm is None else algorithm)
+        + ("" if level is None else f" (level {level})")
     )
     console.print(
         f"  Content settings: {_content_settings_line(icestore.store_path)}\n"
@@ -281,27 +302,7 @@ def log(
             "[canvod.error]❌ --svg writes the commit graph; it doesn't go with --ops.[/canvod.error]"
         )
         raise typer.Exit(1)
-    if site is not None and path is None:
-        store = store or "gnss"
-        if store not in _STORE_KINDS:
-            console.print(
-                f"[canvod.error]❌ --store must be one of: {', '.join(_STORE_KINDS)}[/canvod.error]"
-            )
-            raise typer.Exit(1)
-        icestore = _open_store(site, store)
-    elif path is not None and site is None:
-        if store is not None:
-            console.print(
-                "[canvod.error]❌ --store doesn't go with --path: the store at "
-                "the path is opened as it is.[/canvod.error]"
-            )
-            raise typer.Exit(1)
-        icestore = _open_path(path)
-    else:
-        console.print(
-            "[canvod.error]❌ Give a site or --path: one of them, not both.[/canvod.error]"
-        )
-        raise typer.Exit(1)
+    icestore = _open_site_or_path(site, store, path)
 
     if ops:
         icestore.print_ops_log(limit=limit)
@@ -314,13 +315,54 @@ def log(
     console.print(f"[canvod.ok]✓ Wrote[/canvod.ok] {svg}")
 
 
-def _open_path(path: str):
-    """The store at ``path`` (local or ``s3://``), opened without settings.
+def _open_site_or_path(site: str | None, store: str | None, path: str | None):
+    """The store of a site (``store``: gnss or vod) or the store at ``path``.
 
-    Exits with a message that names the path if no store is there or the
-    storage can't be reached.
+    Opened for reading: a store found by ``path`` without its type is opened
+    as a GNSS store, and the type only picks the chunking of writes. Don't
+    reuse this for writing.
     """
     from canvod.store import MyIcechunkStore
+
+    location, store_type = _locate_site_or_path(site, store, path)
+    return MyIcechunkStore(location, store_type=store_type or "gnss_store")
+
+
+def _locate_site_or_path(
+    site: str | None, store: str | None, path: str | None
+) -> tuple[Path | str, str | None]:
+    """The location and type of a site's store or of the store at ``path``.
+
+    Exactly one of ``site`` and ``path`` is given; ``--store`` only goes
+    with a site. The type is None for a store at ``path`` that doesn't
+    record one. Exits with a message otherwise, or if no store is there.
+    """
+    if site is not None and path is None:
+        store = store or "gnss"
+        if store not in _STORE_KINDS:
+            console.print(
+                f"[canvod.error]❌ --store must be one of: {', '.join(_STORE_KINDS)}[/canvod.error]"
+            )
+            raise typer.Exit(1)
+        return _store_path(site, store)
+    if path is not None and site is None:
+        if store is not None:
+            console.print(
+                "[canvod.error]❌ --store doesn't go with --path: the store at "
+                "the path is opened as it is.[/canvod.error]"
+            )
+            raise typer.Exit(1)
+        _require_store_at(path)
+        return path, _folder_store_type(path)
+    console.print(
+        "[canvod.error]❌ Give a site or --path: one of them, not both.[/canvod.error]"
+    )
+    raise typer.Exit(1)
+
+
+def _require_store_at(path: str) -> None:
+    """Exit with a message that names ``path`` if no store is there or the
+    storage can't be reached (local or ``s3://``)."""
     from canvod.store_metadata import store_exists
     from canvod.store_metadata.location import StorageUnreachableError
 
@@ -332,10 +374,54 @@ def _open_path(path: str):
     if not exists:
         console.print(f"[canvod.error]❌ No store at[/canvod.error] {path}")
         raise typer.Exit(1)
-    # The store type only picks the chunking of writes; log only reads the
-    # history, so a store without one is opened as a GNSS store. Don't
-    # reuse this for writing.
-    return MyIcechunkStore(path, store_type=_folder_store_type(path) or "gnss_store")
+
+
+@store_app.command()
+def interact(
+    site: Annotated[
+        str | None,
+        typer.Argument(
+            help="Site name, as defined under sites: in canvod-settings.yaml. Omit when using --path."
+        ),
+    ] = None,
+    store: Annotated[
+        str | None,
+        typer.Option(
+            "--store",
+            metavar="gnss|vod",
+            help="Store of the site to open. Default: gnss. Not with --path.",
+            show_default=False,
+        ),
+    ] = None,
+    path: Annotated[
+        str | None,
+        typer.Option(
+            "--path",
+            metavar="STORE",
+            help=(
+                "Open the store at this local path or s3://bucket/prefix "
+                "instead of a site's store, for example a copy. Needs no settings file."
+            ),
+        ),
+    ] = None,
+    config_dir: Annotated[Path | None, CONFIG_DIR_OPTION] = None,
+) -> None:
+    """Open a store without settings in a marimo notebook, in an environment of its own.
+
+    The notebook shows the store and is yours to work in. uv installs
+    canvodpy from PyPI at the version of this command (marimo's
+    --sandbox). The notebook opens the store without settings, so canvodpy
+    refuses commits, expiry, and garbage collection on it, and is deleted
+    when marimo stops (Ctrl-C).
+    """
+    from canvod.store_metadata.location import store_location
+    from canvodpy.cli.store_interact import run_interact
+
+    location, store_type = _locate_site_or_path(site, store, path)
+    # The notebook's kernel may run in another folder: a local path goes in absolute.
+    local = store_location(location).local_path
+    where = str(location) if local is None else str(Path(local).resolve())
+    raise typer.Exit(run_interact(where, store_type or "gnss_store"))
 
 
 @store_app.command()
