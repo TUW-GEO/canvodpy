@@ -41,7 +41,7 @@ file_hash(path)  # first 16 hex digits of the file's SHA-256
 | `file_hash` | First 16 hex digits of a file's SHA-256; the store uses it to recognize files it already holds |
 | `bytes_hash` | The same hash for file content that is already in memory |
 | `isfloat` | Check whether a value can be read as a float |
-| `get_version_from_pyproject` | Read a package version from its `pyproject.toml` |
+| `canvodpy_version` | The installed canvodpy version, which store commit messages and the `Software` attribute name; `"unknown"` when canvodpy is not installed |
 | `deprecated` | Decorator that marks code left over from development: it warns on use and names the replacement |
 | `deprecated_argument` | Decorator that marks one argument of a function as left over from development: it warns when the argument is passed |
 | `sanitize_directory` | Remove the files that the operating system puts into data folders, for example `.DS_Store` |

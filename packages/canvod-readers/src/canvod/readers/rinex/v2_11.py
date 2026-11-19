@@ -72,8 +72,7 @@ from canvod.readers.gnss_specs.obs_codes import (
     _v2_tracking_code,
 )
 from canvod.readers.gnss_specs.signals import SignalIDMapper
-from canvod.readers.gnss_specs.utils import get_version_from_pyproject
-from canvod.utils.tools import bytes_hash, deprecated
+from canvod.utils.tools import bytes_hash, canvodpy_version, deprecated
 
 # --------------------------------------------------------------------------- #
 # Constants
@@ -1635,9 +1634,7 @@ class Rnxv2Obs(GNSSDataReader, BaseModel):
     def _create_basic_attrs(self) -> dict[str, str]:
         attrs = get_global_attrs()
         attrs["Created"] = datetime.now(UTC).isoformat()
-        attrs["Software"] = (
-            f"{attrs['Software']}, Version: {get_version_from_pyproject()}"
-        )
+        attrs["Software"] = f"{attrs['Software']}, Version: {canvodpy_version()}"
         attrs["RINEX Version"] = str(self.header.version)
         attrs["Tracking Code Markers"] = (
             "RINEX 2 does not record tracking codes; lowercase sid codes mark "

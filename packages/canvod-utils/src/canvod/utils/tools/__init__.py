@@ -10,8 +10,8 @@ This module provides common utilities used across all canVODpy packages:
 
 Examples
 --------
->>> from canvod.utils.tools import get_version_from_pyproject
->>> version = get_version_from_pyproject()
+>>> from canvod.utils.tools import canvodpy_version
+>>> version = canvodpy_version()
 
 >>> from canvod.utils.tools import YYYYDOY
 >>> date = YYYYDOY.from_str("2025024")
@@ -37,7 +37,7 @@ from .fs import directory_size_bytes
 from .hashing import bytes_hash, file_hash
 from .sanitize import sanitize_directory
 from .validation import isfloat
-from .version import get_version_from_pyproject
+from .version import canvodpy_version, get_version_from_pyproject
 from .worker import _worker_init
 
 # Backwards compatibility: gpsweekday is now a static method on YYYYDOY
@@ -49,6 +49,7 @@ __all__ = [
     "YYYYDOY",
     "_worker_init",
     "bytes_hash",
+    "canvodpy_version",
     "deprecated",
     "deprecated_argument",
     "directory_size_bytes",
