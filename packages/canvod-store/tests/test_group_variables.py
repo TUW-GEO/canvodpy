@@ -61,7 +61,11 @@ def _dataset(
     return xr.Dataset(
         data,
         coords={"epoch": ("epoch", epochs, {"time_system": "GPS"}), "sid": sids},
-        attrs={"File Hash": file_hash, PREPROCESSING_ATTR: record},
+        attrs={
+            "File Hash": file_hash,
+            "Software": "canvod-readers 1.0.0",
+            PREPROCESSING_ATTR: record,
+        },
     )
 
 

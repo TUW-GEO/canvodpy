@@ -43,6 +43,12 @@ LOG_BOOK_ATTRS = {
     ORBIT_INTERPOLATION_ATTR: ORBIT_INTERPOLATION_COLUMN,
 }
 
+#: Dataset attributes that describe one file: its hash, canonical name and
+#: path. The log book holds them per file (columns ``rinex_hash``,
+#: ``canonical_name``, ``physical_path``); on the group they named the
+#: group's first file only (#693), so a write never stores them there.
+FILE_ATTRS = frozenset({"File Hash", "canonical_name", "physical_path"})
+
 
 def split_log_book_attrs(
     attrs: dict[str, Any],
@@ -117,8 +123,9 @@ def prepare_write(
 
     Drops the in-memory preprocessing record (it goes into the log book, see
     ``canvod.config.models.PREPROCESSING_ATTR``), so stored data have the
-    signature of data without preprocessing, and the other attributes for
-    the log book (:data:`LOG_BOOK_ATTRS`), and checks
+    signature of data without preprocessing, the other attributes for
+    the log book (:data:`LOG_BOOK_ATTRS`) and the attributes of one file
+    (:data:`FILE_ATTRS`), and checks
     and sets the time encoding
     (:func:`~canvod.store.time_encoding.prepare_times`). Call it right
     before every write into a store group.
@@ -152,6 +159,7 @@ def prepare_write(
         check_append_coordinates(ds, store, group, append_dim)
     attrs, _ = split_preprocessing(ds.attrs)
     attrs, _ = split_log_book_attrs(attrs)
+    attrs = {k: v for k, v in attrs.items() if k not in FILE_ATTRS}
     ds = ds.copy(deep=False)
     ds.attrs = attrs
     return prepare_times(ds, store, group)
