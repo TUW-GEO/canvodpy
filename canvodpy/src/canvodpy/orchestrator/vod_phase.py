@@ -57,7 +57,7 @@ from canvod.store.store import (
     normalize_encodings,
 )
 from canvod.store_metadata.layout import LayoutError
-from canvod.utils.tools import get_version_from_pyproject
+from canvod.utils.tools import canvodpy_version
 from canvodpy.orchestrator.resources import run_measured
 from canvodpy.vod_calculation import compute_vod
 
@@ -428,7 +428,7 @@ class VodPhase:
             vod_store.grow_day_blocks(
                 growth,
                 message=(
-                    f"[v{get_version_from_pyproject()}] VOD day blocks for "
+                    f"[v{canvodpy_version()}] VOD day blocks for "
                     f"{_yyyydoy(days[0])}..{_yyyydoy(days[-1])}"
                 ),
             )
