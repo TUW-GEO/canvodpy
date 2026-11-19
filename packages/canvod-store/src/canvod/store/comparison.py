@@ -141,6 +141,7 @@ class DiffKind(StrEnum):
     VALUE = "value"
     NO_TOLERANCE = "no_tolerance"
     ATTRIBUTE = "attribute"
+    FILES = "files"
 
 
 class ComparisonDifference(BaseModel):
@@ -254,7 +255,40 @@ def compare_stores(reference: MyIcechunkStore, new: MyIcechunkStore) -> StoreCom
             _compare_datasets(
                 group, reference.read_group(group), new.read_group(group), result
             )
+            if reference.store_type == "gnss_store":
+                _compare_files(group, reference, new, result)
     return result
+
+
+def _file_hashes(store: MyIcechunkStore, group: str) -> set[str]:
+    """The hashes of the files in ``group``'s log book."""
+    df = store.load_metadata_for_dedup(group)
+    if df is None or "rinex_hash" not in df.columns:
+        return set()
+    return {str(h) for h in df["rinex_hash"].to_list()}
+
+
+def _compare_files(
+    group: str,
+    reference: MyIcechunkStore,
+    new: MyIcechunkStore,
+    result: StoreComparison,
+) -> None:
+    """Compare which files a GNSS group was written from (``rinex_hash``)."""
+    ref_hashes = _file_hashes(reference, group)
+    new_hashes = _file_hashes(new, group)
+    if ref_hashes != new_hashes:
+        result.differences.append(
+            ComparisonDifference(
+                group=group,
+                kind=DiffKind.FILES,
+                variable="rinex_hash",
+                detail=(
+                    f"only in reference {sorted(ref_hashes - new_hashes)}, "
+                    f"only in new {sorted(new_hashes - ref_hashes)}"
+                ),
+            )
+        )
 
 
 def without_volatile(attrs: dict[str, Any], prefix: str = "") -> dict[str, Any]:

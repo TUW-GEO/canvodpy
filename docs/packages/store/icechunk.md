@@ -130,6 +130,8 @@ reports what it would delete.
 
 ## File hash
 
-The `File Hash` attribute of a stored file, and the hash in the log book,
-come from the reader's `file_hash`: the first 16 characters of the SHA-256
-hex digest of the file.
+The `File Hash` attribute of a file's dataset, and the hash in the log book
+(`rinex_hash`), come from the reader's `file_hash`: the first 16 characters
+of the SHA-256 hex digest of the file. For every file of a group, the log
+book holds its hash, canonical name, and path. The group itself holds
+none of them (since v1.2.0; before, it held those of its first file).
