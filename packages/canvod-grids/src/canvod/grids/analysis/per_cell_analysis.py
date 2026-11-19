@@ -264,7 +264,7 @@ class PerCellVODAnalyzer:
 
     def _compute_radial_distribution(self, ds: xr.Dataset) -> dict:
         """Bin mean VOD by polar angle (5° bins, 0–90°)."""
-        polar = 90.0 - ds.cell_theta.values
+        polar = ds.cell_theta.values
         mean_vod = ds.cell_timeseries.mean(dim="time").values
 
         edges = np.arange(0, 95, 5)
@@ -314,7 +314,7 @@ class PerCellVODAnalyzer:
         self, ds: xr.Dataset, time_aggregation: str, theta_bins: int
     ) -> tuple[np.ndarray, dict]:
         """Compute one theta × time heatmap."""
-        polar = 90.0 - ds.cell_theta.values
+        polar = ds.cell_theta.values
         cell_ts = ds.cell_timeseries.values
         time_coord = ds.time.values
 
@@ -438,8 +438,7 @@ def _compute_single_heatmap(ds: xr.Dataset, theta_bins: int) -> np.ndarray:
         in a bin.
 
     """
-    elevation_angles = ds.cell_theta.values
-    polar_angles = 90.0 - elevation_angles
+    polar_angles = ds.cell_theta.values
     cell_timeseries = ds.cell_timeseries.values
 
     n_times = cell_timeseries.shape[1]
