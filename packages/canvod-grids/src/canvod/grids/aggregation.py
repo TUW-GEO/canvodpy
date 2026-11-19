@@ -202,7 +202,7 @@ def compute_percell_timeseries(
     cell_var : str
         Cell-ID variable name.
     theta_range : tuple, optional
-        ``(min_deg, max_deg)`` elevation filter.
+        ``(min_deg, max_deg)`` polar-angle filter (0 at the zenith, 90 at the horizon).
     phi_range : tuple, optional
         ``(min_deg, max_deg)`` azimuth filter (wraps at 360°).
     selected_sids : list[str], optional
@@ -699,9 +699,9 @@ def _create_percell_dataset(
                 ["cell"],
                 cell_theta,
                 {
-                    "long_name": "Cell elevation angle",
+                    "long_name": "Cell polar angle",
                     "units": "degrees",
-                    "description": "Elevation angle from zenith",
+                    "description": "Polar angle of the cell center, 0 at the zenith, 90 at the horizon",
                 },
             ),
             "cell_phi": (
