@@ -109,8 +109,11 @@ def _str_to_object(ds: xr.Dataset) -> xr.Dataset:
 
 
 # --- Fast-path constants ---
+# Month, day, hour, and minute: zero-padded (I2.2, RINEX 3.04/3.05 Table A3)
+# or blank-padded (I2), as some receivers write them.
 _EPOCH_RE = re.compile(
-    r"^>\s*(\d{4})\s+(\d{2})\s+(\d{2})\s+(\d{2})\s+(\d{2})\s+(\d+\.\d+)\s+(\d+)\s+(\d+)"
+    r"^>\s*(\d{4})\s+(\d{1,2})\s+(\d{1,2})\s+(\d{1,2})\s+(\d{1,2})\s+"
+    r"(\d+\.\d+)\s+(\d+)\s+(\d+)"
 )
 
 _OBS_VAL_END = 14

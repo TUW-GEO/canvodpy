@@ -558,10 +558,12 @@ class Rnxv3ObsEpochRecordLineModel(BaseModel):
 
         """
         epoch = values["epoch"]
+        # Month, day, hour, and minute are I2.2 (zero-padded) in RINEX 3.04
+        # and 3.05 Table A3; some receivers write them blank-padded (I2).
         pattern = (
             r"^(?P<epoch_record_indicator>>)\s*(?P<year>\d{4})\s+"
-            r"(?P<month>\d{2})\s+(?P<day>\d{2})\s+(?P<hour>\d{2})\s+"
-            r"(?P<minute>\d{2})\s+(?P<seconds>\d+\.\d+)\s+"
+            r"(?P<month>\d{1,2})\s+(?P<day>\d{1,2})\s+(?P<hour>\d{1,2})\s+"
+            r"(?P<minute>\d{1,2})\s+(?P<seconds>\d+\.\d+)\s+"
             r"(?P<epoch_flag>\d+)\s+(?P<num_satellites>\d+)\s*"
             r"(?P<reserved>\d*)\s*"
             r"(?P<receiver_clock_offset>-?\d*\.\d*)?\s*$"
