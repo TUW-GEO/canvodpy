@@ -89,8 +89,8 @@ from canvod.utils.logging import (
     stage_timer,
 )
 from canvod.utils.tools import (
+    canvodpy_version,
     deprecated,
-    get_version_from_pyproject,
     sanitize_directory,
 )
 from canvodpy.logging.logging_config import active_log_dir
@@ -2624,7 +2624,7 @@ class RinexDataProcessor:
             receivers,
         )
         self._ensure_gnss_store_metadata(receivers, source_format)
-        version = get_version_from_pyproject()
+        version = canvodpy_version()
         log = self._logger
         yyyydoy = str(self.matched_data_dirs.yyyydoy)
 
@@ -3191,7 +3191,7 @@ class RinexDataProcessor:
         )
         self._ensure_gnss_store_metadata(receivers, source_format)
         log = self._logger
-        version = get_version_from_pyproject()
+        version = canvodpy_version()
         yyyydoy = str(self.matched_data_dirs.yyyydoy)
         store = self.site.gnss_store
         epoch_chunk = int((store.chunk_strategy or {}).get("epoch", 180))
@@ -3702,7 +3702,7 @@ class RinexDataProcessor:
         """
         store = self.site.gnss_store
         log = self._logger
-        version = get_version_from_pyproject()
+        version = canvodpy_version()
         session = days[0][1].session
         if any(day.session is not session for _, day, _ in days):
             msg = "The days of a unit must be planned on one session."
@@ -4008,7 +4008,7 @@ class RinexDataProcessor:
             (ds for _, ds in augmented_datasets), [receiver_name]
         )
         self._ensure_gnss_store_metadata([receiver_name], source_format)
-        version = get_version_from_pyproject()
+        version = canvodpy_version()
 
         t_start = time.time()
 
@@ -5717,7 +5717,7 @@ class DistributedRinexDataProcessor(RinexDataProcessor):
         receiver_type: str,
         receiver_name: str,
     ) -> list[Path]:
-        version = get_version_from_pyproject()
+        version = canvodpy_version()
         repo = self.site.gnss_store.repo
         rinex_files_sorted = sorted(rinex_files, key=lambda p: p.name)
 

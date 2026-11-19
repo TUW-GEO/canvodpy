@@ -130,15 +130,12 @@ class TestUtils:
         assert hash1 == hash2
         assert len(hash1) == 16  # Short hash
 
-    def test_get_version_from_pyproject(self):
-        """Test version extraction from pyproject.toml."""
-        # This will work if pyproject.toml exists in standard location
-        try:
-            version = utils.get_version_from_pyproject()
-            assert version is not None
-            assert isinstance(version, str)
-        except FileNotFoundError:
-            pytest.skip("pyproject.toml not found in expected location")
+    def test_get_version_from_pyproject_is_deprecated(self):
+        """It names canvod-readers; the Software attribute names canvodpy."""
+        from importlib.metadata import version
+
+        with pytest.warns(FutureWarning, match="canvodpy_version"):
+            assert utils.get_version_from_pyproject() == version("canvod-readers")
 
 
 class TestMetadata:

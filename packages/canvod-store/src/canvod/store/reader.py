@@ -17,7 +17,7 @@ from tqdm import tqdm
 from canvod.config import load_config
 from canvod.readers import MatchedDirs, Rnxv3Obs
 from canvod.store.manager import GnssResearchSite
-from canvod.utils.tools import _worker_init, deprecated, get_version_from_pyproject
+from canvod.utils.tools import _worker_init, canvodpy_version, deprecated
 
 _REPLACEMENT = (
     "Use `canvodpy run` or `canvodpy.Site(<site>).pipeline().process_date(<date>)` "
@@ -362,7 +362,7 @@ class IcechunkDataReader:
                 log = self._logger.bind(file=str(fname))
                 try:
                     rel_path = self._site.gnss_store.rel_path_for_commit(fname)
-                    version = get_version_from_pyproject()
+                    version = canvodpy_version()
 
                     rinex_hash = ds.attrs.get("File Hash")
                     if not rinex_hash:
@@ -512,7 +512,7 @@ class IcechunkDataReader:
     ) -> None:
         """Append dataset to the appropriate Icechunk store."""
         try:
-            version = get_version_from_pyproject()
+            version = canvodpy_version()
             date_str = self.matched_dirs.yyyydoy.to_str()
 
             commit_message = (

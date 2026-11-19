@@ -51,6 +51,7 @@ import psutil
 
 from canvod.config.models.sites import RECIPE_SETTINGS
 from canvod.utils.remote_file import recorded_name, without_urls
+from canvod.utils.tools import canvodpy_version
 
 FILE_NAME = "run_history.sqlite"
 
@@ -1270,16 +1271,6 @@ def recorded_run(
     finally:
         if token is not None:
             reset_run_id(token)
-
-
-def canvodpy_version() -> str:
-    """Return the installed canvodpy version."""
-    from importlib.metadata import PackageNotFoundError, version
-
-    try:
-        return version("canvodpy")
-    except PackageNotFoundError:
-        return "0.0.0+unknown"
 
 
 def canvodpy_commit() -> str | None:

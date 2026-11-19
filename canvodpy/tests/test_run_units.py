@@ -11,6 +11,7 @@ import pickle
 import threading
 import time
 from concurrent.futures import Future
+from importlib.metadata import version
 from pathlib import Path
 from types import SimpleNamespace
 
@@ -182,6 +183,16 @@ def test_a_backlog_makes_one_growth_and_one_data_commit_per_unit(
     assert sum("(7 days)" in m for m in new) == 2
     assert _stored_days(seeded) == set(DAYS)
     assert sorted(pipe._run.days) == sorted((_GROUP, day, "written") for day in DAYS)
+
+
+def test_commit_messages_name_the_canvodpy_version(seeded, monkeypatch) -> None:
+    before = len(_commits(seeded))
+
+    _run(seeded, monkeypatch, DAYS[:2], unit_days=7, no_orbits=None)
+
+    new = _commits(seeded)[: len(_commits(seeded)) - before]
+    assert new
+    assert all(m.startswith(f"[v{version('canvodpy')}] ") for m in new), new
 
 
 def test_the_next_units_phase_1_starts_after_this_units_growth_commit(
