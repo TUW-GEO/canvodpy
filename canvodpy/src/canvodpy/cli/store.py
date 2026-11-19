@@ -406,17 +406,22 @@ def interact(
     ] = None,
     config_dir: Annotated[Path | None, CONFIG_DIR_OPTION] = None,
 ) -> None:
-    """Open a store read-only in a marimo notebook, in an environment of its own.
+    """Open a store without settings in a marimo notebook, in an environment of its own.
 
-    The notebook shows the store and is yours to work in. It installs the
-    canvodpy version of this command with uv (marimo's --sandbox), opens
-    the store without settings, so canvodpy refuses every write, and is
-    deleted when marimo stops (Ctrl-C).
+    The notebook shows the store and is yours to work in. uv installs
+    canvodpy from PyPI at the version of this command (marimo's
+    --sandbox). The notebook opens the store without settings, so canvodpy
+    refuses commits, expiry, and garbage collection on it, and is deleted
+    when marimo stops (Ctrl-C).
     """
+    from canvod.store_metadata.location import store_location
     from canvodpy.cli.store_interact import run_interact
 
     location, store_type = _locate_site_or_path(site, store, path)
-    raise typer.Exit(run_interact(str(location), store_type or "gnss_store"))
+    # The notebook's kernel may run in another folder: a local path goes in absolute.
+    local = store_location(location).local_path
+    where = str(location) if local is None else str(Path(local).resolve())
+    raise typer.Exit(run_interact(where, store_type or "gnss_store"))
 
 
 @store_app.command()

@@ -1903,6 +1903,19 @@ class TestStoreInteract:
         assert "TestSite" in notebook
         assert env["CANVOD_CONFIG_DIR"] != str(config_dir)
 
+    def test_a_relative_path_reaches_the_notebook_absolute(self, tmp_path, monkeypatch):
+        """marimo's kernel may run elsewhere than the command was started."""
+        _write_synthetic_store(tmp_path / "copy" / "gnss")
+        monkeypatch.chdir(tmp_path)
+
+        result = self._invoke(
+            monkeypatch, ["--path", "copy/gnss"], _env(tmp_path / "no-settings")
+        )
+
+        assert result.exit_code == 0, result.output
+        [(_args, _env_used, notebook)] = self._FakePopen.calls
+        assert repr(str((tmp_path / "copy" / "gnss").resolve())) in notebook
+
     def test_without_uv_it_says_so(self, tmp_path, monkeypatch):
         import canvodpy.cli.store_interact as si
 

@@ -48,8 +48,8 @@ def _(mo):
     mo.md("""
     **{location_md}**
 
-    Opened without settings: canvodpy refuses every write to this
-    store. This notebook is deleted when marimo stops; save a copy
+    Opened without settings: canvodpy refuses commits, expiry, and
+    garbage collection on this store. This notebook is deleted when marimo stops; save a copy
     from marimo's menu to keep your work.
     """)
     return
@@ -98,7 +98,7 @@ def run_interact(location: str, store_type: str) -> int:
         env = os.environ | {"CANVOD_CONFIG_DIR": str(no_settings)}
 
         console.print(
-            f"Opening {location} read-only in marimo, with canvodpy "
+            f"Opening {location} without settings in marimo, with canvodpy "
             f"{version('canvodpy')} in an environment of its own. "
             "The first start installs it and takes a while. Ctrl-C stops marimo."
         )
