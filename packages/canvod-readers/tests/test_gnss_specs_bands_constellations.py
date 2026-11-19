@@ -134,6 +134,24 @@ class TestGLONASS:
         assert isinstance(sc, dict)
         assert len(sc) > 0
 
+    @pytest.mark.parametrize(
+        ("band", "rinex_band", "bandwidth_mhz"),
+        [
+            # BOC(1,1) pilot, main lobe 4 x 1.023 MHz (L1 ICD 2016, sect. 2.1)
+            ("G1a", "4", 4.092),
+            # BOC(1,1) pilot, main lobe 4 x 1.023 MHz (L2 ICD 2016, sect. 2.2)
+            ("G2a", "6", 4.092),
+            # BPSK(10), main lobe 2 x 10.23 MHz (L3 ICD 2016, sect. 2.1)
+            ("G3", "3", 20.46),
+        ],
+    )
+    def test_cdma_bandwidth_is_the_main_lobe(self, band, rinex_band, bandwidth_mhz):
+        from canvod.readers.gnss_specs.validation_constants import GLONASS_BANDS
+
+        stored = GLONASS.BAND_PROPERTIES[band]["bandwidth"]
+        assert stored.to(UREG.MHz).magnitude == pytest.approx(bandwidth_mhz)
+        assert GLONASS_BANDS[rinex_band]["bandwidth"] == pytest.approx(bandwidth_mhz)
+
 
 # ---------------------------------------------------------------------------
 # BEIDOU
