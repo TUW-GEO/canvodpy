@@ -2350,8 +2350,10 @@ class Rnxv3Obs(GNSSDataReader):
             "GLONASS Slot Frequency Dict": json.dumps(
                 self.header.glonass_slot_freq_dict
             ),
-            "Leap Seconds": f"{self.header.leap_seconds:~}",
         }
+        # LEAP SECONDS is optional (RINEX 3.04 Table A2).
+        if self.header.leap_seconds is not None:
+            attrs["Leap Seconds"] = f"{self.header.leap_seconds:~}"
         return attrs
 
 
