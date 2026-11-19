@@ -223,7 +223,7 @@ class Rnxv3ObsEpochRecord:
 
 RINEX 3.04 and 3.05 (Table A3) write month, day, hour, and minute of the
 epoch line zero-padded (`> 2025 01 01 00 00`). Some receivers write them
-blank-padded (`> 2025  1  1  0  0`); since v1.1.1 both parsers read that
+blank-padded (`> 2025  1  1  0  0`); since v1.2.0 both parsers read that
 form too.
 
 ### Observation and satellite
