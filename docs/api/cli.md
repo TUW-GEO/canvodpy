@@ -297,6 +297,7 @@ $ canvodpy store [OPTIONS] COMMAND [ARGS]...
 * `list`: List every configured site's GNSS and VOD...
 * `info`: Show branches, groups, and stats for one...
 * `log`: Show the commit history as a graph, or the...
+* `interact`: Open a store without settings in a marimo...
 * `maintain`: Expire old snapshots of one site's store...
 * `maintain-due`: Run only the store maintenance that's due,...
 * `migrate-metadata`: Move a store written before repository...
@@ -321,21 +322,22 @@ $ canvodpy store list [OPTIONS]
 
 ### `canvodpy store info`
 
-Show branches, groups, and stats for one site's store.
+Show branches, groups, and stats for one site's store or the store at --path.
 
 **Usage**:
 
 ```console
-$ canvodpy store info [OPTIONS] {site}
+$ canvodpy store info [OPTIONS] [site]
 ```
 
 **Arguments**:
 
-* `site`: Site name, as defined under sites: in canvod-settings.yaml  [required]
+* `site`: Site name, as defined under sites: in canvod-settings.yaml. Omit when using --path.
 
 **Options**:
 
-* `--store gnss|vod`: Store to open.  [default: gnss]
+* `--store gnss|vod`: Store of the site to open. Default: gnss. Not with --path.
+* `--path STORE`: Open the store at this local path or s3://bucket/prefix instead of a site's store, for example a copy. Needs no settings file.
 * `--branch <str>`: Branch to inspect  [default: main]
 * `--group <str>`: Show the full content of one group: its dataset and its metadata table.
 * `-c, --config-dir <path|url>`: Configuration directory, holding canvod-settings.yaml and recipes/, or the URL of a settings file in a GitHub repository, fetched by each run (https://raw.githubusercontent.com/<account>/<repo>/<commit, tag or branch>/.../canvod-settings.yaml). Default: $CANVOD_CONFIG_DIR, else config/ of the canvodpy checkout, else ~/.config/canvodpy.
@@ -364,6 +366,33 @@ $ canvodpy store log [OPTIONS] [site]
 * `--limit <int>`: Number of operations that --ops shows.  [default: 50]
 * `--svg FILE`: Write the commit graph to this SVG file instead of printing it.
 * `--plain`: Draw the commit graph without colors, for a file or a CI log.
+* `-c, --config-dir <path|url>`: Configuration directory, holding canvod-settings.yaml and recipes/, or the URL of a settings file in a GitHub repository, fetched by each run (https://raw.githubusercontent.com/<account>/<repo>/<commit, tag or branch>/.../canvod-settings.yaml). Default: $CANVOD_CONFIG_DIR, else config/ of the canvodpy checkout, else ~/.config/canvodpy.
+* `--help`: Show this message and exit.
+
+### `canvodpy store interact`
+
+Open a store without settings in a marimo notebook, in an environment of its own.
+
+The notebook shows the store and is yours to work in. uv installs
+canvodpy from PyPI at the version of this command (marimo's
+--sandbox). The notebook opens the store without settings, so canvodpy
+refuses commits, expiry, and garbage collection on it, and is deleted
+when marimo stops (Ctrl-C).
+
+**Usage**:
+
+```console
+$ canvodpy store interact [OPTIONS] [site]
+```
+
+**Arguments**:
+
+* `site`: Site name, as defined under sites: in canvod-settings.yaml. Omit when using --path.
+
+**Options**:
+
+* `--store gnss|vod`: Store of the site to open. Default: gnss. Not with --path.
+* `--path STORE`: Open the store at this local path or s3://bucket/prefix instead of a site's store, for example a copy. Needs no settings file.
 * `-c, --config-dir <path|url>`: Configuration directory, holding canvod-settings.yaml and recipes/, or the URL of a settings file in a GitHub repository, fetched by each run (https://raw.githubusercontent.com/<account>/<repo>/<commit, tag or branch>/.../canvod-settings.yaml). Default: $CANVOD_CONFIG_DIR, else config/ of the canvodpy checkout, else ~/.config/canvodpy.
 * `--help`: Show this message and exit.
 
