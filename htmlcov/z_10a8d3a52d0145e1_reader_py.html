@@ -65,7 +65,7 @@
             <a id="nextFileLink" class="nav" href="z_10a8d3a52d0145e1_store_py.html">&#xbb; next</a>
             &nbsp; &nbsp; &nbsp;
             <a class="nav" href="https://coverage.readthedocs.io/en/7.17.3">coverage.py v7.17.3</a>,
-            created at 2026-11-22 12:24 +0000
+            created at 2026-11-22 12:29 +0000
         </p>
         <aside class="hidden">
             <button type="button" class="button_next_chunk" data-shortcut="j"></button>
@@ -99,7 +99,7 @@
     <p class="run"><span class="n"><a id="t17" href="#t17">17</a></span><span class="t"><span class="key">from</span> <span class="nam">canvod</span><span class="op">.</span><span class="nam">config</span> <span class="key">import</span> <span class="nam">load_config</span>&nbsp;</span><span class="r"></span></p>
     <p class="run"><span class="n"><a id="t18" href="#t18">18</a></span><span class="t"><span class="key">from</span> <span class="nam">canvod</span><span class="op">.</span><span class="nam">readers</span> <span class="key">import</span> <span class="nam">MatchedDirs</span><span class="op">,</span> <span class="nam">Rnxv3Obs</span>&nbsp;</span><span class="r"></span></p>
     <p class="run"><span class="n"><a id="t19" href="#t19">19</a></span><span class="t"><span class="key">from</span> <span class="nam">canvod</span><span class="op">.</span><span class="nam">store</span><span class="op">.</span><span class="nam">manager</span> <span class="key">import</span> <span class="nam">GnssResearchSite</span>&nbsp;</span><span class="r"></span></p>
-    <p class="run"><span class="n"><a id="t20" href="#t20">20</a></span><span class="t"><span class="key">from</span> <span class="nam">canvod</span><span class="op">.</span><span class="nam">utils</span><span class="op">.</span><span class="nam">tools</span> <span class="key">import</span> <span class="nam">_worker_init</span><span class="op">,</span> <span class="nam">deprecated</span><span class="op">,</span> <span class="nam">get_version_from_pyproject</span>&nbsp;</span><span class="r"></span></p>
+    <p class="run"><span class="n"><a id="t20" href="#t20">20</a></span><span class="t"><span class="key">from</span> <span class="nam">canvod</span><span class="op">.</span><span class="nam">utils</span><span class="op">.</span><span class="nam">tools</span> <span class="key">import</span> <span class="nam">_worker_init</span><span class="op">,</span> <span class="nam">canvodpy_version</span><span class="op">,</span> <span class="nam">deprecated</span>&nbsp;</span><span class="r"></span></p>
     <p class="pln"><span class="n"><a id="t21" href="#t21">21</a></span><span class="t">&nbsp;</span><span class="r"></span></p>
     <p class="run"><span class="n"><a id="t22" href="#t22">22</a></span><span class="t"><span class="nam">_REPLACEMENT</span> <span class="op">=</span> <span class="op">(</span>&nbsp;</span><span class="r"></span></p>
     <p class="run run2"><span class="n"><a id="t23" href="#t23">23</a></span><span class="t">    <span class="str">&quot;Use `canvodpy run` or `canvodpy.Site(&lt;site&gt;).pipeline().process_date(&lt;date&gt;)` &quot;</span>&nbsp;</span><span class="r"></span></p>
@@ -444,7 +444,7 @@
     <p class="mis show_mis"><span class="n"><a id="t362" href="#t362">362</a></span><span class="t">                <span class="nam">log</span> <span class="op">=</span> <span class="nam">self</span><span class="op">.</span><span class="nam">_logger</span><span class="op">.</span><span class="nam">bind</span><span class="op">(</span><span class="nam">file</span><span class="op">=</span><span class="nam">str</span><span class="op">(</span><span class="nam">fname</span><span class="op">)</span><span class="op">)</span>&nbsp;</span><span class="r"></span></p>
     <p class="mis show_mis"><span class="n"><a id="t363" href="#t363">363</a></span><span class="t">                <span class="key">try</span><span class="op">:</span>&nbsp;</span><span class="r"></span></p>
     <p class="mis show_mis"><span class="n"><a id="t364" href="#t364">364</a></span><span class="t">                    <span class="nam">rel_path</span> <span class="op">=</span> <span class="nam">self</span><span class="op">.</span><span class="nam">_site</span><span class="op">.</span><span class="nam">gnss_store</span><span class="op">.</span><span class="nam">rel_path_for_commit</span><span class="op">(</span><span class="nam">fname</span><span class="op">)</span>&nbsp;</span><span class="r"></span></p>
-    <p class="mis show_mis"><span class="n"><a id="t365" href="#t365">365</a></span><span class="t">                    <span class="nam">version</span> <span class="op">=</span> <span class="nam">get_version_from_pyproject</span><span class="op">(</span><span class="op">)</span>&nbsp;</span><span class="r"></span></p>
+    <p class="mis show_mis"><span class="n"><a id="t365" href="#t365">365</a></span><span class="t">                    <span class="nam">version</span> <span class="op">=</span> <span class="nam">canvodpy_version</span><span class="op">(</span><span class="op">)</span>&nbsp;</span><span class="r"></span></p>
     <p class="pln"><span class="n"><a id="t366" href="#t366">366</a></span><span class="t">&nbsp;</span><span class="r"></span></p>
     <p class="mis show_mis"><span class="n"><a id="t367" href="#t367">367</a></span><span class="t">                    <span class="nam">rinex_hash</span> <span class="op">=</span> <span class="nam">ds</span><span class="op">.</span><span class="nam">attrs</span><span class="op">.</span><span class="nam">get</span><span class="op">(</span><span class="str">&quot;File Hash&quot;</span><span class="op">)</span>&nbsp;</span><span class="r"></span></p>
     <p class="mis show_mis"><span class="n"><a id="t368" href="#t368">368</a></span><span class="t">                    <span class="key">if</span> <span class="key">not</span> <span class="nam">rinex_hash</span><span class="op">:</span>&nbsp;</span><span class="r"></span></p>
@@ -594,7 +594,7 @@
     <p class="run run2"><span class="n"><a id="t512" href="#t512">512</a></span><span class="t">    <span class="op">)</span> <span class="op">-&gt;</span> <span class="key">None</span><span class="op">:</span>&nbsp;</span><span class="r"></span></p>
     <p class="pln"><span class="n"><a id="t513" href="#t513">513</a></span><span class="t">        <span class="str">&quot;&quot;&quot;Append dataset to the appropriate Icechunk store.&quot;&quot;&quot;</span>&nbsp;</span><span class="r"></span></p>
     <p class="mis show_mis"><span class="n"><a id="t514" href="#t514">514</a></span><span class="t">        <span class="key">try</span><span class="op">:</span>&nbsp;</span><span class="r"></span></p>
-    <p class="mis show_mis"><span class="n"><a id="t515" href="#t515">515</a></span><span class="t">            <span class="nam">version</span> <span class="op">=</span> <span class="nam">get_version_from_pyproject</span><span class="op">(</span><span class="op">)</span>&nbsp;</span><span class="r"></span></p>
+    <p class="mis show_mis"><span class="n"><a id="t515" href="#t515">515</a></span><span class="t">            <span class="nam">version</span> <span class="op">=</span> <span class="nam">canvodpy_version</span><span class="op">(</span><span class="op">)</span>&nbsp;</span><span class="r"></span></p>
     <p class="mis show_mis"><span class="n"><a id="t516" href="#t516">516</a></span><span class="t">            <span class="nam">date_str</span> <span class="op">=</span> <span class="nam">self</span><span class="op">.</span><span class="nam">matched_dirs</span><span class="op">.</span><span class="nam">yyyydoy</span><span class="op">.</span><span class="nam">to_str</span><span class="op">(</span><span class="op">)</span>&nbsp;</span><span class="r"></span></p>
     <p class="pln"><span class="n"><a id="t517" href="#t517">517</a></span><span class="t">&nbsp;</span><span class="r"></span></p>
     <p class="mis show_mis"><span class="n"><a id="t518" href="#t518">518</a></span><span class="t">            <span class="nam">commit_message</span> <span class="op">=</span> <span class="op">(</span>&nbsp;</span><span class="r"></span></p>
@@ -658,7 +658,7 @@
             <a class="nav" href="z_10a8d3a52d0145e1_store_py.html">&#xbb; next</a>
             &nbsp; &nbsp; &nbsp;
             <a class="nav" href="https://coverage.readthedocs.io/en/7.17.3">coverage.py v7.17.3</a>,
-            created at 2026-11-22 12:24 +0000
+            created at 2026-11-22 12:29 +0000
         </p>
     </div>
 </footer>
