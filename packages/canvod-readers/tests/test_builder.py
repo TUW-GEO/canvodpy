@@ -236,6 +236,18 @@ class TestDatasetBuilder:
         assert "Software" in ds.attrs
         assert "Institution" in ds.attrs
 
+    def test_software_names_the_canvodpy_version(self, reader: _StubReader):
+        """Software names canvodpy's version, not that of canvod-readers."""
+        from canvod.utils.tools import canvodpy_version
+
+        builder = DatasetBuilder(reader, time_system="GPS")
+        ei = builder.add_epoch(datetime(2025, 1, 1, tzinfo=UTC))
+        sig = builder.add_signal(sv="G01", band="L1", code="C")
+        builder.set_value(ei, sig, "SNR", 42.0)
+        ds = builder.build()
+
+        assert ds.attrs["Software"].endswith(f", Version: {canvodpy_version()}")
+
     def test_file_hash_from_reader(self, reader: _StubReader):
         """File Hash attribute should match reader.file_hash."""
         builder = DatasetBuilder(reader, time_system="GPS")

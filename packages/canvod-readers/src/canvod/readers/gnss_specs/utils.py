@@ -7,6 +7,11 @@ from canvod.utils import tools
 from canvod.utils.tools import deprecated
 
 
+@deprecated(
+    "`canvod.readers.gnss_specs.utils.get_version_from_pyproject` returns the "
+    "version of canvod-readers, not that of canvodpy, and will be removed with "
+    "the next major version. Use `canvod.utils.tools.canvodpy_version` instead."
+)
 def get_version_from_pyproject(pyproject_path: Path | None = None) -> str:
     """Get the installed version of canvod-readers.
 
