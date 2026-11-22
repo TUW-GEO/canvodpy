@@ -6,9 +6,7 @@ canVODpy no longer writes ``summaries.history``.
 
 from __future__ import annotations
 
-import importlib.metadata
-
-from canvod.utils.tools import deprecated
+from canvod.utils.tools import canvodpy_version, deprecated
 
 
 @deprecated(
@@ -29,6 +27,6 @@ def history_entry(now: str, event: str, preprocessing: dict[str, str]) -> str:
         Per store group written, its preprocessing as text
         (``canvod.config.models.describe_preprocessing``).
     """
-    version = importlib.metadata.version("canvodpy")
+    version = canvodpy_version()
     applied = "; ".join(f"{group}: {text}" for group, text in preprocessing.items())
     return f"{now}: {event} (canvodpy {version}); preprocessing: {applied or 'none'}"

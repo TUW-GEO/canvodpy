@@ -5,7 +5,29 @@ from importlib.metadata import PackageNotFoundError
 from importlib.metadata import version as _installed_version
 from pathlib import Path
 
+from .deprecation import deprecated
 
+
+def canvodpy_version() -> str:
+    """The version of canvodpy installed, which commit messages, commit
+    metadata and the ``Software`` attribute name.
+
+    canvodpy's packages are released separately, so their versions differ;
+    this reads the canvodpy distribution's metadata, without importing
+    canvodpy. ``"unknown"`` when canvodpy is not installed (a package of it
+    used alone).
+    """
+    try:
+        return _installed_version("canvodpy")
+    except PackageNotFoundError:
+        return "unknown"
+
+
+@deprecated(
+    "`get_version_from_pyproject` returns the version of canvod-utils, not "
+    "that of canvodpy, and will be removed with the next major version. "
+    "Use `canvodpy_version` instead."
+)
 def get_version_from_pyproject(pyproject_path: Path | None = None) -> str:
     """
     Get the installed canvod-utils package version.
