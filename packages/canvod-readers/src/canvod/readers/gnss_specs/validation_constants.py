@@ -80,19 +80,19 @@ GLONASS_BANDS: Final[BandTable] = {
     "3": {
         "name": "G3",
         "frequency": 1202.025,
-        "bandwidth": 20.0,
+        "bandwidth": 20.46,  # main lobe, see GLONASS in constellations.py
         "codes": {"I", "Q", "X"},
     },
     "4": {
         "name": "G1a",
         "frequency": 1600.995,
-        "bandwidth": 7.875,
+        "bandwidth": 4.092,  # main lobe, see GLONASS in constellations.py
         "codes": {"A", "B", "X"},
     },
     "6": {
         "name": "G2a",
         "frequency": 1248.06,
-        "bandwidth": 7.875,
+        "bandwidth": 4.092,  # main lobe, see GLONASS in constellations.py
         "codes": {"A", "B", "X"},
     },
 }

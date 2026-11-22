@@ -74,8 +74,8 @@ from canvod.store_metadata.log_book import LogBooks, read_log_book
 from canvod.store_metadata.summary import cadence_ranges
 from canvod.utils.logging import get_run_id, stage_timer
 from canvod.utils.tools import (
+    canvodpy_version,
     deprecated,
-    get_version_from_pyproject,
     sanitize_directory,
 )
 
@@ -1825,7 +1825,7 @@ class MyIcechunkStore:
         end = dataset.epoch.max().values
 
         if commit_message is None:
-            version = get_version_from_pyproject()
+            version = canvodpy_version()
             commit_message = f"[v{version}] Initial commit to group '{group_name}'"
 
         dataset, encoding = self._for_group_creation(dataset)
@@ -2120,7 +2120,7 @@ class MyIcechunkStore:
             self.rewrite_group(session, group_name, ds_rewrite, [(start, end)])
 
             if commit_message is None:
-                version = get_version_from_pyproject()
+                version = canvodpy_version()
                 commit_message = (
                     f"[v{version}] Overwrote file {rinex_hash} in group '{group_name}'"
                 )
@@ -2232,7 +2232,7 @@ class MyIcechunkStore:
         str
             Icechunk snapshot ID.
         """
-        version = get_version_from_pyproject()
+        version = canvodpy_version()
         path = f"{group_name}/metadata/{name}"
         ds = self._normalize_encodings(meta_ds)
         ds = self._cleanse_dataset_attrs(ds)
@@ -2328,7 +2328,7 @@ class MyIcechunkStore:
         str
             Icechunk snapshot ID.
         """
-        version = get_version_from_pyproject()
+        version = canvodpy_version()
         with self.writable_session(branch) as session:
             total_epochs = self.write_metadata_parts(parts, group_name, name, session)
             return commit_with_rebase(
@@ -2549,13 +2549,13 @@ class MyIcechunkStore:
             return
 
         if commit_message is None and action == "write":
-            version = get_version_from_pyproject()
+            version = canvodpy_version()
             commit_message = f"[v{version}] Wrote to group '{group_name}'"
         elif commit_message is None and action == "append":
-            version = get_version_from_pyproject()
+            version = canvodpy_version()
             commit_message = f"[v{version}] Appended to group '{group_name}'"
         elif commit_message is None:
-            version = get_version_from_pyproject()
+            version = canvodpy_version()
             commit_message = f"[v{version}] {action} to group '{group_name}'"
 
         with self.writable_session(branch) as session:
@@ -3243,7 +3243,7 @@ class MyIcechunkStore:
         dataset = self._normalize_encodings(dataset)
         action = "append" if self.group_exists(group_name, branch) else "write"
         if commit_message is None:
-            version = get_version_from_pyproject()
+            version = canvodpy_version()
             commit_message = (
                 f"[v{version}] {action} VOD group '{group_name}' "
                 f"(calculator={calculator_name})"
@@ -3696,9 +3696,7 @@ class MyIcechunkStore:
         for plan, day in zip(plans, days, strict=True):
             if not day.in_fork:
                 _require_one_day(plan)
-        message, metadata = _vod_batch_commit(
-            get_version_from_pyproject(), "write", plans
-        )
+        message, metadata = _vod_batch_commit(canvodpy_version(), "write", plans)
         epoch_chunk = int((self.chunk_strategy or {}).get("epoch", 180))
         with commit_lock(self.store_path):
             if forks:
@@ -3770,7 +3768,7 @@ class MyIcechunkStore:
         safe to leave in place: the next retry's dedup check sees that
         group's data as already-committed and won't re-attempt it.
         """
-        version = get_version_from_pyproject()
+        version = canvodpy_version()
         log = self._logger
         results: dict[str, VodWriteResult] = {}
 

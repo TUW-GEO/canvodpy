@@ -505,13 +505,11 @@ class GNSSDataReader(BaseModel, ABC):
             Ready-to-use attrs dict.
         """
         from canvod.readers.gnss_specs.metadata import get_global_attrs
-        from canvod.readers.gnss_specs.utils import get_version_from_pyproject
+        from canvod.utils.tools import canvodpy_version
 
         attrs = get_global_attrs()
         attrs["Created"] = datetime.now(UTC).isoformat()
-        attrs["Software"] = (
-            f"{attrs['Software']}, Version: {get_version_from_pyproject()}"
-        )
+        attrs["Software"] = f"{attrs['Software']}, Version: {canvodpy_version()}"
         attrs["File Hash"] = self.file_hash
         return attrs
 

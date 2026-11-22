@@ -401,8 +401,29 @@ class GLONASS(ConstellationBase):
         https://www.unavco.org/help/glossary/docs/
         ICD_GLONASS_5.1_(2008)_en.pdf (3.3.1.1 Frequency plan, Table 3.1;
         3.3.1.4 Spurious emissions).
-      - CDMA band bandwidths (7.875 MHz for G1a, G2a, G3): no source found;
-        see the GitHub issue on this value.
+      - The 1.022 MHz per-channel bandwidth again, from ITU-R M.1787-1
+        (2012), Annex 1: Table 1-2 gives the GLONASS standard-accuracy
+        signal's transmit bandwidth as 1.02 MHz (emission class 1M02G7X),
+        and sections 4 and 5 give its chip rate f_t = 0.511 MHz and its
+        main lobe as 2 f_t:
+        https://www.itu.int/dms_pubrec/itu-r/rec/m/
+        R-REC-M.1787-1-201201-S!!PDF-E.pdf
+      - CDMA band bandwidths. The CDMA ICDs, Edition 1.0 (2016), state chip
+        rates, not bandwidths; the bandwidth here is the main lobe of the
+        modulation, as for Galileo and BeiDou:
+          - G1a (L1OC): L1OCd and L1OCp time-division multiplexed chip by
+            chip, each clocked at f_T1/2 = 0.5115 MHz; L1OCp with a meander
+            at 2 f_T1 = 2.046 MHz forms a BOC(1,1) spectrum (ICD L1,
+            2.1 L1OC generation). Main lobe 4 x 1.023 = 4.092 MHz.
+          - G2a (L2OC): L2OCp, BOC(1,1) as in L1, time-division multiplexed
+            with L2 CSI (ICD L2, 2.2 L2OCp signal generation, 2.3 L2 CSI
+            and L2OCp multiplexing). Main lobe 4.092 MHz.
+          - G3 (L3OC): two BPSK(10) components, L3OCd and L3OCp, clocked
+            at f_T1 = 10.23 MHz (ICD L3, 2.1 General scheme of L3OC signal
+            generation). Main lobe 2 x 10.23 = 20.46 MHz.
+        ICD-GLONASS-CDMA-L1/L2/L3, Edition 1.0, 2016, published at
+        http://russianspacesystems.ru/wp-content/uploads/2016/08/ (archived
+        copies at web.archive.org).
       - Frequency channel of each satellite on a date: IGS satellite
         metadata, see :func:`~canvod.readers.gnss_specs.glonass_fdma.glonass_channel`.
 
@@ -445,17 +466,17 @@ class GLONASS(ConstellationBase):
     BAND_PROPERTIES: ClassVar[dict[str, dict[str, Any]]] = {
         "G1a": {
             "freq": 1600.995 * UREG.MHz,
-            "bandwidth": 7.875 * UREG.MHz,
+            "bandwidth": 4.092 * UREG.MHz,
             "system": "R",
         },
         "G2a": {
             "freq": 1248.06 * UREG.MHz,
-            "bandwidth": 7.875 * UREG.MHz,
+            "bandwidth": 4.092 * UREG.MHz,
             "system": "R",
         },
         "G3": {
             "freq": 1202.025 * UREG.MHz,
-            "bandwidth": 7.875 * UREG.MHz,
+            "bandwidth": 20.46 * UREG.MHz,
             "system": "R",
         },
     }

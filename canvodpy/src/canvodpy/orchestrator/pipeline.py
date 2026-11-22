@@ -65,10 +65,10 @@ from canvod.utils.logging import (
 )
 from canvod.utils.tools import (
     YYYYDOY,
+    canvodpy_version,
     deprecated,
     deprecated_argument,
     file_hash,
-    get_version_from_pyproject,
 )
 from canvodpy.logging.logging_config import active_log_dir, ensure_file_logging
 from canvodpy.orchestrator.discovery import (
@@ -1338,7 +1338,7 @@ class PipelineOrchestrator:
             else f"{date_keys[0]}..{date_keys[-1]} ({len(date_keys)} days)"
         )
         commit_msg = _with_run_id(
-            f"[v{get_version_from_pyproject()}] {span}: {len(holders)} groups: "
+            f"[v{canvodpy_version()}] {span}: {len(holders)} groups: "
             + ", ".join(f"{g}(skipped={len(holders[g])})" for g in sorted(holders))
         )
 
@@ -1552,8 +1552,7 @@ class PipelineOrchestrator:
         if not days:
             return
         message = _with_run_id(
-            f"[v{get_version_from_pyproject()}] Day blocks for "
-            f"{', '.join(sorted(doy_contexts))}"
+            f"[v{canvodpy_version()}] Day blocks for {', '.join(sorted(doy_contexts))}"
         )
         t_start = _time.monotonic()
         snapshot_id = call_with_store_retries(
