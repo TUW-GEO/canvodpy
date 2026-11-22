@@ -23,6 +23,7 @@ import numpy as np
 from numpy.typing import ArrayLike, NDArray
 
 from canvod.readers.gnss_specs.constants import SPEEDOFLIGHT, UREG
+from canvod.readers.gnss_specs.glonass_fdma import fdma_base_and_spacing_hz
 from canvod.readers.sbf._registry import FDMA_SIGNAL_NUMS
 
 # Speed of light [m/s], derived from the shared SPEEDOFLIGHT constant.
@@ -403,10 +404,10 @@ def doppler2_hz(
 #   FreqNr as defined in Section 4.1.9, p.255 (offset 8)
 # ---------------------------------------------------------------------------
 
-_G1_BASE_HZ: float = 1602.000e6
-_G1_STEP_HZ: float = 9 / 16 * 1e6  # per frequency number
-_G2_BASE_HZ: float = 1246.000e6
-_G2_STEP_HZ: float = 7 / 16 * 1e6  # per frequency number
+# The plan itself (base, spacing) lives once in canvod.readers.gnss_specs.
+# No channel-range check here: FreqNr is 5 bits and decoded as found.
+_G1_BASE_HZ, _G1_STEP_HZ = fdma_base_and_spacing_hz("G1")
+_G2_BASE_HZ, _G2_STEP_HZ = fdma_base_and_spacing_hz("G2")
 _FREQ_NR_OFFSET: int = 8  # frequency number = FreqNr - 8
 
 

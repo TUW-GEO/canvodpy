@@ -180,6 +180,30 @@ channel = catalog.glonass_channel("R730", date(2025, 1, 1))  # → 1
 plane, slot = catalog.plane_and_slot("G063", date(2025, 1, 1))  # → ("4", "D2A")
 ```
 
+### GLONASS carrier frequencies
+
+GLONASS G1 and G2 are FDMA: each satellite transmits on its own frequency
+channel `k`, at `1602 + k * 9/16` MHz (G1) and `1246 + k * 7/16` MHz (G2).
+The channel belongs to the satellite, not the slot, so it can change when a
+slot gets another satellite. `glonass_channel` looks it up for a slot and a
+date; `glonass_carrier_frequency_hz` adds the frequency plan.
+
+```python
+from canvod.readers.gnss_specs import (
+    glonass_carrier_frequency_hz,
+    glonass_channel,
+    glonass_fdma_frequency_hz,
+)
+
+glonass_fdma_frequency_hz("G1", -5)  # → 1599187500.0 (Hz)
+glonass_channel("R25", date(2023, 1, 15), catalog)  # → -5
+glonass_carrier_frequency_hz("R25", "G2", date(2023, 1, 15), catalog)  # → 1243812500.0
+```
+
+Without `catalog`, both use `SatelliteCatalog.load()`, loaded once per
+process. The static table `GLONASS_channels.txt` and
+`GLONASS.get_channel_used_by_SV` are deprecated: they have no dates.
+
 ### Combined metadata lookup
 
 ```python
