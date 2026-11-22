@@ -554,7 +554,7 @@ class GLONASS(ConstellationBase):
 
         """
         slot = int(sv[1:3])
-        return self.glonass_slots_channels[slot]
+        return self._read_static_channels()[slot]
 
     @property
     @deprecated(_STATIC_CHANNELS_DEPRECATED)
@@ -569,6 +569,10 @@ class GLONASS(ConstellationBase):
             Mapping slot → channel.
 
         """
+        return self._read_static_channels()
+
+    def _read_static_channels(self) -> dict[int, int]:
+        """Parse the static GLONASS channel file without warning."""
         slot_channel_dict: dict[int, int] = {}
         with self.pth.open() as file:
             lines = file.readlines()

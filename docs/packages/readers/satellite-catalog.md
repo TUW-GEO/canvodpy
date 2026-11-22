@@ -187,6 +187,8 @@ channel `k`, at `1602 + k * 9/16` MHz (G1) and `1246 + k * 7/16` MHz (G2).
 The channel belongs to the satellite, not the slot, so it can change when a
 slot gets another satellite. `glonass_channel` looks it up for a slot and a
 date; `glonass_carrier_frequency_hz` adds the frequency plan.
+This module-level `glonass_channel` takes a slot (`"R25"`), while
+`SatelliteCatalog.glonass_channel` above takes a satellite's SVN (`"R807"`).
 
 ```python
 from canvod.readers.gnss_specs import (
@@ -201,7 +203,9 @@ glonass_carrier_frequency_hz("R25", "G2", date(2023, 1, 15), catalog)  # → 124
 ```
 
 Without `catalog`, both use `SatelliteCatalog.load()`, loaded once per
-process. The static table `GLONASS_channels.txt` and
+process. That call may download the IGS satellite metadata file when no fresh
+local copy exists. For offline use, pass a catalog, for example
+`SatelliteCatalog.load(allow_download=False)`. The static table `GLONASS_channels.txt` and
 `GLONASS.get_channel_used_by_SV` are deprecated: they have no dates.
 
 ### Combined metadata lookup

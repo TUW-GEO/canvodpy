@@ -154,7 +154,9 @@ def glonass_channel(
         Date of the observation.
     catalog : SatelliteCatalog, optional
         Satellite metadata to use. Default: ``SatelliteCatalog.load()``,
-        loaded once per process.
+        loaded once per process. That call may download the IGS satellite
+        metadata file when no fresh local copy exists. For offline use,
+        pass a catalog, e.g. ``SatelliteCatalog.load(allow_download=False)``.
 
     Returns
     -------
@@ -166,6 +168,11 @@ def glonass_channel(
     ------
     ValueError
         If ``sv`` is not a GLONASS satellite.
+
+    See Also
+    --------
+    SatelliteCatalog.glonass_channel : the same lookup by satellite (SVN,
+        e.g. ``"R807"``) instead of by slot.
     """
     if not sv.startswith("R"):
         msg = f"{sv!r} is not a GLONASS satellite"

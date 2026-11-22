@@ -119,9 +119,11 @@ class TestChannelOnDate:
 
 
 class TestStaticTableDeprecated:
-    def test_get_channel_used_by_sv_warns(self):
-        with pytest.warns(FutureWarning, match="glonass_channel"):
-            GLONASS().get_channel_used_by_SV("R01")
+    def test_get_channel_used_by_sv_warns_once(self):
+        glonass = GLONASS()
+        with pytest.warns(FutureWarning, match="glonass_channel") as record:
+            glonass.get_channel_used_by_SV("R01")
+        assert len([w for w in record if w.category is FutureWarning]) == 1
 
     def test_glonass_slots_channels_warns(self):
         with pytest.warns(FutureWarning, match="glonass_channel"):
