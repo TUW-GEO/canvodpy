@@ -56,7 +56,7 @@
 | canvodpy/src/canvodpy/orchestrator/store\_retry.py                              |       51 |        8 |     84% |68, 91-102, 175 |
 | canvodpy/src/canvodpy/orchestrator/vod\_phase.py                                |      231 |       45 |     81% |161-167, 185-243, 263-264, 266-271, 477-486 |
 | canvodpy/src/canvodpy/orchestrator/vod\_reconcile.py                            |       54 |        0 |    100% |           |
-| canvodpy/src/canvodpy/run\_history.py                                           |      434 |       26 |     94% |342, 369, 378, 380, 812-813, 859, 1061, 1068-1070, 1151-1154, 1286-1287, 1291, 1303-1304, 1330, 1346-1355, 1361-1363 |
+| canvodpy/src/canvodpy/run\_history.py                                           |      434 |       25 |     94% |369, 378, 380, 812-813, 859, 1061, 1068-1070, 1151-1154, 1286-1287, 1291, 1303-1304, 1330, 1346-1355, 1361-1363 |
 | canvodpy/src/canvodpy/utils/\_\_init\_\_.py                                     |        0 |        0 |    100% |           |
 | canvodpy/src/canvodpy/utils/history.py                                          |        7 |        0 |    100% |           |
 | canvodpy/src/canvodpy/vod\_calculation.py                                       |       23 |        1 |     96% |        58 |
@@ -163,7 +163,7 @@
 | packages/canvod-readers/src/canvod/readers/gnss\_specs/\_\_init\_\_.py          |        3 |        0 |    100% |           |
 | packages/canvod-readers/src/canvod/readers/gnss\_specs/bands.py                 |      120 |       92 |     23% |   166-416 |
 | packages/canvod-readers/src/canvod/readers/gnss\_specs/constants.py             |       13 |        0 |    100% |           |
-| packages/canvod-readers/src/canvod/readers/gnss\_specs/constellations.py        |      118 |       13 |     89% |105-123, 476-477, 708-710 |
+| packages/canvod-readers/src/canvod/readers/gnss\_specs/constellations.py        |      118 |       13 |     89% |105-123, 497-498, 729-731 |
 | packages/canvod-readers/src/canvod/readers/gnss\_specs/exceptions.py            |       22 |        2 |     91% |   64, 172 |
 | packages/canvod-readers/src/canvod/readers/gnss\_specs/leap\_seconds.py         |       23 |        0 |    100% |           |
 | packages/canvod-readers/src/canvod/readers/gnss\_specs/metadata.py              |       36 |        4 |     89% |345-346, 354, 357 |
@@ -179,7 +179,7 @@
 | packages/canvod-readers/src/canvod/readers/nmea/\_\_init\_\_.py                 |        2 |        0 |    100% |           |
 | packages/canvod-readers/src/canvod/readers/nmea/exceptions.py                   |       10 |        0 |    100% |           |
 | packages/canvod-readers/src/canvod/readers/nmea/v4\_00.py                       |      389 |       48 |     88% |74-75, 184, 192, 197, 204, 258-259, 269, 317, 325-326, 415-416, 420-422, 426-427, 497-498, 525, 529, 533, 537-541, 545, 549-553, 559, 593-594, 647-649, 743, 748-749, 804-805, 830-831 |
-| packages/canvod-readers/src/canvod/readers/preprocessing.py                     |      163 |        6 |     96% |164, 168-176, 182, 331 |
+| packages/canvod-readers/src/canvod/readers/preprocessing.py                     |      163 |        7 |     96% |164, 168-176, 182, 319, 331 |
 | packages/canvod-readers/src/canvod/readers/rinex/\_\_init\_\_.py                |        4 |        0 |    100% |           |
 | packages/canvod-readers/src/canvod/readers/rinex/nav.py                         |      105 |        3 |     97% |234, 241, 253 |
 | packages/canvod-readers/src/canvod/readers/rinex/v2\_11.py                      |      749 |      152 |     80% |188-191, 207, 221, 283-285, 343, 374-375, 392-396, 399, 422, 424-428, 434, 437-438, 446-448, 451, 467-468, 470-471, 487-490, 518, 521, 527-528, 590-591, 741, 744, 752, 780, 784-798, 802-804, 808, 812-816, 875-880, 951-952, 956, 993-994, 997-998, 1086-1091, 1096-1101, 1123-1137, 1140-1142, 1191, 1195-1213, 1291, 1298, 1300, 1308, 1373, 1375, 1384, 1394-1395, 1422, 1517, 1566, 1586, 1592, 1595-1602, 1614-1630, 1649-1692, 1724, 1728, 1736-1738, 1744, 1769-1774 |
