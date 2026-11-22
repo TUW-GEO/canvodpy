@@ -124,7 +124,7 @@
 | packages/canvod-grids/src/canvod/grids/analysis/analysis\_storage.py            |       11 |        2 |     82% |     40-41 |
 | packages/canvod-grids/src/canvod/grids/analysis/filtering.py                    |      215 |      130 |     40% |132, 155-171, 179, 202-223, 231, 257-264, 272, 298-303, 329-330, 338, 383, 412, 478-480, 499-511, 534-657, 661-666, 681, 692 |
 | packages/canvod-grids/src/canvod/grids/analysis/masking.py                      |      132 |      111 |     16% |58-60, 91-109, 136-144, 172-183, 199-203, 219-223, 254-269, 296-303, 342-359, 396-410, 438-452, 463-489, 500-501, 512-513, 545-560, 583-585 |
-| packages/canvod-grids/src/canvod/grids/analysis/per\_cell\_analysis.py          |      277 |      247 |     11% |84-92, 100-104, 117-135, 142-171, 180-212, 225-243, 252-263, 267-284, 292-307, 317-336, 342-355, 371-410, 441-458, 479-481, 509-520, 538-539, 566-599, 616-622, 646 |
+| packages/canvod-grids/src/canvod/grids/analysis/per\_cell\_analysis.py          |      276 |      187 |     32% |88-89, 104, 117-135, 142-171, 180-212, 225-243, 252-263, 292-307, 342-355, 372-376, 387-408, 478-480, 508-519, 537-538, 565-598, 615-621, 645 |
 | packages/canvod-grids/src/canvod/grids/analysis/per\_cell\_filtering.py         |      150 |      119 |     21% |56, 111-151, 179-225, 242, 265-279, 290, 313-323, 334, 360-365, 376, 402-409, 440-442, 465-477, 498-538, 554, 571 |
 | packages/canvod-grids/src/canvod/grids/analysis/solar.py                        |      146 |      123 |     16% |83-100, 124-129, 135-149, 158-249, 254-269, 291-292, 316-317, 353-413, 442-445, 465-477, 490-491, 522-524, 554-558 |
 | packages/canvod-grids/src/canvod/grids/analysis/spatial.py                      |       65 |       53 |     18% |80-94, 139-201, 239-270 |
@@ -252,7 +252,7 @@
 | packages/canvod-viz/src/canvod/viz/widgets/hemisphere\_widgets.py               |       27 |        0 |    100% |           |
 | packages/canvod-vod/src/canvod/vod/\_\_init\_\_.py                              |        4 |        0 |    100% |           |
 | packages/canvod-vod/src/canvod/vod/calculator.py                                |       76 |        8 |     89% |56, 78, 122, 129-136 |
-| **TOTAL**                                                                       | **30600** | **7277** | **76%** |           |
+| **TOTAL**                                                                       | **30599** | **7217** | **76%** |           |
 
 
 ## Setup coverage badge
