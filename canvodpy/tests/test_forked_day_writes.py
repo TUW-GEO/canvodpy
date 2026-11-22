@@ -205,6 +205,15 @@ def test_a_forked_day_keeps_every_epoch_in_one_commit(seeded, files) -> None:
     assert summary.total_epochs == stored.sizes["epoch"]
 
 
+def test_the_group_holds_no_file_hash_the_log_book_holds_each(seeded, files) -> None:
+    # File Hash describes one file: on the group it named the first file only.
+    _write_day(_Processor.for_day(seeded))
+
+    assert "File Hash" not in seeded.read_group(_GROUP).attrs
+    day = {files[_name(i)].attrs["File Hash"] for i in range(_FILES_PER_DAY)}
+    assert set(_log_book(seeded)["rinex_hash"].to_list()) == day
+
+
 def test_an_overwrite_rerun_gives_the_same_data_in_one_commit(seeded, files) -> None:
     _write_day(_Processor.for_day(seeded))
     before = seeded.read_group(_GROUP, drop_empty=True)

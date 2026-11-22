@@ -399,8 +399,7 @@ attributes that change with every run or release: the creation and
 modification times, the store ids, the canvodpy version and the
 `Software` attribute, and the content hash of the GNSS store a VOD
 store was computed from (its values are compared themselves). The list
-is `VOLATILE_ATTRIBUTES` in the same module. A changed input file
-therefore shows as a changed `File Hash`.
+is `VOLATILE_ATTRIBUTES` in the same module.
 A new or changed setting shows under
 `canvod:repository_metadata.content_settings`, by name and in its hash:
 it changes what the store records about how it was built, so it counts
@@ -414,10 +413,12 @@ Table A1). A position computed from NMEA latitude, longitude and height
 differs in the last bits between platforms. The table is
 `ATTRIBUTE_TOLERANCES` in the same module.
 
-The log books (`metadata/table`) are not compared. They record how a
-run wrote each file (write times, snapshot ids, run ids, paths); what
-the files hold is compared through the groups, and which files were
-read through `File Hash`.
+Of the log books (`metadata/table`), only the file hashes of each GNSS
+group (`rinex_hash`) are compared: a changed input file shows as a
+`files` difference naming the hashes found in one store only. The rest
+of a log book records how a run wrote each file (write times, snapshot
+ids, run ids, paths), and what the files hold is compared through the
+groups.
 
 Float variables are compared within one absolute tolerance per
 variable, derived from the finest resolution any format records. A

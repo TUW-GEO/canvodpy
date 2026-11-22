@@ -375,20 +375,46 @@ def test_changed_software_version_is_ignored(tmp_path) -> None:
     assert result.matches
 
 
-def test_changed_file_hash_is_reported(tmp_path) -> None:
-    # A different input file is a different store, unlike a new version.
+def _log_file(store, ds: xr.Dataset, rinex_hash: str, group: str = _GROUP) -> None:
+    """A log-book row for one file of ``ds``."""
+    store.append_metadata(
+        group_name=group,
+        rinex_hash=rinex_hash,
+        start=ds.epoch.values[0],
+        end=ds.epoch.values[-1],
+        snapshot_id="s",
+        action="write",
+        commit_msg="test",
+        dataset_attrs={},
+    )
+
+
+def test_changed_input_file_is_reported(tmp_path) -> None:
+    # A different input file is a different store, unlike a new version. The
+    # log book names every file; a group attribute named the first file only.
     ds = _gnss_ds(seed=0)
-    ds.attrs["File Hash"] = "a4d029a0c1d7925b"
-    ds2 = ds.copy(deep=True)
-    ds2.attrs["File Hash"] = "0000000000000000"
     ref = _gnss_store(tmp_path / "ref", ds)
-    new = _gnss_store(tmp_path / "new", ds2)
+    new = _gnss_store(tmp_path / "new", ds)
+    _log_file(ref, ds, "a4d029a0c1d7925b")
+    _log_file(new, ds, "0000000000000000")
 
     result = compare_stores(ref, new)
 
-    attr_diffs = [d for d in result.differences if d.kind == DiffKind.ATTRIBUTE]
-    assert [d.variable for d in attr_diffs] == ["File Hash"]
+    [diff] = result.differences
+    assert diff.kind == DiffKind.FILES
+    assert "a4d029a0c1d7925b" in diff.detail
+    assert "0000000000000000" in diff.detail
     assert not result.matches
+
+
+def test_the_same_input_files_match(tmp_path) -> None:
+    ds = _gnss_ds(seed=0)
+    ref = _gnss_store(tmp_path / "ref", ds)
+    new = _gnss_store(tmp_path / "new", ds)
+    for store in (ref, new):
+        _log_file(store, ds, "a4d029a0c1d7925b")
+
+    assert compare_stores(ref, new).matches
 
 
 def test_nested_store_attribute_names_the_inner_key(tmp_path) -> None:
