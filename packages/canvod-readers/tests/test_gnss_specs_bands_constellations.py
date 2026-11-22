@@ -124,13 +124,15 @@ class TestGLONASS:
 
     def test_channel_lookup(self):
         glo = GLONASS()
-        # This should not raise (channel file is included with the package)
-        ch = glo.get_channel_used_by_SV("R01")
+        # Deprecated, still works (channel file is included with the package)
+        with pytest.warns(FutureWarning):
+            ch = glo.get_channel_used_by_SV("R01")
         assert isinstance(ch, int)
 
     def test_glonass_slots_channels(self):
         glo = GLONASS()
-        sc = glo.glonass_slots_channels
+        with pytest.warns(FutureWarning):
+            sc = glo.glonass_slots_channels
         assert isinstance(sc, dict)
         assert len(sc) > 0
 

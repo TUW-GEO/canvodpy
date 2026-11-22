@@ -9,6 +9,11 @@ from typing import TYPE_CHECKING, Any, ClassVar
 import structlog
 
 from canvod.readers.gnss_specs.constants import UREG
+from canvod.readers.gnss_specs.glonass_fdma import (
+    fdma_base_and_spacing_hz,
+    glonass_fdma_frequency_hz,
+)
+from canvod.utils.tools import deprecated, deprecated_argument
 
 _log = structlog.get_logger(__name__)
 
@@ -349,6 +354,33 @@ class BEIDOU(ConstellationBase):
         )
 
 
+_GLONASS_CHANNELS_TXT = Path(__file__).parent / "GLONASS_channels.txt"
+
+_STATIC_CHANNELS_DEPRECATED = (
+    "The static GLONASS channel table (GLONASS_channels.txt) has no dates "
+    "and will be removed with the next major version. Use "
+    "`canvod.readers.gnss_specs.glonass_fdma.glonass_channel(sv, on_date)`, "
+    "which reads the IGS satellite metadata."
+)
+
+#: Subband bandwidth of a GLONASS FDMA channel: twice the C/A chip rate.
+_FDMA_SUBBAND_BANDWIDTH_HZ = 1.022e6
+#: Channel range of the in-force FDMA plan (ICD 5.1, SVs after 2005).
+_FDMA_CHANNELS_IN_FORCE = (-7, 6)
+
+
+def _fdma_aggregate_band_properties(band: str) -> dict[str, Any]:
+    """Center and bandwidth of the aggregated G1 or G2 band."""
+    low, high = (
+        float(glonass_fdma_frequency_hz(band, k)) for k in _FDMA_CHANNELS_IN_FORCE
+    )
+    return {
+        "freq": (low + high) / 2 / 1e6 * UREG.MHz,
+        "bandwidth": (high - low + _FDMA_SUBBAND_BANDWIDTH_HZ) / 1e6 * UREG.MHz,
+        "system": "R",
+    }
+
+
 class GLONASS(ConstellationBase):
     """GLONASS constellation model (uses FDMA for L1/L2).
 
@@ -392,14 +424,15 @@ class GLONASS(ConstellationBase):
         ICD-GLONASS-CDMA-L1/L2/L3, Edition 1.0, 2016, published at
         http://russianspacesystems.ru/wp-content/uploads/2016/08/ (archived
         copies at web.archive.org).
-      - GLONASS channel assignment from: see included channel file.
+      - Frequency channel of each satellite on a date: IGS satellite
+        metadata, see :func:`~canvod.readers.gnss_specs.glonass_fdma.glonass_channel`.
 
     G1/G2 is treated as a single band here, although it consists of sub-bands
     according to FDMA. The aggregate center frequency and bandwidth are
     derived from the current in-force GLONASS FDMA channel plan, channel
-    numbers ``n`` in ``[-7, 6]`` (see channel file):
+    numbers ``n`` in ``[-7, 6]``:
 
-        freq(n)   = base_freq + n * spacing
+        freq(n)   = base_freq + n * spacing  (glonass_fdma_frequency_hz)
         center    = (freq(n_min) + freq(n_max)) / 2
         bandwidth = freq(n_max) - freq(n_min) + subband_bandwidth
 
@@ -409,9 +442,6 @@ class GLONASS(ConstellationBase):
 
     Attributes
     ----------
-    glonass_channel_pth : Path, optional
-        Path to GLONASS channel assignment file (default:
-        "GLONASS_channels.txt" in the same directory as this file).
     aggregate_fdma : bool, default True
         If True, aggregate FDMA sub-bands into single G1/G2 bands.
         If False, maintain individual FDMA channel frequencies.
@@ -466,25 +496,16 @@ class GLONASS(ConstellationBase):
     }
 
     # n_min=-7, n_max=6 (see Note on G1 & G2 above):
-    #   G1: freq(n) = 1602 + n*9/16   -> center=1601.71875, bandwidth=8.3345
-    #   G2: freq(n) = 1246 + n*7/16   -> center=1245.78125, bandwidth=6.7095
+    #   G1: center=1601.71875 MHz, bandwidth=8.3345 MHz
+    #   G2: center=1245.78125 MHz, bandwidth=6.7095 MHz
     AGGR_G1_G2_BAND_PROPERTIES: ClassVar[dict[str, dict[str, Any]]] = {
-        "G1": {
-            "freq": 1601.71875 * UREG.MHz,  # see Note on G1 & G2
-            "bandwidth": 8.3345 * UREG.MHz,  # see Note on G1 & G2
-            "system": "R",
-        },
-        "G2": {
-            "freq": 1245.78125 * UREG.MHz,  # see Note on G1 & G2
-            "bandwidth": 6.7095 * UREG.MHz,  # see Note on G1 & G2
-            "system": "R",
-        },
+        band: _fdma_aggregate_band_properties(band) for band in ("G1", "G2")
     }
 
+    @deprecated_argument("glonass_channel_pth", _STATIC_CHANNELS_DEPRECATED)
     def __init__(
         self,
-        glonass_channel_pth: Path | None = Path(__file__).parent
-        / "GLONASS_channels.txt",
+        glonass_channel_pth: Path | None = _GLONASS_CHANNELS_TXT,
         aggregate_fdma: bool = True,
     ) -> None:
         """Initialize GLONASS constellation with FDMA channel assignments."""
@@ -522,21 +543,25 @@ class GLONASS(ConstellationBase):
             self.__dict__["BAND_PROPERTIES"] = {
                 **self.BAND_PROPERTIES,
                 "G1_FDMA": {
-                    "freq": 1602.0 * UREG.MHz,  # Nominal center
+                    "freq": fdma_base_and_spacing_hz("G1")[0] / 1e6 * UREG.MHz,
                     "bandwidth": 9.0 * UREG.MHz,  # FDMA range
                     "system": "R",
                     "fdma": True,  # Flag for SV-dependent frequency
                 },
                 "G2_FDMA": {
-                    "freq": 1246.0 * UREG.MHz,  # Nominal center
+                    "freq": fdma_base_and_spacing_hz("G2")[0] / 1e6 * UREG.MHz,
                     "bandwidth": 7.0 * UREG.MHz,  # FDMA range
                     "system": "R",
                     "fdma": True,  # Flag for SV-dependent frequency
                 },
             }
 
+    @deprecated(_STATIC_CHANNELS_DEPRECATED)
     def get_channel_used_by_SV(self, sv: str) -> int:
-        """Return the GLONASS channel number for a satellite.
+        """Return the GLONASS channel number for a slot from a static table.
+
+        Deprecated: the table has no dates and slots change satellites.
+        Use :func:`~canvod.readers.gnss_specs.glonass_fdma.glonass_channel`.
 
         Parameters
         ----------
@@ -550,11 +575,14 @@ class GLONASS(ConstellationBase):
 
         """
         slot = int(sv[1:3])
-        return self.glonass_slots_channels[slot]
+        return self._read_static_channels()[slot]
 
     @property
+    @deprecated(_STATIC_CHANNELS_DEPRECATED)
     def glonass_slots_channels(self) -> dict[int, int]:
-        """Parse GLONASS channel file.
+        """Parse the static GLONASS channel file.
+
+        Deprecated, see :meth:`get_channel_used_by_SV`.
 
         Returns
         -------
@@ -562,6 +590,10 @@ class GLONASS(ConstellationBase):
             Mapping slot → channel.
 
         """
+        return self._read_static_channels()
+
+    def _read_static_channels(self) -> dict[int, int]:
+        """Parse the static GLONASS channel file without warning."""
         slot_channel_dict: dict[int, int] = {}
         with self.pth.open() as file:
             lines = file.readlines()

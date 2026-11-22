@@ -65,13 +65,15 @@ GPS_BANDS: Final[BandTable] = {
 GLONASS_BANDS: Final[BandTable] = {
     "1": {
         "name": "G1",
-        "frequency_base": 1602.0,  # MHz + k*9/16, k=-7..+12
+        "frequency_base": 1602.0,  # MHz, channel k at base + k * spacing
+        "channel_spacing": 0.5625,  # MHz (9/16), FDMA ICD 5.1, Table 3.1
         "bandwidth": 9.0,
         "codes": {"C", "P"},
     },
     "2": {
         "name": "G2",
-        "frequency_base": 1246.0,  # MHz + k*7/16
+        "frequency_base": 1246.0,  # MHz, channel k at base + k * spacing
+        "channel_spacing": 0.4375,  # MHz (7/16), FDMA ICD 5.1, Table 3.1
         "bandwidth": 9.0,
         "codes": {"C", "P"},
     },
