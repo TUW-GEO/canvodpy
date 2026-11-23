@@ -49,7 +49,7 @@ jobs:
               if: false
               run: git submodule update --init --depth 1 packages/canvod-readers/tests/test_data
             - name: Install uv and set the python version
-              uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2 # v10.3.3
+              uses: astral-sh/setup-uv@1db35dd8eee11c5894872e0b383ae6c406cf738d # v10.4.0
               with:
                   python-version: ${{ matrix.python-version }}
                   enable-cache: true
@@ -77,7 +77,7 @@ jobs:
                   file: coverage.lcov
             - name: Coverage comment
               if: inputs.coverage && matrix.os == 'ubuntu-latest'
-              uses: py-cov-action/python-coverage-comment-action@f61e5cd43688fff694a32299b5098c81728388cf # v3
+              uses: py-cov-action/python-coverage-comment-action@578b975732e9142c925d4c80cab569d2ace819f0 # v3
               with:
                   GITHUB_TOKEN: ${{ github.token }}
                   VERBOSE: false
