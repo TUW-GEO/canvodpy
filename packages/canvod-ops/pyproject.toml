@@ -42,7 +42,7 @@ dependencies = [
 [dependency-groups]
 dev = [
     "canvod-store>=1.0.0,<2",
-    "pytest>=8.0.0",
+    "pytest>=9.2.0",
     "pytest-cov>=5.0.0",
 ]
 

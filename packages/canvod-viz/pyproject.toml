@@ -33,7 +33,7 @@ classifiers = [
 dependencies = [
     "matplotlib>=3.8.0",
     "plotly>=5.18.0",
-    "numpy>=1.26.0",
+    "numpy>=2.5.5",
     "canvod-grids>=1.0.0,<2",
 ]
 

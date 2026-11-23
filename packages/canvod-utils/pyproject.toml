@@ -30,7 +30,7 @@ classifiers = [
 
 dependencies = [
     "psutil>=7.2.2",
-    "pydantic>=2.0",
+    "pydantic>=2.14.3",
     "structlog>=24.1.0",
 ]
 

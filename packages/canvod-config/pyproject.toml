@@ -32,7 +32,7 @@ classifiers = [
 ]
 
 dependencies = [
-    "pydantic>=2.0",
+    "pydantic>=2.14.3",
     "pydantic-settings>=2.0",
     "pyyaml>=6.0",
     "email-validator>=2.0",
